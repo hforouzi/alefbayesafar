@@ -1,5 +1,7 @@
+{% set current_locale = app.request.locale|default('fa') %}
+{% set text_direction = current_locale == 'fa' ? 'rtl' : 'ltr' %}
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="{{ current_locale }}" dir="{{ text_direction }}">
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,7 +11,7 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{{ asset('assets/css/style.css') }}">
     {% block stylesheets %}{% endblock %}
 </head>
-<body class="min-h-screen overflow-x-hidden bg-[#f7f3ee] text-[#1f2933] antialiased" style="font-family: Vazirmatn, Tahoma, Arial, sans-serif;">
+<body class="min-h-screen overflow-x-hidden bg-[#f7f3ee] font-vazirmatn text-[#1f2933] antialiased">
     {% set nav = [
         { label: 'خانه', route: 'homepage' },
         { label: 'ساخت پکیج', route: 'public_build' },

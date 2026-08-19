@@ -1,10 +1,10 @@
 (function () {
     const $themeConfig = {
-        locale: 'en', // en, da, de, el, es, fr, hu, it, ja, pl, pt, ru, sv, tr, zh
+        locale: document.documentElement.getAttribute('lang') || 'fa',
         theme: 'light', // light, dark, system
         menu: 'vertical', // vertical, collapsible-vertical, horizontal
         layout: 'full', // full, boxed-layout
-        rtlClass: 'ltr', // rtl, ltr
+        rtlClass: document.documentElement.dataset.localeDir || document.documentElement.getAttribute('dir') || 'rtl',
         animation: '', // animate__fadeIn, animate__fadeInDown, animate__fadeInUp, animate__fadeInLeft, animate__fadeInRight, animate__slideInDown, animate__slideInLeft, animate__slideInRight, animate__zoomIn
         navbar: 'navbar-sticky', // navbar-sticky, navbar-floating, navbar-static
         semidark: false,
@@ -179,6 +179,11 @@
             },
 
             setRTLLayout() {
+                const localeDirection = document.querySelector('html')?.dataset?.localeDir;
+                if (localeDirection === 'rtl' || localeDirection === 'ltr') {
+                    this.rtlClass = localeDirection;
+                }
+
                 document
                     .querySelector('html')
                     .setAttribute(

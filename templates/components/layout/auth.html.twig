@@ -1,5 +1,7 @@
+{% set current_locale = app.request.locale|default('fa') %}
+{% set text_direction = current_locale == 'fa' ? 'rtl' : 'ltr' %}
 <!DOCTYPE html>
-<html lang="{{ app.request.locale|default('de') }}" dir="ltr">
+<html lang="{{ current_locale }}" dir="{{ text_direction }}" data-locale-dir="{{ text_direction }}">
 
 <head>
     <meta charset='utf-8'>
@@ -7,10 +9,6 @@
     <title>{{ 'app.name'|trans }}</title>
     <meta name='viewport' content='width=device-width, initial-scale=1'>
         <link rel="icon" type="image/x-icon" href="{{ asset('/favicon.svg') }}" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap"
-            rel="stylesheet">
         <link rel='stylesheet' type='text/css' media='screen'
             href="{{ asset('assets/css/perfect-scrollbar.min.css') }}">
         <link rel='stylesheet' type='text/css' media='screen'
@@ -25,7 +23,7 @@
 </head>
 
 
-<body x-data="main" class="antialiased relative font-nunito text-sm font-normal overflow-x-hidden"
+<body x-data="main" class="antialiased relative font-vazirmatn text-sm font-normal overflow-x-hidden"
     :class="[ $store.app.sidebar ? 'toggle-sidebar' : '', $store.app.theme === 'dark' || $store.app.isDarkMode ?  'dark' : '', $store.app.menu, $store.app.layout,$store.app.rtlClass]">
 
     <!-- screen loader -->

@@ -8,7 +8,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 
 final class LocaleSubscriber implements EventSubscriberInterface
 {
-    private const SUPPORTED_LOCALES = ['de', 'en'];
+    private const SUPPORTED_LOCALES = ['fa', 'en'];
     private const WEB_ONLY_PATHS = ['/api', '/pwa'];
 
     public static function getSubscribedEvents(): array

@@ -1,0 +1,50 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'destination.airport.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'destination.airport.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('destination_airport_new') }}" class="btn btn-primary">{{ 'destination.airport.new'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% set table_body %}
+        <thead>
+            <tr>
+                <th>{{ 'destination.airport.iata'|trans }}</th>
+                <th>{{ 'destination.airport.name'|trans }}</th>
+                <th>{{ 'destination.airport.city'|trans }}</th>
+                <th>{{ 'destination.city.country'|trans }}</th>
+                <th>{{ 'destination.common.active'|trans }}</th>
+                <th class="text-right">{{ 'common.actions'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for airport in airports %}
+                <tr>
+                    <td class="whitespace-nowrap font-semibold text-black dark:text-white-light">{{ airport.iataCode ?: '-' }}</td>
+                    <td>{{ airport.name }}</td>
+                    <td>{{ airport.city.name }}</td>
+                    <td>{{ airport.city.country }}</td>
+                    <td>
+                        {% include 'components/_status_badge.html.twig' with {
+                            status: airport.active ? 'active' : 'inactive',
+                            label: airport.active ? 'destination.common.active' : 'destination.common.inactive',
+                        } %}
+                    </td>
+                    <td class="whitespace-nowrap text-right">
+                        <div class="flex flex-wrap justify-end gap-2">
+                            <a href="{{ path('destination_airport_edit', { id: airport.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'common.edit'|trans }}</a>
+                            <form method="post" action="{{ path('destination_airport_delete', { id: airport.id }) }}" onsubmit="return confirm('{{ 'destination.common.delete_confirmation'|trans }}');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_destination_airport_' ~ airport.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'common.delete'|trans }}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr><td colspan="6" class="py-10 text-center text-white-dark">{{ 'destination.airport.empty'|trans }}</td></tr>
+            {% endfor %}
+        </tbody>
+    {% endset %}
+    {% include 'components/_card.html.twig' with { body: include('components/_table.html.twig', { body: table_body }) } %}
+{% endblock %}
