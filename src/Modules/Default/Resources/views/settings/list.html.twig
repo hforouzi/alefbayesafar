@@ -1,0 +1,35 @@
+{% extends "index.html.twig" %}
+{% block Main %}
+
+    <div class="card">
+        <div class="card-header">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <h5 class="card-title">{{ 'administrator.setting.list'|trans }}</h5>
+                    </div>
+                </div><!-- end col -->
+                
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap align-items-start justify-content-md-end mt-2 mt-md-0 gap-2 mb-3">
+                        
+                        <div>
+                            <a href="{{path('create_setting')}}" class="btn btn-light"><i class="uil uil-plus me-1"></i>{{ 'administrator.setting.new'|trans }}</a>
+                        </div>
+                    
+                    </div>
+                </div><!-- end col -->
+            </div><!-- end row -->
+        </div>
+    <h1></h1>
+    <ul>
+        {% for setting in settings %}
+            <li>
+                <a href="{{ path('setting_by_name', { 'name': setting.name }) }}">
+                    {{ setting.name }}: {{ setting.value }}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    </div>
+{% endblock %}

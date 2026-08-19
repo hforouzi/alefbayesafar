@@ -1,0 +1,94 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'dashboard.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'dashboard.subtitle'|trans }}{% endblock %}
+{% block page_actions %}{% endblock %}
+
+{% block body %}
+    {% set metrics = [
+        {
+            label: 'dashboard.metric.users',
+            value: userCount,
+            icon_bg: 'bg-primary/10',
+            icon_text: 'text-primary',
+            icon: 'solar:users-group-rounded-bold'
+        },
+        {
+            label: 'dashboard.metric.roles',
+            value: roleCount,
+            icon_bg: 'bg-success/10',
+            icon_text: 'text-success',
+            icon: 'solar:shield-user-bold'
+        },
+        {
+            label: 'dashboard.metric.permissions',
+            value: permissionCount,
+            icon_bg: 'bg-info/10',
+            icon_text: 'text-info',
+            icon: 'solar:key-bold'
+        }
+    ] %}
+
+    <div class="grid gap-6 md:grid-cols-3">
+        {% for metric in metrics %}
+            <div class="rounded-2xl border border-white-light/40 bg-white p-5 shadow-[0_2px_2px_rgb(224_230_237_/_46%),_1px_6px_7px_rgb(224_230_237_/_46%)] dark:border-dark-light/20 dark:bg-[#0e1726]">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-white-dark">{{ metric.label|trans }}</p>
+                        <div class="mt-3 text-3xl font-semibold text-black dark:text-white-light">{{ metric.value }}</div>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl {{ metric.icon_bg }} {{ metric.icon_text }}">
+                        {{ ux_icon(metric.icon, { class: 'h-6 w-6' }) }}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div class="mt-6 grid gap-6 xl:grid-cols-3">
+        <div class="xl:col-span-2 rounded-2xl border border-white-light/40 bg-white p-6 shadow-[0_2px_2px_rgb(224_230_237_/_46%),_1px_6px_7px_rgb(224_230_237_/_46%)] dark:border-dark-light/20 dark:bg-[#0e1726]">
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-black dark:text-white-light">{{ 'dashboard.panel.administration'|trans }}</h2>
+                    <p class="mt-1 text-sm text-white-dark">{{ 'dashboard.panel.administration_subtitle'|trans }}</p>
+                </div>
+                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                    {{ 'navigation.administration'|trans }}
+                </span>
+            </div>
+
+            <div class="mt-6 grid gap-4 md:grid-cols-3">
+                <a href="{{ path('user_list') }}" class="rounded-2xl border border-dashed border-white-light/60 bg-white-light/20 p-4 transition hover:border-primary/40 hover:bg-primary/5 dark:border-dark-light/20 dark:bg-dark/20">
+                    <span class="text-sm text-white-dark">{{ 'navigation.users'|trans }}</span>
+                    <div class="mt-4 text-2xl font-semibold text-black dark:text-white-light">{{ userCount }}</div>
+                </a>
+                <a href="{{ path('role_list') }}" class="rounded-2xl border border-dashed border-white-light/60 bg-white-light/20 p-4 transition hover:border-primary/40 hover:bg-primary/5 dark:border-dark-light/20 dark:bg-dark/20">
+                    <span class="text-sm text-white-dark">{{ 'navigation.roles'|trans }}</span>
+                    <div class="mt-4 text-2xl font-semibold text-black dark:text-white-light">{{ roleCount }}</div>
+                </a>
+                <a href="{{ path('permission_list') }}" class="rounded-2xl border border-dashed border-white-light/60 bg-white-light/20 p-4 transition hover:border-primary/40 hover:bg-primary/5 dark:border-dark-light/20 dark:bg-dark/20">
+                    <span class="text-sm text-white-dark">{{ 'navigation.permissions'|trans }}</span>
+                    <div class="mt-4 text-2xl font-semibold text-black dark:text-white-light">{{ permissionCount }}</div>
+                </a>
+            </div>
+        </div>
+
+        <div class="rounded-2xl border border-white-light/40 bg-white p-6 shadow-[0_2px_2px_rgb(224_230_237_/_46%),_1px_6px_7px_rgb(224_230_237_/_46%)] dark:border-dark-light/20 dark:bg-[#0e1726]">
+            <h2 class="text-lg font-semibold text-black dark:text-white-light">{{ 'dashboard.panel.template_status'|trans }}</h2>
+            <div class="mt-6 space-y-4">
+                <div class="flex items-center justify-between rounded-2xl bg-primary/5 p-4 dark:bg-primary/10">
+                    <span class="text-sm text-white-dark">{{ 'dashboard.status.browser_auth'|trans }}</span>
+                    <span class="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">{{ 'dashboard.status.ready'|trans }}</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-info/5 p-4 dark:bg-info/10">
+                    <span class="text-sm text-white-dark">{{ 'dashboard.status.permissions'|trans }}</span>
+                    <span class="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">{{ 'dashboard.status.ready'|trans }}</span>
+                </div>
+                <div class="flex items-center justify-between rounded-2xl bg-warning/5 p-4 dark:bg-warning/10">
+                    <span class="text-sm text-white-dark">{{ 'dashboard.status.menu'|trans }}</span>
+                    <span class="rounded-full bg-success/10 px-2.5 py-1 text-xs font-semibold text-success">{{ 'dashboard.status.ready'|trans }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

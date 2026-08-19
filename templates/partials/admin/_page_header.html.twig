@@ -1,0 +1,28 @@
+<div class="mb-6 rounded-2xl border border-white-light/40 bg-white px-5 py-4 shadow-[0_2px_2px_rgb(224_230_237_/_46%),_1px_6px_7px_rgb(224_230_237_/_46%)] dark:border-dark-light/20 dark:bg-[#0e1726]">
+    {% if breadcrumb is defined and breadcrumb %}
+        <div class="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-white-dark">
+            {{ breadcrumb|raw }}
+        </div>
+    {% endif %}
+
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+            {% if title %}
+                <h1 class="text-2xl font-semibold text-black dark:text-white-light">
+                    {{ title|trans }}
+                </h1>
+            {% endif %}
+            {% if subtitle %}
+                <p class="mt-1 text-sm text-white-dark">
+                    {{ subtitle|trans }}
+                </p>
+            {% endif %}
+        </div>
+
+        {% if actions %}
+            <div class="flex flex-wrap items-center gap-2">
+                {{ actions|raw }}
+            </div>
+        {% endif %}
+    </div>
+</div>

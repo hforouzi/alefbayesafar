@@ -1,0 +1,9 @@
+parameters:
+    level: 6
+    paths:
+        - src
+        - tests
+    excludePaths:
+        - src/Kernel.php
+    ignoreErrors:
+        # Add specific errors to ignore if needed

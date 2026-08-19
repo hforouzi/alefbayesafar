@@ -1,0 +1,3 @@
+security:
+  invalid_credentials: 'Ungültige Anmeldedaten.'
+  invalid_captcha_code: 'Ungültiger Captcha-Code.'

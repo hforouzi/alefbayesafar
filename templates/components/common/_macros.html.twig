@@ -1,0 +1,73 @@
+{% macro render_menu_items(items, parent_name = null) %}
+    {% import _self as macros %}
+    
+    {% for menuItem in items %}
+        {% set current_route = app.request.get('_route') %}
+        {% set current_path = app.request.pathinfo %}
+        
+        {# بررسی دقیق‌تر برای آیتم فعال #}
+        {% set is_active = false %}
+        {% if menuItem.route != '#' %}
+            {% set menu_path = path(menuItem.route) %}
+            {% set is_active = current_route == menuItem.route or current_path starts with menu_path %}
+        {% endif %}
+        
+        {# بررسی اینکه آیا یکی از فرزندان این آیتم فعال است #}
+        {% set has_active_child = false %}
+        {% if menuItem.children is defined and menuItem.children is not empty %}
+            {% for child in menuItem.children %}
+                {% if child.route != '#' %}
+                    {% set child_path = path(child.route) %}
+                    {% if current_route == child.route or current_path starts with child_path %}
+                        {% set has_active_child = true %}
+                    {% endif %}
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        
+        {% if menuItem.children is defined and menuItem.children is not empty and menuItem.position == 1 %}
+            <li class="menu nav-item">
+                <button type="button" class="nav-link group {{ (is_active or has_active_child) ? 'active' : '' }}"
+                        :class="{ 'active': activeDropdown === '{{ menuItem.name | lower | replace({' ': '-'}) }}' }"
+                        @click="handleClick('{{ menuItem.name | lower | replace({' ': '-'}) }}')">
+                    <div class="flex items-center">
+                        {% if menuItem.icon is not null %}
+                            {{ ux_icon(menuItem.icon, {class: "group-hover:!text-primary shrink-0 " ~ ((is_active or has_active_child) ? 'text-primary' : ''),  width: 16,
+                                height: 16}) }}
+                        {% endif %}
+                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ (is_active or has_active_child) ? 'text-primary font-bold' : '' }}">
+                            {{ menuItem.name }}
+                        </span>
+                    </div>
+                    <div class="rtl:rotate-180" :class="{ '!rotate-90': activeDropdown === '{{ menuItem.name | lower | replace({' ': '-'}) }}' }">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                </button>
+                <ul x-cloak
+                    x-show="activeDropdown === '{{ menuItem.name | lower | replace({' ': '-'}) }}' || {{ (has_active_child or is_active) ? 'true' : 'false' }}"
+                    x-collapse
+                    class="sub-menu text-gray-500"
+                    x-init="if ({{ (has_active_child or is_active) ? 'true' : 'false' }}) { activeDropdown = '{{ menuItem.name | lower | replace({' ': '-'}) }}' }">
+                    {{ macros.render_menu_items(menuItem.children, menuItem.name) }}
+                </ul>
+            </li>
+        {% else %}
+            <li class="{{ parent_name is null ? 'nav-item' : '' }}">
+                <a href="{% if menuItem.route == '#' %}#{% else %}{{ path(menuItem.route) }}{% endif %}"
+                   class="nav-link group {{ is_active ? 'active' : '' }}">
+                    <div class="flex items-center">
+                        {% if menuItem.icon is not null %}
+                            {{ ux_icon(menuItem.icon, {class: "group-hover:!text-primary shrink-0 " ~ (is_active ? 'text-primary' : ''),  width: 16,
+                                height: 16}) }}
+                        {% endif %}
+                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ is_active ? 'text-primary font-bold' : '' }}">
+                            {{ menuItem.name }}
+                        </span>
+                    </div>
+                </a>
+            </li>
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

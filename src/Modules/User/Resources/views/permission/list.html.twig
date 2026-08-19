@@ -1,0 +1,270 @@
+{% extends "components/layout/default.html.twig" %}
+
+{% block content %}
+    {% set header_title = block('page_title')|trim %}
+    {% set header_subtitle = block('page_subtitle')|trim %}
+    {% set header_actions = block('page_actions')|trim %}
+    
+    <div class="animate__animated p-6" :class="[$store.app.animation]" x-data="permissionTable()">
+        <div class="mb-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <h2 class="text-xl font-semibold text-dark dark:text-white-light">{{ 'permission.title'|trans }}</h2>
+                    <p class="text-white-dark">{{ 'permission.subtitle'|trans }}</p>
+                </div>
+                <div class="flex gap-3">
+                    <a href="{{ path('sync_actions') }}" class="btn btn-primary">
+                        <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4C9.25022 4 6.82447 5.38734 5.38451 7.50024" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M7 7.99999H5C4.44772 7.99999 4 7.55228 4 6.99999V5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        {{ 'permissions.sync'|trans }}
+                    </a>
+                    <a href="{{ path('permission_new') }}" class="btn btn-success">
+                        <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M15 12L12 12M12 12L9 12M12 12L12 9M12 12L12 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        {{ 'permissions.new'|trans }}
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        {% if unsyncedActions|default([])|length > 0 %}
+            <div class="panel mb-6 border border-warning bg-warning/10 text-warning dark:border-warning dark:bg-warning/10">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h5 class="font-semibold">
+                            {{ 'permission_sync.unsynced_warning_title'|trans }}
+                        </h5>
+                        <p class="mt-1 text-sm">
+                            {{ 'permission_sync.unsynced_warning_message'|trans({'%count%': unsyncedActions|length}) }}
+                        </p>
+                        <div class="mt-2 text-xs font-semibold">
+                            {{ 'permission_sync.unsynced_count'|trans({'%count%': unsyncedActions|length}) }}
+                        </div>
+                    </div>
+                    <a href="{{ path('sync_actions') }}" class="btn btn-warning shrink-0">
+                        {{ 'permission_sync.run_sync_actions'|trans }}
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="panel mb-6">
+            <div class="flex flex-col gap-5 md:flex-row md:items-center">
+                <div>
+                    <h5 class="text-lg font-semibold dark:text-white-light">{{ 'permission.list'|trans }}</h5>
+                    <p class="text-sm text-white-dark">{{ permissions|length }} {{ 'permission.list'|trans }}</p>
+                </div>
+                <div class="ltr:ml-auto rtl:mr-auto">
+                    <input type="text" class="form-input w-full md:w-72" placeholder="{{ 'permissions.search'|trans }}..." x-model="searchText">
+                </div>
+            </div>
+        </div>
+
+        {% set groups = permissionGroups|default({}) %}
+        {% if groups|length > 0 %}
+            <div class="space-y-6">
+                {% for groupKey, groupPermissions in groups %}
+                    {% set groupLabelKey = 'permission.group.' ~ groupKey %}
+                    {% set translatedGroupLabel = groupLabelKey|trans %}
+                    {% set groupLabel = translatedGroupLabel == groupLabelKey ? groupKey|replace({'_': ' '})|title : translatedGroupLabel %}
+
+                    <div class="panel">
+                        <div class="mb-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary dark:text-white">
+                                    {{ groupLabel|slice(0, 1)|upper }}
+                                </div>
+                                <div>
+                                    <h5 class="text-lg font-semibold dark:text-white-light">{{ groupLabel }}</h5>
+                                    <p class="text-sm text-white-dark">{{ groupPermissions|length }} {{ 'permission.list'|trans }}</p>
+                                </div>
+                            </div>
+                            <span class="badge rounded-full bg-primary/10 px-3 py-1 text-primary dark:bg-primary dark:text-white">
+                                {{ groupPermissions|length }}
+                            </span>
+                        </div>
+
+                        <div class="datatables">
+                            <div class="table-responsive">
+                                <table class="table-hover whitespace-nowrap">
+                                    <thead>
+                                    <tr>
+                                        <th>{{ 'permissions.id'|trans }}</th>
+                                        <th>{{ 'permission.name'|trans }}</th>
+                                        <th>{{ 'permission.route'|trans }}</th>
+                                        <th>{{ 'permission.controller_actions'|trans }}</th>
+                                        <th class="!text-center">{{ 'permission.actions'|trans }}</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for permission in groupPermissions %}
+                                        {% set route = permission.route|default('') %}
+                                        <tr x-show="filterPermission('{{ permission.name|default('')|lower|e('js') }}', '{{ route|lower|e('js') }}', '{{ groupLabel|lower|e('js') }}')">
+                                            <td class="text-center font-semibold text-primary">
+                                                <span class="mx-auto flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary dark:text-white">
+                                                    {{ permission.id }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="font-semibold text-dark dark:text-white">{{ permission.name }}</div>
+                                            </td>
+                                            <td>
+                                                {% if route %}
+                                                    <span class="badge rounded-full bg-primary/10 px-3 py-1 text-primary dark:bg-primary dark:text-white">
+                                                        {{ route }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="text-sm italic text-white-dark">-</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% set totalActions = permission.controllerActions|length %}
+                                                {% set maxVisible = 8 %}
+
+                                                {% if totalActions > 0 %}
+                                                    <div class="flex flex-wrap gap-2">
+                                                        {% set visibleActions = permission.controllerActions|slice(0, maxVisible) %}
+
+                                                        {% for action in visibleActions %}
+                                                            <div class="group relative w-fit">
+                                                                <span class="badge cursor-help rounded-md bg-secondary/10 px-2 py-1 text-xs text-secondary dark:bg-secondary dark:text-white">
+                                                                    {% set parts = action.controller|split('\\') %}
+                                                                    {% if parts|length > 2 %}
+                                                                        {% set module = parts[2] %}
+                                                                        {{ module }}::
+                                                                    {% endif %}
+                                                                    {{ action.action }}
+                                                                </span>
+
+                                                                <div class="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 transform whitespace-nowrap rounded-lg bg-dark px-3 py-2 text-xs text-white opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                                                                    <div class="font-semibold">{{ action.controller }}</div>
+                                                                    <div class="text-gray-300">{{ action.action }}</div>
+                                                                    <div class="absolute left-1/2 top-full -translate-x-1/2 transform border-4 border-transparent border-t-dark"></div>
+                                                                </div>
+                                                            </div>
+                                                        {% endfor %}
+
+                                                        {% if totalActions > maxVisible %}
+                                                            <span class="badge rounded-md bg-info/10 px-2 py-1 text-xs text-info dark:bg-info dark:text-white">
+                                                                +{{ totalActions - maxVisible }} {{ 'permissions.more'|trans }}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <span class="text-sm italic text-white-dark">{{ 'permissions.no_actions'|trans }}</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="flex items-center justify-center gap-4">
+                                                    <a href="{{ path('permission_edit', {'id': permission.id}) }}" class="text-primary hover:text-primary/80">
+                                                        {{ ux_icon('bytesize:edit', {class: 'h-4.5 w-4.5'}) }}
+                                                    </a>
+
+                                                    <button type="button"
+                                                            class="text-danger hover:text-danger/80"
+                                                            onclick="deletePermission(
+                                                                {{ permission.id }},
+                                                                '{{ permission.name|e('js') }}',
+                                                                '{{ csrf_token('delete' ~ permission.id) }}'
+                                                            )">
+                                                        {{ ux_icon('bytesize:trash', {class: 'h-4.5 w-4.5', color: 'red'}) }}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="panel">
+                <div class="flex flex-col items-center justify-center py-12 text-center">
+                    <div class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary dark:text-white">
+                        <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M7 10V8C7 5.23858 9.23858 3 12 3C14.7614 3 17 5.23858 17 8V10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <path d="M6 10H18C19.1046 10 20 10.8954 20 12V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V12C4 10.8954 4.89543 10 6 10Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                    </div>
+                    <h5 class="text-lg font-semibold dark:text-white-light">{{ 'permission.empty'|trans }}</h5>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="fixed inset-0 z-[999] hidden overflow-y-auto bg-[black]/60" id="deleteModal">
+        <div class="flex min-h-screen items-start justify-center px-4" :class="[$store.app.animation]">
+            <div class="panel my-8 w-full max-w-lg animate__animated animate__fadeIn overflow-hidden rounded-lg border-0 p-0">
+                <div class="flex items-center justify-between bg-[#fbfbfb] px-5 py-3 dark:bg-[#121c2c]">
+                    <div class="text-lg font-bold dark:text-white">{{ 'permission.confirm_delete'|trans }}</div>
+                    <button type="button" class="text-white-dark hover:text-dark" onclick="closeDeleteModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="p-5">
+                    <div class="text-center">
+                        <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-danger/10 text-danger">
+                            <svg class="h-8 w-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 7V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+                                <path d="M7.84308 3.80211C9.8718 2.6007 10.8862 2 12 2C13.1138 2 14.1282 2.6007 16.1569 3.80211L16.8431 4.20846C18.8718 5.40987 19.8862 6.01057 20.4431 7C21 7.98943 21 9.19084 21 11.5937V12.4063C21 14.8092 21 16.0106 20.4431 17C19.8862 17.9894 18.8718 18.5901 16.8431 19.7915L16.1569 20.1979C14.1282 21.3993 13.1138 22 12 22C10.8862 22 9.8718 21.3993 7.84308 20.1979L7.15692 19.7915C5.1282 18.5901 4.11384 17.9894 3.55692 17C3 16.0106 3 14.8092 3 12.4063V11.5937C3 9.19084 3 7.98943 3.55692 7C4.11384 6.01057 5.1282 5.40987 7.15692 4.20846L7.84308 3.80211Z" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <h3 class="mt-4 text-lg font-semibold dark:text-white">{{ 'permission.confirm_delete'|trans }}</h3>
+                        <p class="mt-2 text-white-dark">
+                            {{ 'permission.confirm_delete'|trans }}
+                            <span class="font-semibold text-danger" id="permissionName"></span>
+                        </p>
+                    </div>
+                    <div class="mt-8 flex items-center justify-center gap-4">
+                        <button type="button" class="btn btn-outline-dark" onclick="closeDeleteModal()">{{ 'permissions.cancel'|trans }}</button>
+                        <form id="deleteForm" method="post" class="inline">
+                            <input type="hidden" name="_token" id="deleteToken">
+                            <button type="submit" class="btn btn-danger">{{ 'permissions.delete'|trans }}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function permissionTable() {
+            return {
+                searchText: '',
+                filterPermission(name, route, group) {
+                    if (this.searchText === '') return true;
+                    const search = this.searchText.toLowerCase();
+                    return name.includes(search) || route.includes(search) || group.includes(search);
+                }
+            }
+        }
+
+        function deletePermission(permissionId, permissionName, csrfToken) {
+            const modal = document.getElementById('deleteModal');
+            const form = document.getElementById('deleteForm');
+            const token = document.getElementById('deleteToken');
+            const nameSpan = document.getElementById('permissionName');
+
+            form.action = `/permission/${permissionId}/delete`;
+            token.value = csrfToken;
+            nameSpan.textContent = permissionName;
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.add('hidden');
+        }
+    </script>
+{% endblock %}

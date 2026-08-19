@@ -1,0 +1,4 @@
+services:
+  App\Modules\User\Service\PermissionChecker:
+    arguments:
+      $security: '@Symfony\Bundle\SecurityBundle\Security'

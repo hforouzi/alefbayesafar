@@ -1,0 +1,70 @@
+{% extends 'components/layout/default.html.twig' %}
+{% block content %}
+    <div x-data="basic">
+        
+        <div class="space-y-8">
+            <div class="panel flex items-center overflow-x-auto whitespace-nowrap p-3 text-primary lg:col-span-2">
+                <a href="{{ path('user_new') }}" type="button" class="btn btn-primary">
+                    {{ ux_icon('flowbite:plus-outline',{class: 'w-5 h-5'}) }}
+                    
+                    new User</a>
+            </div>
+            <div class="panel">
+                <div class="mb-5 flex items-center justify-between">
+                    <h5 class="text-lg font-semibold dark:text-white-light">{{ 'user.list'|trans }}</h5>
+                </div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>{{ 'user.email'|trans }}</th>
+                                <th>{{ 'user.roles'|trans }}</th>
+                                <th class="text-end">{{ 'common.actions'|trans }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                                <tr>
+                                    <td class="whitespace-nowrap">{{ user.email }}</td>
+                                    <td>
+                                        <div class="flex flex-wrap gap-1">
+                                            {% if user.userRoles|length > 0 %}
+                                                {% for role in user.userRoles %}
+                                                    <span class="badge bg-primary">{{ role.name }}</span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="badge bg-warning">{{ 'user_access.no_roles'|trans }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="flex justify-end gap-2">
+                                            <a href="{{ path('user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-primary">
+                                                {{ 'user.actions.access'|trans }}
+                                            </a>
+                                            <a href="{{ path('user_edit', {id: user.id}) }}" class="btn btn-sm btn-outline-dark">
+                                                {{ 'common.edit'|trans }}
+                                            </a>
+                                            <form method="post" action="{{ path('user_delete', {id: user.id}) }}" onsubmit="return confirm('{{ 'common.delete'|trans }}?');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ user.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                    {{ 'common.delete'|trans }}
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-center text-white-dark">{{ 'messages.not_found'|trans }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        
+        </div>
+    </div>
+{% endblock %}

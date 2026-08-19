@@ -1,0 +1,73 @@
+{% extends 'components/layout/default.html.twig' %}
+
+{% block page_title %}{% endblock %}
+{% block page_subtitle %}{% endblock %}
+{% block page_actions %}{% endblock %}
+
+{% block content %}
+ 
+    <div>
+        <div class="pt-12 grid grid-cols-1 lg:grid-cols-1 gap-6">
+            <div class="panel">
+                <h1>{{ form.vars.value.id ? 'Edit Menu' : 'Create Menu' }}</h1>
+                <div class="pt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    
+                    <div class="mb-5">
+                        {{ form_start(form, {'attr': {'class': 'form-horizontal'}}) }}
+                        
+                        {{ form_row(form.name ,{'attr':{'class':'form-input'}} ) }}
+                    
+                    </div>
+                    <div class="mb-3">
+                        
+                        {{ form_row(form.parent ,{'attr':{'class':'form-input'}}) }}
+                    
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.route,{'attr':{'class':'form-input'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.position ,{'attr':{'class':'form-input'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.icon,{'attr':{'class':'form-input'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.category,{'attr':{'class':'form-input'}}) }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form_row(form.menuCategory,{'attr':{'class':'form-input'}}) }}
+                    </div>
+                </div>
+                
+                
+                <div class="pt-6 grid grid-cols-1 lg:grid-cols-1 gap-6">
+                
+                
+                </div>
+                <div class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {% for checkbox in form.permissions %}
+                        <div class="mb-2">
+                            
+                            {{ form_widget(checkbox, {'attr': {'class': 'form-checkbox text-success'}}) }}
+                            {{ form_label(checkbox, null, {'label_attr': {'class': 'inline-flex'}}) }}
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <div class="flex flex-wrap gap-2 mt-5">
+                        <button class="btn btn-primary">{{ form.vars.value.id ? 'Update' : 'Create' }}</button>
+               
+                        <a type="button" class="btn btn-dark" href="{{ path('menu_index') }}">Back to list</a>
+                    
+                </div>
+            
+            
+            </div>
+            {{ form_end(form) }}
+        
+        </div>
+    </div>
+  
+
+{% endblock %}

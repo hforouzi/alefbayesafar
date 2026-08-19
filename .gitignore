@@ -1,0 +1,10 @@
+/.idea/
+/.env.local
+/.env.*.local
+/.phpunit.result.cache
+/node_modules/
+/vendor/
+/var/
+/config/secrets/*/*.decrypt.private.php
+/public/assets/css/style.css.map
+/_reference/

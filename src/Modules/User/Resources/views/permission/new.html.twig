@@ -1,0 +1,11 @@
+{% extends "components/layout/default.html.twig" %}
+
+{% block content %}
+    {% include '@User/permission/_form.html.twig' with {
+        form: form,
+        groupedActions: groupedActions,
+        new: true,
+        page_title: 'permission.new'|trans,
+        submit_label: 'permission.save'|trans
+    } %}
+{% endblock %}

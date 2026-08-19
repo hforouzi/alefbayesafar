@@ -1,0 +1,75 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'menu_category.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'menu_category.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('menu_category_new') }}" class="btn btn-primary">
+        {{ 'menu_category.new'|trans }}
+    </a>
+{% endblock %}
+
+{% block body %}
+    {% set table_body %}
+        <thead>
+            <tr>
+                <th>{{ 'menu_category.code'|trans }}</th>
+                <th>{{ 'menu_category.name'|trans }}</th>
+                <th>{{ 'menu_category.label_key'|trans }}</th>
+                <th>{{ 'menu_category.icon'|trans }}</th>
+                <th>{{ 'menu_category.position'|trans }}</th>
+                <th>{{ 'menu_category.active'|trans }}</th>
+                <th class="text-right">{{ 'menu_category.actions'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for menuCategory in menuCategories %}
+                <tr>
+                    <td class="whitespace-nowrap font-semibold text-black dark:text-white-light">
+                        {{ menuCategory.code }}
+                    </td>
+                    <td>
+                        <a href="{{ path('menu_category_show', { id: menuCategory.id }) }}" class="font-medium text-primary hover:underline">
+                            {{ menuCategory.name }}
+                        </a>
+                    </td>
+                    <td class="whitespace-nowrap text-white-dark">
+                        {{ menuCategory.labelKey ?: '-' }}
+                    </td>
+                    <td class="whitespace-nowrap text-white-dark">
+                        {{ menuCategory.icon ?: '-' }}
+                    </td>
+                    <td>{{ menuCategory.position }}</td>
+                    <td>
+                        {% include 'components/_status_badge.html.twig' with {
+                            status: menuCategory.active ? 'active' : 'inactive',
+                            label: menuCategory.active ? 'menu_category.active' : 'menu_category.inactive',
+                        } %}
+                    </td>
+                    <td class="whitespace-nowrap text-right">
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            <a class="btn btn-sm btn-outline-primary" href="{{ path('menu_category_show', { id: menuCategory.id }) }}">
+                                {{ 'common.show'|trans }}
+                            </a>
+                            <a class="btn btn-sm btn-outline-warning" href="{{ path('menu_category_edit', { id: menuCategory.id }) }}">
+                                {{ 'common.edit'|trans }}
+                            </a>
+                            {% include '@Default/menu_category/_delete_form.html.twig' with { menuCategory: menuCategory } %}
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="py-10 text-center text-white-dark">
+                        {{ 'menu_category.empty'|trans }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endset %}
+
+    {% include 'components/_card.html.twig' with {
+        body: include('components/_table.html.twig', {
+            body: table_body,
+        }),
+    } %}
+{% endblock %}

@@ -1,0 +1,225 @@
+app:
+  name: 'Symfony App Template'
+  short_name: 'SAT'
+
+auth:
+  login:
+    title: 'Sign in'
+    welcome_back: 'Welcome back!'
+    prompt: 'Please enter your email and password to sign in.'
+    email: 'Email'
+    email_placeholder: 'Enter email'
+    password: 'Password'
+    password_placeholder: 'Password'
+    remember_me: 'Remember me'
+    submit: 'Sign in'
+
+navigation:
+  dashboard: 'Dashboard'
+  main: 'Main'
+  administration: 'Administration'
+  apps: 'Apps'
+  users: 'Users'
+  roles: 'Roles'
+  permissions: 'Permissions'
+  menu: 'Menu'
+  menu_categories: 'Menu Categories'
+  settings: 'Settings'
+  other: 'Other'
+  login: 'Sign in'
+  login_cover: 'Login with cover'
+  login_boxed: 'Login in boxed layout'
+  password_recovery: 'Password recovery'
+  more: 'More'
+  user_permissions: 'Users and permissions'
+
+language:
+  german: 'German'
+  english: 'English'
+  current: 'Current language'
+  switch: 'Change language'
+
+dashboard:
+  title: 'Dashboard'
+  subtitle: 'Generic administration overview'
+  description: 'Reusable administration template.'
+  metric:
+    users: 'Users'
+    roles: 'Roles'
+    permissions: 'Permissions'
+  panel:
+    administration: 'Administration'
+    administration_subtitle: 'Manage users, roles, and permissions.'
+    template_status: 'Template status'
+  placeholder:
+    no_data: 'No data available yet'
+  status:
+    browser_auth: 'Browser authentication'
+    permissions: 'Permission checks'
+    menu: 'Dynamic menu'
+    ready: 'Ready'
+
+common:
+  search: 'Search'
+  save: 'Save'
+  cancel: 'Cancel'
+  back: 'Back'
+  edit: 'Edit'
+  delete: 'Delete'
+  show: 'Show'
+  close: 'Close'
+  search_action: 'Search'
+  actions: 'Actions'
+  status: 'Status'
+  created_at: 'Created at'
+  updated_at: 'Updated at'
+  all_rights_reserved: 'All rights reserved.'
+  form:
+    error_title: 'The form could not be saved'
+    error_intro: 'Please review the following fields and correct the entries.'
+    required: 'Required'
+    required_marker_label: 'Required'
+
+menu:
+  title: 'Menu'
+  subtitle: 'Manage menu items'
+  list: 'Menu list'
+  new: 'New menu'
+  menu_category: 'Menu category'
+  menu_category_placeholder: 'Use legacy category'
+  help:
+    menu_category: 'If set, this menu category is preferred. Otherwise the legacy category is used.'
+  route_help: 'Use only parameterless navigation routes, e.g. app_dashboard or user_list. Do not use show/edit/delete routes.'
+  route:
+    help: 'Use only parameterless navigation routes, e.g. app_dashboard or user_list. Do not use show/edit/delete routes.'
+  route_status:
+    linkable: 'Linkable'
+    not_linkable: 'Not linkable'
+    empty_route: 'No route'
+    controller_action_not_route_name: 'Controller action is not a route name'
+    route_not_found: 'Route not found'
+    route_requires_parameters: 'Route requires parameters'
+  view: 'View menus'
+  create: 'Create menus'
+  update: 'Update menus'
+  delete: 'Delete menus'
+
+menu_category:
+  title: 'Menu categories'
+  subtitle: 'Manage navigation categories'
+  list: 'Menu categories'
+  new: 'New menu category'
+  edit: 'Edit menu category'
+  show: 'Show menu category'
+  code: 'Code'
+  name: 'Name'
+  label_key: 'Translation key'
+  icon: 'Icon'
+  position: 'Position'
+  active: 'Active'
+  inactive: 'Inactive'
+  flash:
+    created: 'Menu category was created.'
+    updated: 'Menu category was updated.'
+    deleted: 'Menu category was deleted.'
+    delete_blocked: 'Menu category cannot be deleted because menus are assigned to it.'
+  help:
+    code: 'Lowercase machine code, e.g. administration.'
+    name: 'Display name for the menu category.'
+    label_key: 'Optional translation key, e.g. navigation.administration.'
+    icon: 'Optional icon, e.g. solar:home-bold.'
+  code_pattern: 'Code must use lowercase letters, numbers, hyphens, or underscores.'
+
+layout:
+  logout: 'Logout'
+  profile: 'Profile'
+  search: 'Search'
+  toggle_sidebar: 'Toggle navigation'
+  notifications: 'Notifications'
+  language: 'Language'
+  theme: 'Appearance'
+  dark_mode: 'Dark mode'
+  light_mode: 'Light mode'
+  system_mode: 'System'
+  account: 'Account'
+  view_profile: 'View profile'
+
+permission:
+  title: 'Permissions'
+  subtitle: 'Manage and group permissions'
+  list: 'Permissions'
+  new: 'New permission'
+  edit: 'Edit permission'
+  group:
+    permission: 'Permissions'
+    role: 'Roles'
+    menu: 'Menus'
+    menu_category: 'Menu categories'
+    user: 'Users'
+    settings: 'Settings'
+    dashboard: 'Dashboard'
+    other: 'Other'
+  name: 'Name'
+  route: 'Route'
+  controller_actions: 'Controller actions'
+  actions: 'Actions'
+  empty: 'No permissions found'
+  save: 'Save'
+  back: 'Back'
+  cancel: 'Cancel'
+  help:
+    route: 'Symfony route name, e.g. user_list. Do not use a URL or controller class.'
+    controller_actions: 'Controller actions or action names according to the existing project convention.'
+  flash:
+    created: 'Permission was created.'
+    updated: 'Permission was updated.'
+  view: 'View permissions'
+  create: 'Create permissions'
+  update: 'Update permissions'
+  delete: 'Delete permissions'
+
+flash:
+  primary: 'Primary'
+  secondary: 'Secondary'
+  success: 'Success'
+  warning: 'Warning'
+  danger: 'Error'
+  info: 'Info'
+
+security:
+  access_denied:
+    message: 'You do not have permission to access this page.'
+  bootstrap:
+    roles_created: 'Roles created'
+    permissions_created: 'Permissions created'
+    user_promoted: 'User was promoted to Super Admin'
+    user_not_found: 'User was not found'
+
+user:
+  management: 'User management'
+  list: 'Users'
+  email: 'Email'
+  password: 'Password'
+  roles: 'Roles'
+  access:
+    denied: 'You are not allowed to manage this user.'
+
+role:
+  title: 'Roles'
+  new: 'New role'
+  edit: 'Edit role'
+  name: 'Name'
+  parent: 'Parent role'
+  permissions: 'Permissions'
+  permissions_empty: 'No permissions available'
+  save: 'Save'
+  back: 'Back'
+  cancel: 'Cancel'
+  help:
+    name: 'Technical role name, e.g. ROLE_ADMIN.'
+    parent: 'Optional parent role.'
+    permissions: 'Select the permissions for this role.'
+  view: 'View roles'
+  create: 'Create roles'
+  update: 'Update roles'
+  delete: 'Delete roles'

@@ -1,0 +1,11 @@
+<div class="overflow-hidden rounded-2xl border border-white-light/40 bg-white shadow-[0_2px_2px_rgb(224_230_237_/_46%),_1px_6px_7px_rgb(224_230_237_/_46%)] dark:border-dark-light/20 dark:bg-[#0e1726] {{ class|default('') }}">
+    {% if header is defined and header is not empty %}
+        <div class="border-b border-white-light/40 px-5 py-4 dark:border-dark-light/20">
+            {{ header|raw }}
+        </div>
+    {% endif %}
+
+    <div class="px-5 py-5 {{ body_class|default('') }}">
+        {{ body|raw }}
+    </div>
+</div>

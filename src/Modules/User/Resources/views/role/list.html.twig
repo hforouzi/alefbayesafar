@@ -1,0 +1,408 @@
+{% extends 'components/layout/default.html.twig' %}
+
+{% block title %}{{ 'role.management'|trans }}{% endblock %}
+
+{% block content %}
+    <div class="animate__animated p-6">
+        <!-- Breadcrumb -->
+        <ul class="flex space-x-2 rtl:space-x-reverse">
+            <li>
+                <a href="{{ path('app_dashboard') }}" class="text-primary hover:underline">
+                    {{ 'dashboard.title'|trans }}
+                </a>
+            </li>
+            <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+                <span>{{ 'role.management'|trans }}</span>
+            </li>
+        </ul>
+        
+        <!-- Page Header -->
+        <div class="pt-5">
+            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-xl font-semibold uppercase tracking-widest text-dark dark:text-white-light">
+                    <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    {{ 'role.management'|trans }}
+                </h2>
+                <div class="flex items-center gap-x-3">
+                    <div class="text-primary">{{ "now"|date("M d, Y - H:i") }}</div>
+                    <div class="badge bg-success">{{ app.user.userIdentifier }}</div>
+                </div>
+            </div>
+            
+            <!-- Stats Cards -->
+            <div class="mb-6 grid grid-cols-1 gap-6 text-white sm:grid-cols-2 xl:grid-cols-4">
+                <!-- Total Roles -->
+                <div class="panel bg-gradient-to-r from-violet-500 to-violet-400">
+                    <div class="flex justify-between">
+                        <div class="text-md font-semibold ltr:mr-1 rtl:ml-1">{{ 'role.total_roles'|trans }}</div>
+                        <div class="dropdown">
+                            <svg class="h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="5" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="19" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex items-center">
+                        <div class="text-3xl font-bold ltr:mr-3 rtl:ml-3">{{ roles|length }}</div>
+                        <div class="badge bg-white/30">{{ 'role.roles'|trans }}</div>
+                    </div>
+                    <div class="mt-5 flex items-center font-semibold">
+                        <svg class="h-4 w-4 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>{{ 'role.active_roles'|trans }}</span>
+                    </div>
+                </div>
+                
+                <!-- System Roles -->
+                <div class="panel bg-gradient-to-r from-blue-500 to-blue-400">
+                    <div class="flex justify-between">
+                        <div class="text-md font-semibold ltr:mr-1 rtl:ml-1">{{ 'role.system_roles'|trans }}</div>
+                        <div class="dropdown">
+                            <svg class="h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="5" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="19" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex items-center">
+                        <div class="text-3xl font-bold ltr:mr-3 rtl:ml-3">
+                            {% set systemRoles = 0 %}
+                            {% for role in roles %}
+                                {% if role.name starts with 'ROLE_' %}
+                                    {% set systemRoles = systemRoles + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ systemRoles }}
+                        </div>
+                        <div class="badge bg-white/30">{{ 'role.built_in'|trans }}</div>
+                    </div>
+                    <div class="mt-5 flex items-center font-semibold">
+                        <svg class="h-4 w-4 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                            <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>{{ 'role.protected'|trans }}</span>
+                    </div>
+                </div>
+                
+                <!-- Custom Roles -->
+                <div class="panel bg-gradient-to-r from-success-500 to-success-400">
+                    <div class="flex justify-between">
+                        <div class="text-md font-semibold ltr:mr-1 rtl:ml-1">{{ 'role.custom_roles'|trans }}</div>
+                        <div class="dropdown">
+                            <svg class="h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="5" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="19" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex items-center">
+                        <div class="text-3xl font-bold ltr:mr-3 rtl:ml-3">
+                            {% set customRoles = 0 %}
+                            {% for role in roles %}
+                                {% if not (role.name starts with 'ROLE_') %}
+                                    {% set customRoles = customRoles + 1 %}
+                                {% endif %}
+                            {% endfor %}
+                            {{ customRoles }}
+                        </div>
+                        <div class="badge bg-white/30">{{ 'role.created'|trans }}</div>
+                    </div>
+                    <div class="mt-5 flex items-center font-semibold">
+                        <svg class="h-4 w-4 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>{{ 'role.customizable'|trans }}</span>
+                    </div>
+                </div>
+                
+                <!-- Total Permissions -->
+                <div class="panel bg-gradient-to-r from-warning-500 to-warning-400">
+                    <div class="flex justify-between">
+                        <div class="text-md font-semibold ltr:mr-1 rtl:ml-1">{{ 'role.total_permissions'|trans }}</div>
+                        <div class="dropdown">
+                            <svg class="h-5 w-5 opacity-70" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="5" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="12" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="19" cy="12" r="2" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-5 flex items-center">
+                        <div class="text-3xl font-bold ltr:mr-3 rtl:ml-3">
+                            {% set totalPermissions = 0 %}
+                            {% for role in roles %}
+                                {% set totalPermissions = totalPermissions + role.permissions.count %}
+                            {% endfor %}
+                            {{ totalPermissions }}
+                        </div>
+                        <div class="badge bg-white/30">{{ 'role.permissions'|trans }}</div>
+                    </div>
+                    <div class="mt-5 flex items-center font-semibold">
+                        <svg class="h-4 w-4 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                            <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        <span>{{ 'role.assigned'|trans }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions Panel -->
+            <div class="panel mb-6">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-3">
+                        <h5 class="text-lg font-semibold dark:text-white-light">
+                            <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            {{ 'role.quick_actions'|trans }}
+                        </h5>
+                        <div class="badge bg-primary">{{ roles|length }} {{ 'role.total'|trans }}</div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <a href="{{ path('role_new') }}" class="btn btn-primary">
+                            <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.5"/>
+                                <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            {{ 'role.new_role'|trans }}
+                        </a>
+                        
+                        <button type="button" class="btn btn-outline-info" onclick="refreshTable()">
+                            <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M1 4V10H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M3.51 15A9 9 0 1 0 6 10.3L1 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            {{ 'action.refresh'|trans }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Roles Table -->
+            <div class="panel">
+                <div class="mb-5 flex items-center justify-between">
+                    <h5 class="text-lg font-semibold dark:text-white-light">
+                        <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        {{ 'role.all_roles'|trans }}
+                    </h5>
+                    
+                    <!-- Search Box -->
+                    <div class="relative">
+                        <input type="text"
+                               class="form-input ltr:pl-9 rtl:pr-9 ltr:sm:pr-4 rtl:sm:pl-4"
+                               placeholder="{{ 'action.search_roles'|trans }}"
+                               id="searchRole">
+                        <div class="absolute ltr:left-3 rtl:right-3 top-1/2 -translate-y-1/2">
+                            <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.5"/>
+                                <path d="M21 21L16.65 16.65" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if roles is not empty %}
+                    <div class="table-responsive">
+                        <table class="table-hover" id="rolesTable">
+                            <thead>
+                            <tr>
+                                <th class="!text-center">{{ 'role.id'|trans }}</th>
+                                <th>{{ 'role.name'|trans }}</th>
+                                <th class="!text-center">{{ 'role.type'|trans }}</th>
+                                <th class="!text-center">{{ 'role.permissions'|trans }}</th>
+                                <th class="!text-center">{{ 'action.actions'|trans }}</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {% for role in roles %}
+                                <tr class="group">
+                                    <td class="text-center font-semibold">
+                                        <div class="badge bg-primary">{{ role.id }}</div>
+                                    </td>
+                                    <td>
+                                        <div class="flex items-center">
+                                            <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center ltr:mr-3 rtl:ml-3">
+                                                {% if role.name starts with 'ROLE_ADMIN' or role.name starts with 'ROLE_SUPER' %}
+                                                    <svg class="h-4 w-4 text-danger" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="currentColor" stroke-width="1.5"/>
+                                                    </svg>
+                                                {% elseif role.name starts with 'ROLE_' %}
+                                                    <svg class="h-4 w-4 text-info" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                                        <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                                                        <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                                                    </svg>
+                                                {% else %}
+                                                    <svg class="h-4 w-4 text-success" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                                                    </svg>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="font-semibold text-dark dark:text-white-light">{{ role.name }}</div>
+                                                <div class="text-xs text-white-dark">
+                                                    {% if role.name starts with 'ROLE_' %}
+                                                        {{ ('role.description.' ~ role.name|lower|replace({'role_': ''}))|trans }}
+                                                    {% else %}
+                                                        {{ 'role.custom_role_description'|trans }}
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        {% if role.name starts with 'ROLE_' %}
+                                            {% if role.name starts with 'ROLE_ADMIN' or role.name starts with 'ROLE_SUPER' %}
+                                                <span class="badge bg-danger">{{ 'role.admin'|trans }}</span>
+                                            {% else %}
+                                                <span class="badge bg-info">{{ 'role.system'|trans }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-success">{{ 'role.custom'|trans }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex items-center justify-center">
+                                            <svg class="h-4 w-4 ltr:mr-1 rtl:ml-1 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                                <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                                                <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                                            </svg>
+                                            <span class="font-semibold">{{ role.permissions.count }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="flex items-center justify-center gap-2">
+                                            <a href="{{ path('role_edit', {'id': role.id}) }}"
+                                               class="btn btn-sm btn-outline-primary"
+                                               title="{{ 'action.edit'|trans }}">
+                                                <svg class="h-4 w-4 ltr:mr-1 rtl:ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                    <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="1.5"/>
+                                                    <path d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z" stroke="currentColor" stroke-width="1.5"/>
+                                                </svg>
+                                                {{ 'action.edit'|trans }}
+                                            </a>
+                                            
+                                            {% if not (role.name starts with 'ROLE_ADMIN' or role.name starts with 'ROLE_SUPER') %}
+                                                    <form method="post"
+                                                      action="{{ path('role_delete', {'id': role.id}) }}"
+                                                      class="d-inline"
+                                                      onsubmit="return confirm('{{ 'role.confirm_delete'|trans({'%role%': role.name})|e('js') }}');">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ role.id) }}">
+                                                    
+                                                    <button type="submit"
+                                                            class="btn btn-sm btn-outline-danger"
+                                                            title="{{ 'action.delete'|trans }}">
+                                                        
+                                                        <svg class="h-4 w-4 ltr:mr-1 rtl:ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M3 6H5H21" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                            <path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="1.5"/>
+                                                        </svg>
+                                                        {{ 'action.delete'|trans }}
+                                                    </button>
+                                                </form>
+                                            {% else %}
+                                                <span class="badge bg-secondary" title="{{ 'role.protected_description'|trans }}">
+                                                        <svg class="h-3 w-3 ltr:mr-1 rtl:ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                            <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="currentColor" stroke-width="1.5"/>
+                                                        </svg>
+                                                        {{ 'role.protected'|trans }}
+                                                    </span>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="flex items-center justify-center py-16">
+                        <div class="text-center">
+                            <svg class="mx-auto h-16 w-16 text-gray-300 dark:text-gray-600" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                            <h3 class="mt-4 text-lg font-medium text-gray-900 dark:text-gray-300">{{ 'role.no_roles'|trans }}</h3>
+                            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">{{ 'role.create_first_role'|trans }}</p>
+                            <div class="mt-6">
+                                <a href="{{ path('role_new') }}" class="btn btn-primary">
+                                    <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="1.5"/>
+                                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    {{ 'role.create_role'|trans }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script defer src="{{ asset('assets/js/apexcharts.js') }}"></script>
+    <script src="{{ asset('assets/js/simple-datatables.js') }}"></script>
+    
+    <script>
+        // Search functionality
+        document.getElementById('searchRole').addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#rolesTable tbody tr');
+
+            tableRows.forEach(row => {
+                const roleNameCell = row.querySelector('td:nth-child(2)');
+                if (roleNameCell) {
+                    const roleName = roleNameCell.textContent.toLowerCase();
+                    if (roleName.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        });
+
+        // Refresh table function
+        function refreshTable() {
+            location.reload();
+        }
+
+        // Initialize DataTable if simple-datatables is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof simpleDatatables !== 'undefined' && document.getElementById('rolesTable')) {
+                new simpleDatatables.DataTable("#rolesTable", {
+                    searchable: false, // We have custom search
+                    fixedHeight: false,
+                    perPage: 10,
+                    perPageSelect: [5, 10, 15, 20, 25],
+                    labels: {
+                        placeholder: "{{ 'action.search'|trans }}",
+                        perPage: "{{ 'datatable.per_page'|trans }}",
+                        noRows: "{{ 'datatable.no_data'|trans }}",
+                        info: "{{ 'datatable.showing'|trans }} {start} {{ 'datatable.to'|trans }} {end} {{ 'datatable.of'|trans }} {rows} {{ 'datatable.entries'|trans }}"
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock %}

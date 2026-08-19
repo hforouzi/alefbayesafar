@@ -1,0 +1,211 @@
+{% import _self as sidebar %}
+
+{% macro render_items(items, current_route) %}
+    {% import _self as sidebar %}
+
+    {% for item in items %}
+        {% set has_children = item.children is defined and item.children is not empty %}
+        {% set is_active = item.is_linkable and item.route is not empty and item.route == current_route %}
+        {% set dropdown_key = 'menu-' ~ item.id %}
+
+        <li class="nav-item">
+            {% if has_children %}
+                <button
+                    type="button"
+                    class="nav-link group w-full {{ (is_active) ? 'active' : '' }}"
+                    :class="{ 'active': activeDropdown === '{{ dropdown_key }}' }"
+                    @click="handleClick('{{ dropdown_key }}')"
+                >
+                    <span class="flex items-center">
+                        {% if item.icon %}
+                            {{ ux_icon(item.icon, { class: 'shrink-0 group-hover:!text-primary ' ~ (is_active ? 'text-primary' : ''),    width: 16,
+                                height: 16 }) }}
+                        {% endif %}
+                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ is_active ? 'text-primary font-bold' : '' }}">
+                            {{ item.name }}
+                        </span>
+                    </span>
+                    <span class="rtl:rotate-180 transition-transform duration-300" :class="{ '!rotate-90': activeDropdown === '{{ dropdown_key }}' }">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9 5L15 12L9 19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </span>
+                </button>
+
+                <ul
+                    x-cloak
+                    x-show="activeDropdown === '{{ dropdown_key }}'"
+                    x-collapse
+                    class="sub-menu text-gray-500"
+                >
+                    {{ sidebar.render_items(item.children, current_route) }}
+                </ul>
+            {% elseif item.is_linkable and item.route %}
+                <a href="{{ path(item.route) }}" class="nav-link group {{ is_active ? 'active' : '' }}">
+                    <span class="flex items-center">
+                        {% if item.icon %}
+                            {{ ux_icon(item.icon, { class: 'shrink-0 group-hover:!text-primary ' ~ (is_active ? 'text-primary' : '')   ,
+                                width: 16,
+                                height: 16}) }}
+                        {% endif %}
+                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ is_active ? 'text-primary font-bold' : '' }}">
+                            {{ item.name }}
+                        </span>
+                    </span>
+                </a>
+            {% else %}
+                <div class="nav-link group cursor-not-allowed opacity-70">
+                    <span class="flex items-center">
+                        {% if item.icon %}
+                            {{ ux_icon(item.icon, { class: 'shrink-0 text-gray-400' ,    width: 16,
+                                height: 16}) }}
+                        {% endif %}
+                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark">
+                            {{ item.name }}
+                        </span>
+                    </span>
+                </div>
+            {% endif %}
+        </li>
+    {% endfor %}
+{% endmacro %}
+
+<div :class="{ 'dark text-white-dark': $store.app.semidark }">
+    {% set menuGroups = get_sidebar_menu() %}
+    {% set current_route = app.request.attributes.get('_route') %}
+
+    <nav
+        x-data="sidebar"
+        class="sidebar fixed min-h-screen h-full top-0 bottom-0 w-[260px] shadow-[5px_0_25px_0_rgba(94,92,154,0.1)] z-50 transition-all duration-300"
+    >
+        <div class="bg-white dark:bg-[#0e1726] h-full">
+            <div class="flex justify-between items-center px-4 py-3">
+                <a href="{{ path('app_dashboard') }}" class="main-logo flex items-center shrink-0">
+                    <img class="w-8 ml-[5px] flex-none" src="{{ asset('assets/images/logo.svg') }}" alt="{{ 'app.name'|trans }}" />
+                    <span class="text-2xl ltr:ml-1.5 rtl:mr-1.5 font-semibold align-middle lg:inline dark:text-white-light">
+                        {{ 'app.short_name'|trans }}
+                    </span>
+                </a>
+                <a
+                    href="javascript:;"
+                    class="collapse-icon w-8 h-8 rounded-full flex items-center hover:bg-gray-500/10 dark:hover:bg-dark-light/10 dark:text-white-light transition duration-300 rtl:rotate-180"
+                    @click="$store.app.toggleSidebar()"
+                >
+                    <svg class="w-5 h-5 m-auto" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M13 19L7 12L13 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        <path opacity="0.5" d="M16.9998 19L10.9998 12L16.9998 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </a>
+            </div>
+
+            <ul
+                class="perfect-scrollbar relative font-semibold space-y-0.5 h-[calc(100vh-80px)] overflow-y-auto overflow-x-hidden p-4 py-0"
+            >
+                {% if menuGroups is not empty %}
+                    {% for categoryKey, group in menuGroups %}
+                        {% if group.items is not empty %}
+                            <li>
+                                <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                                    <span>{{ group.category_label|trans }}</span>
+                                </h2>
+                                <ul>
+                                    {{ sidebar.render_items(group.items, current_route) }}
+                                </ul>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    {# Fallback only: keep the sidebar usable if the menu table is empty. #}
+                    <li>
+                        <h2 class="py-3 px-7 flex items-center uppercase font-extrabold bg-white-light/30 dark:bg-dark dark:bg-opacity-[0.08] -mx-4 mb-1">
+                            <span>{{ 'navigation.main'|trans }}</span>
+                        </h2>
+                        <ul>
+                            <li class="nav-item">
+                                <a href="{{ path('app_dashboard') }}" class="nav-link group {{ current_route == 'app_dashboard' ? 'active' : '' }}">
+                                    <span class="flex items-center">{{ ux_icon('solar:home-bold', {
+                                            class: 'shrink-0 group-hover:!text-primary ' ~ (current_route == 'app_dashboard' ? 'text-primary' : ''),
+                                            width: 16,
+                                            height: 16
+                                        }) }}                                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ current_route == 'app_dashboard' ? 'text-primary font-bold' : '' }}">
+                                            {{ 'navigation.dashboard'|trans }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ path('user_list') }}" class="nav-link group {{ current_route == 'user_list' ? 'active' : '' }}">
+                                    <span class="flex items-center">
+                                        {{ ux_icon('solar:users-group-rounded-bold', { class: 'shrink-0 group-hover:!text-primary ' ~ (current_route == 'user_list' ? 'text-primary' : ''), width: 16, height: 16 }) }}
+                                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ current_route == 'user_list' ? 'text-primary font-bold' : '' }}">
+                                            {{ 'navigation.users'|trans }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ path('role_list') }}" class="nav-link group {{ current_route == 'role_list' ? 'active' : '' }}">
+                                    <span class="flex items-center">
+                                        {{ ux_icon('solar:shield-user-bold', { class: 'shrink-0 group-hover:!text-primary ' ~ (current_route == 'role_list' ? 'text-primary' : ''), width: 16, height: 16 }) }}
+                                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ current_route == 'role_list' ? 'text-primary font-bold' : '' }}">
+                                            {{ 'navigation.roles'|trans }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="{{ path('permission_list') }}" class="nav-link group {{ current_route == 'permission_list' ? 'active' : '' }}">
+                                    <span class="flex items-center">
+                                        {{ ux_icon('solar:key-bold', { class: 'shrink-0 group-hover:!text-primary ' ~ (current_route == 'permission_list' ? 'text-primary' : ''), width: 16, height: 16 }) }}
+                                        <span class="ltr:pl-3 rtl:pr-3 text-black dark:text-[#506690] dark:group-hover:text-white-dark {{ current_route == 'permission_list' ? 'text-primary font-bold' : '' }}">
+                                            {{ 'navigation.permissions'|trans }}
+                                        </span>
+                                    </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('sidebar', () => ({
+                activeDropdown: localStorage.getItem('sidebar-active-dropdown') || null,
+
+                init() {
+                    if (this.activeDropdown) {
+                        localStorage.setItem('sidebar-active-dropdown', this.activeDropdown);
+                    }
+                },
+
+                handleClick(value) {
+                    this.activeDropdown = this.activeDropdown === value ? null : value;
+                    if (this.activeDropdown) {
+                        localStorage.setItem('sidebar-active-dropdown', this.activeDropdown);
+                    } else {
+                        localStorage.removeItem('sidebar-active-dropdown');
+                    }
+                },
+            }));
+        });
+    </script>
+
+    <style>
+        .nav-link.active {
+            background: rgba(var(--primary), 0.1);
+            color: rgb(var(--primary));
+        }
+
+        .sub-item .nav-link.active {
+            background: rgba(var(--primary), 0.05);
+            border-right: 3px solid rgb(var(--primary));
+        }
+
+        .nav-link.active .text-black {
+            color: rgb(var(--primary)) !important;
+        }
+    </style>
+</div>

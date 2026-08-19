@@ -1,0 +1,13 @@
+{% extends 'components/layout/default.html.twig' %}
+
+{% block title %}{{ 'role.new'|trans }}{% endblock %}
+
+{% block content %}
+    {% include '@User/role/_form.html.twig' with {
+        form: form,
+        permissionGroups: permissionGroups,
+        new: true,
+        page_title: 'role.new'|trans,
+        submit_label: 'role.save'|trans
+    } %}
+{% endblock %}

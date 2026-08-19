@@ -1,0 +1,46 @@
+{% macro field_label(field) %}
+    {% if field.vars.label is same as(false) %}
+        {{ field.vars.name|replace({'_': ' '})|title }}
+    {% else %}
+        {{ (field.vars.label|default(field.vars.name))|trans }}
+    {% endif %}
+{% endmacro %}
+
+{% macro error_items(field) %}
+    {% import _self as summary %}
+
+    {% for error in field.vars.errors %}
+        <li>
+            {% if field.vars.id|default('') %}
+                <a href="#{{ field.vars.id }}" class="font-semibold text-danger underline decoration-danger/30 underline-offset-2 hover:decoration-danger">
+                    {{ summary.field_label(field) }}
+                </a>
+            {% else %}
+                <span class="font-semibold text-danger">{{ summary.field_label(field) }}</span>
+            {% endif %}
+            <span class="text-danger/80">- {{ error.message|trans }}</span>
+        </li>
+    {% endfor %}
+
+    {% for child in field %}
+        {{ summary.error_items(child) }}
+    {% endfor %}
+{% endmacro %}
+
+{% if form.vars.submitted|default(false) and not form.vars.valid %}
+    {% import _self as summary %}
+
+    <div role="alert" class="rounded-md border border-danger/30 bg-danger/10 p-4 text-danger dark:border-danger/40 dark:bg-danger-dark-light">
+        <div class="mb-2 flex items-start gap-3">
+            <span class="mt-1 inline-block h-2 w-2 shrink-0 rounded-full bg-danger"></span>
+            <div>
+                <h6 class="font-semibold text-danger">{{ 'common.form.error_title'|trans }}</h6>
+                <p class="mt-1 text-sm text-danger/80">{{ 'common.form.error_intro'|trans }}</p>
+            </div>
+        </div>
+
+        <ul class="mt-3 list-disc space-y-1 pl-5 text-sm">
+            {{ summary.error_items(form) }}
+        </ul>
+    </div>
+{% endif %}

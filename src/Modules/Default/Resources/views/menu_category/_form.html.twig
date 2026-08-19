@@ -1,0 +1,94 @@
+{% set is_edit = menuCategory.id is not null %}
+
+<div class="panel">
+    <div class="mb-5 flex items-start justify-between gap-4">
+        <div>
+            <h5 class="text-lg font-semibold text-black dark:text-white-light">
+                {{ is_edit ? 'menu_category.edit'|trans : 'menu_category.new'|trans }}
+            </h5>
+            <p class="mt-1 text-sm text-white-dark">{{ 'menu_category.subtitle'|trans }}</p>
+        </div>
+        <span class="badge {{ menuCategory.active ? 'bg-success text-white' : 'bg-warning text-white' }}">
+            {{ menuCategory.active ? 'menu_category.active'|trans : 'menu_category.inactive'|trans }}
+        </span>
+    </div>
+
+    {{ form_start(form, { attr: { class: 'space-y-6' } }) }}
+        {{ form_errors(form) }}
+
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div>
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light">
+                    {{ form.code.vars.label }}
+                </label>
+                {{ form_widget(form.code) }}
+                {% if form.code.vars.help is not empty %}
+                    <div class="mt-1 text-xs text-white-dark">{{ form.code.vars.help }}</div>
+                {% endif %}
+                {{ form_errors(form.code) }}
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light">
+                    {{ form.name.vars.label }}
+                </label>
+                {{ form_widget(form.name) }}
+                {% if form.name.vars.help is not empty %}
+                    <div class="mt-1 text-xs text-white-dark">{{ form.name.vars.help }}</div>
+                {% endif %}
+                {{ form_errors(form.name) }}
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light">
+                    {{ form.labelKey.vars.label }}
+                </label>
+                {{ form_widget(form.labelKey) }}
+                {% if form.labelKey.vars.help is not empty %}
+                    <div class="mt-1 text-xs text-white-dark">{{ form.labelKey.vars.help }}</div>
+                {% endif %}
+                {{ form_errors(form.labelKey) }}
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light">
+                    {{ form.icon.vars.label }}
+                </label>
+                {{ form_widget(form.icon) }}
+                {% if form.icon.vars.help is not empty %}
+                    <div class="mt-1 text-xs text-white-dark">{{ form.icon.vars.help }}</div>
+                {% endif %}
+                {{ form_errors(form.icon) }}
+            </div>
+
+            <div>
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light">
+                    {{ form.position.vars.label }}
+                </label>
+                {{ form_widget(form.position) }}
+                {{ form_errors(form.position) }}
+            </div>
+
+            <div class="flex items-end">
+                <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                    {{ form_widget(form.active) }}
+                    <span>{{ form.active.vars.label }}</span>
+                </label>
+                <div class="ml-4 text-xs text-white-dark">
+                    {{ form_errors(form.active) }}
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center gap-3">
+            <button type="submit" class="btn btn-primary">
+                {{ 'common.save'|trans }}
+            </button>
+            <a href="{{ path('menu_category_index') }}" class="btn btn-light">
+                {{ 'common.cancel'|trans }}
+            </a>
+        </div>
+
+        {{ form_rest(form) }}
+    {{ form_end(form, { render_rest: false }) }}
+</div>

@@ -1,0 +1,13 @@
+{% macro required_marker(extra_classes, extra_attrs) %}
+    <span class="text-danger {{ extra_classes|default('') }}" aria-label="{{ 'common.form.required_marker_label'|trans }}" title="{{ 'common.form.required'|trans }}"{% for name, value in extra_attrs|default({}) %} {{ name }}="{{ value }}"{% endfor %}>*</span>
+{% endmacro %}
+
+{% macro field_errors(field) %}
+    {% if field.vars.errors|length > 0 %}
+        <div class="mt-1 space-y-1 text-sm text-danger">
+            {% for error in field.vars.errors %}
+                <p>{{ error.message|trans }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endmacro %}

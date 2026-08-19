@@ -1,0 +1,357 @@
+{% extends 'components/layout/default.html.twig' %}
+
+{% block title %}
+    {{ form.vars.value.id ? ('user.edit'|trans) : ('user.new'|trans) }}
+{% endblock %}
+
+{% block content %}
+    <div class="animate__animated p-6">
+        <!-- Breadcrumb -->
+        <ul class="flex space-x-2 rtl:space-x-reverse">
+            <li>
+                <a href="{{ path('app_dashboard') }}" class="text-primary hover:underline">
+                    {{ 'dashboard.title'|trans }}
+                </a>
+            </li>
+            <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+                <a href="{{ path('user_list') }}" class="text-primary hover:underline">
+                    {{ 'user.management'|trans }}
+                </a>
+            </li>
+            <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+                <span>{{ form.vars.value.id ? ('user.edit'|trans) : ('user.new'|trans) }}</span>
+            </li>
+        </ul>
+        
+        <!-- Page Header -->
+        <div class="pt-5">
+            <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h2 class="text-xl font-semibold uppercase tracking-widest text-dark dark:text-white-light">
+                    {% if form.vars.value.id %}
+                        <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="currentColor" stroke-width="1.5"/>
+                            <path d="M18.5 2.49998C18.8978 2.10216 19.4374 1.87866 20 1.87866C20.5626 1.87866 21.1022 2.10216 21.5 2.49998C21.8978 2.89781 22.1213 3.43737 22.1213 3.99998C22.1213 4.56259 21.8978 5.10216 21.5 5.49998L12 15L8 16L9 12L18.5 2.49998Z" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        {{ 'user.edit'|trans }}
+                    {% else %}
+                        <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21" stroke="currentColor" stroke-width="1.5"/>
+                            <circle cx="8.5" cy="7" r="4" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="20" y1="8" x2="20" y2="14" stroke="currentColor" stroke-width="1.5"/>
+                            <line x1="23" y1="11" x2="17" y2="11" stroke="currentColor" stroke-width="1.5"/>
+                        </svg>
+                        {{ 'user.new'|trans }}
+                    {% endif %}
+                </h2>
+                <div class="flex items-center gap-x-3">
+                    <a href="{{ path('user_list') }}"
+                       class="btn btn-outline-dark">
+                        <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M15 6L9 12L15 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        {{ 'action.back_to_list'|trans }}
+                    </a>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+                <!-- User Form Panel -->
+                <div class="xl:col-span-2">
+                    <div class="panel">
+                        <div class="mb-5 flex items-center justify-between">
+                            <h5 class="text-lg font-semibold dark:text-white-light">
+                                <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M20 21C20 16.0294 16.4183 12 12 12C7.58172 12 4 16.0294 4 21" stroke="currentColor" stroke-width="1.5"/>
+                                    <circle cx="12" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                {{ 'user.information'|trans }}
+                            </h5>
+                            {% if form.vars.value.id %}
+                                <div class="badge bg-primary">ID: {{ form.vars.value.id }}</div>
+                            {% else %}
+                                <div class="badge bg-success">{{ 'user.new_user'|trans }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        {{ form_start(form, {'attr': {'class': 'space-y-5', 'novalidate': true}}) }}
+                        
+                        <!-- Email Field -->
+                        <div>
+                            {{ form_label(form.email, null, {'label_attr': {'class': 'mb-0 text-white-dark font-medium'}}) }}
+                            <div class="relative text-white-dark">
+                                {{ form_widget(form.email, {
+                                    'attr': {
+                                        'class': 'form-input ltr:pl-10 rtl:pr-10',
+                                        'placeholder': 'user@example.com'
+                                    }
+                                }) }}
+                                <div class="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2">
+                                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 7L10.94 13.94C11.5 14.5 12.5 14.5 13.06 13.94L20 7" stroke="currentColor" stroke-width="1.5"/>
+                                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                </div>
+                            </div>
+                            {{ form_errors(form.email) }}
+                        </div>
+                        
+                        <!-- Password Field -->
+                        <div class="border-t border-white-light pt-5 dark:border-[#1b2e4b]">
+                            <h6 class="mb-4 text-lg font-semibold text-dark dark:text-white-light">
+                                <svg class="inline h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                    <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                {{ form.vars.value.id ? ('user.change_password'|trans) : ('user.password'|trans) }}
+                            </h6>
+                            
+                            <div>
+                                {{ form_label(form.password, null, {'label_attr': {'class': 'mb-0 text-white-dark font-medium'}}) }}
+                                <div class="relative text-white-dark">
+                                    {{ form_widget(form.password, {
+                                        'attr': {
+                                            'class': 'form-input ltr:pl-10 rtl:pr-10',
+                                            'placeholder': '••••••••'
+                                        }
+                                    }) }}
+                                    <div class="absolute ltr:left-4 rtl:right-4 top-1/2 -translate-y-1/2">
+                                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <rect x="3" y="11" width="18" height="10" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                            <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="1.5"/>
+                                            <path d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11" stroke="currentColor" stroke-width="1.5"/>
+                                        </svg>
+                                    </div>
+                                </div>
+                                {{ form_errors(form.password) }}
+                                {% if form.vars.value.id %}
+                                    <div class="mt-2 text-xs text-white-dark">
+                                        <svg class="inline h-3 w-3 ltr:mr-1 rtl:ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                            <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                                            <line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                                        </svg>
+                                        {{ 'user.password_change_help'|trans }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <!-- Roles Section -->
+                        <div class="border-t border-white-light pt-5 dark:border-[#1b2e4b]">
+                            <h6 class="mb-4 text-lg font-semibold text-dark dark:text-white-light">
+                                <svg class="inline h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                {{ 'user.roles'|trans }}
+                            </h6>
+                            
+                            <div>
+                                {{ form_label(form.userRoles, null, {'label_attr': {'class': 'mb-0 text-white-dark font-medium'}}) }}
+                                
+                                <!-- Database roles -->
+                                <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    {% for role in form.userRoles %}
+                                        <div class="flex items-center rounded-lg border border-white-light p-3 transition-all hover:bg-primary/5 dark:border-[#1b2e4b] dark:hover:bg-primary/10">
+                                            <label class="flex w-full cursor-pointer items-center">
+                                                {{ form_widget(role, {'attr': {'class': 'form-checkbox text-primary ltr:mr-3 rtl:ml-3'}}) }}
+                                                <div class="flex-1">
+                                                    <div class="font-semibold text-dark dark:text-white-light">
+                                                        {{ role.vars.label }}
+                                                    </div>
+                                                    {% if role.vars.data.permissions is defined and role.vars.data.permissions|length > 0 %}
+                                                        <div class="mt-1 text-xs text-white-dark">
+                                                            {{ role.vars.data.permissions|length }} {{ 'permissions'|trans }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="flex items-center">
+                                                    <svg class="h-4 w-4 text-primary" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                                    </svg>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                
+                                {{ form_errors(form.userRoles) }}
+                                
+                                <!-- Selected role count -->
+                                <div class="mt-3 flex items-center justify-between text-xs">
+                                    <div class="text-white-dark">
+                                        <svg class="inline h-3 w-3 ltr:mr-1 rtl:ml-1" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                            <line x1="12" y1="16" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                                            <line x1="12" y1="8" x2="12.01" y2="8" stroke="currentColor" stroke-width="1.5"/>
+                                        </svg>
+                                        {{ 'user.roles_help'|trans }}
+                                    </div>
+                                    <div class="rounded-full bg-primary/10 px-2 py-1 text-primary">
+                                        <span id="selected-roles-count">{{ form.userRoles.vars.value|length }}</span> {{ 'selected'|trans }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Hidden Token -->
+                        {{ form_widget(form._token) }}
+                        
+                        <!-- Action Buttons -->
+                        <div class="!mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            {{ form_widget(form.save, {
+                                'attr': {
+                                    'class': 'btn btn-primary !mt-6 w-full border-0 uppercase shadow-[0_10px_20px_-10px_rgba(67,97,238,0.44)] sm:w-auto',
+                                    'onclick': 'this.disabled=true; this.innerHTML=\'<svg class="animate-spin h-5 w-5 ltr:mr-3 rtl:ml-3" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>\' + \'' ~ 'action.saving'|trans ~ '\'; this.form.submit();'
+                                }
+                            }) }}
+                            
+                            <a href="{{ path('user_list') }}"
+                               class="btn btn-outline-dark w-full sm:w-auto">
+                                <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M9 14L5 10L9 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                    <path d="M5 10H19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                {{ 'action.cancel'|trans }}
+                            </a>
+                        </div>
+                        {{ form_end(form, {'render_rest': false}) }}
+                    </div>
+                </div>
+                
+                <!-- User Information Sidebar -->
+                <div class="xl:col-span-1">
+                    {% if form.vars.value.id %}
+                        <!-- User Summary -->
+                        <div class="panel mb-6">
+                            <div class="mb-5">
+                                <h5 class="text-lg font-semibold dark:text-white-light">
+                                    <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <circle cx="12" cy="8" r="5" stroke="currentColor" stroke-width="1.5"/>
+                                        <path d="M20 21C20 16.0294 16.4183 12 12 12C7.58172 12 4 16.0294 4 21" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    {{ 'user.current_info'|trans }}
+                                </h5>
+                            </div>
+                            
+                            <div class="space-y-4">
+                                <div class="flex items-center rounded-md bg-white-light p-3 text-dark dark:bg-[#1b2e4b] dark:text-white-light">
+                                    <svg class="h-5 w-5 ltr:mr-3 rtl:ml-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 7L10.94 13.94C11.5 14.5 12.5 14.5 13.06 13.94L20 7" stroke="currentColor" stroke-width="1.5"/>
+                                        <rect x="2" y="5" width="20" height="14" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    <div>
+                                        <div class="text-xs text-white-dark">{{ 'user.current_email'|trans }}</div>
+                                        <div class="font-semibold">{{ form.vars.value.email|default('N/A') }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center rounded-md bg-white-light p-3 text-dark dark:bg-[#1b2e4b] dark:text-white-light">
+                                    <svg class="h-5 w-5 ltr:mr-3 rtl:ml-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.5"/>
+                                        <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                                        <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.5"/>
+                                        <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    <div>
+                                        <div class="text-xs text-white-dark">{{ 'user.created_at'|trans }}</div>
+                                        <div class="font-semibold">{{ form.vars.value.createdAt ? form.vars.value.createdAt|date('M d, Y - H:i') : 'N/A' }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="flex items-center rounded-md bg-white-light p-3 text-dark dark:bg-[#1b2e4b] dark:text-white-light">
+                                    <svg class="h-5 w-5 ltr:mr-3 rtl:ml-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    <div class="w-full">
+                                        <div class="text-xs text-white-dark">{{ 'user.current_roles'|trans }}</div>
+                                        <div class="mt-1">
+                                            {% if form.vars.value.userRoles and form.vars.value.userRoles|length > 0 %}
+                                                {% for role in form.vars.value.userRoles %}
+                                                    <span class="badge bg-primary mr-1 mb-1 inline-block">
+                        {{ role.name }}
+                    </span>
+                                                {% endfor %}
+                                            {% else %}
+                                                <span class="badge bg-warning">{{ 'user.no_roles'|trans }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="flex items-center rounded-md bg-success-light p-3 text-dark dark:bg-success/10 dark:text-white-light">
+                                    <svg class="h-5 w-5 ltr:mr-3 rtl:ml-3" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                    </svg>
+                                    <div>
+                                        <div class="text-xs text-success font-semibold">{{ 'user.status'|trans }}</div>
+                                        <div class="font-medium">{{ 'user.active'|trans }}</div>
+                                    </div>
+                                </div>
+                                <a href="{{ path('user_edit', {id: form.vars.value.id}) }}"
+                                   class="btn btn-outline-primary w-full">
+                                    {{ 'user_access.manage_access'|trans }}
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Help Panel -->
+                    <div class="panel">
+                        <div class="mb-5">
+                            <h5 class="text-lg font-semibold dark:text-white-light">
+                                <svg class="inline h-6 w-6 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                                    <path d="M9.09 9C9.32508 8.33166 9.78915 7.76811 10.4 7.40912C11.0108 7.05013 11.7289 6.91894 12.4272 7.03871C13.1255 7.15849 13.7588 7.52152 14.2151 8.06353C14.6713 8.60553 14.9211 9.29152 14.92 10C14.92 12 11.92 13 11.92 13" stroke="currentColor" stroke-width="1.5"/>
+                                    <line x1="12" y1="17" x2="12.01" y2="17" stroke="currentColor" stroke-width="1.5"/>
+                                </svg>
+                                {{ 'help.title'|trans }}
+                            </h5>
+                        </div>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="rounded-md bg-info-light p-3 dark:bg-info/10">
+                                <div class="font-semibold text-info">{{ 'help.email_requirements'|trans }}</div>
+                                <div class="text-dark dark:text-white-light">{{ 'help.email_unique_valid'|trans }}</div>
+                            </div>
+                            
+                            <div class="rounded-md bg-warning-light p-3 dark:bg-warning/10">
+                                <div class="font-semibold text-warning">{{ 'help.password_requirements'|trans }}</div>
+                                <div class="text-dark dark:text-white-light">{{ 'help.password_optional_edit'|trans }}</div>
+                            </div>
+                            
+                            <div class="rounded-md bg-success-light p-3 dark:bg-success/10">
+                                <div class="font-semibold text-success">{{ 'help.roles_info'|trans }}</div>
+                                <div class="text-dark dark:text-white-light">{{ 'help.select_multiple_roles'|trans }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkboxes = document.querySelectorAll('input[type="checkbox"][name*="userRoles"]');
+        const counter = document.getElementById('selected-roles-count');
+
+        function updateCounter() {
+            const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+            if (counter) {
+                counter.textContent = checkedCount;
+            }
+        }
+
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateCounter);
+        });
+
+        // Initial count
+        updateCounter();
+    });
+</script>
+{% endblock %}

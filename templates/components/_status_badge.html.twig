@@ -1,0 +1,14 @@
+{% set status_map = {
+    active: 'text-success bg-success-light dark:bg-success-dark-light',
+    inactive: 'text-warning bg-warning-light dark:bg-warning-dark-light',
+    draft: 'text-white-dark bg-white-light dark:bg-dark-light/20',
+    pending: 'text-info bg-info-light dark:bg-info-dark-light',
+    archived: 'text-danger bg-danger-light dark:bg-danger-dark-light',
+} %}
+
+{% set normalized_status = status|default('')|lower %}
+{% set badge_classes = status_map[normalized_status]|default('text-info bg-info-light dark:bg-info-dark-light') %}
+
+<span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide {{ badge_classes }}">
+    {{ label|default(status)|trans }}
+</span>

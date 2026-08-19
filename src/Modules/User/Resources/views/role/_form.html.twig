@@ -1,0 +1,222 @@
+{% set pageTitle = page_title|default(new|default(false) ? 'role.new'|trans : 'role.edit'|trans) %}
+{% set submitLabel = submit_label|default('role.save'|trans) %}
+{% set groups = permissionGroups|default({}) %}
+
+<div class="animate__animated p-6" :class="[$store.app.animation]" x-data="roleForm()">
+    <ul class="mb-5 flex space-x-2 rtl:space-x-reverse">
+        <li>
+            <a href="{{ path('role_list') }}" class="text-primary hover:underline">{{ 'role.title'|trans }}</a>
+        </li>
+        <li class="before:content-['/'] ltr:before:mr-2 rtl:before:ml-2">
+            <span>{{ pageTitle }}</span>
+        </li>
+    </ul>
+
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div class="xl:col-span-2">
+            <div class="panel">
+                <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                        <h5 class="text-lg font-semibold dark:text-white-light">{{ pageTitle }}</h5>
+                        <p class="mt-1 text-sm text-white-dark">{{ 'role.help.permissions'|trans }}</p>
+                    </div>
+                    {% if form.vars.value.id|default(null) %}
+                        <span class="badge rounded-full bg-primary text-white">ID: {{ form.vars.value.id }}</span>
+                    {% else %}
+                        <span class="badge rounded-full bg-success text-white">{{ 'role.new'|trans }}</span>
+                    {% endif %}
+                </div>
+
+                {{ form_start(form, {'attr': {'class': 'space-y-6', 'novalidate': true}}) }}
+                    {% if form.vars.errors|length > 0 %}
+                        <div class="rounded-md border border-danger bg-danger/10 p-4 text-danger">
+                            {{ form_errors(form) }}
+                        </div>
+                    {% endif %}
+
+                    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                        <div>
+                            {{ form_label(form.name, null, {'label_attr': {'class': 'mb-2 block font-semibold text-dark dark:text-white-light'}}) }}
+                            {{ form_widget(form.name, {'attr': {'class': 'form-input', 'placeholder': 'ROLE_ADMIN'}}) }}
+                            {% if form.name.vars.help %}
+                                <p class="mt-1 text-xs text-white-dark">{{ form.name.vars.help|trans }}</p>
+                            {% endif %}
+                            {{ form_errors(form.name) }}
+                        </div>
+
+                        <div>
+                            {{ form_label(form.parent, null, {'label_attr': {'class': 'mb-2 block font-semibold text-dark dark:text-white-light'}}) }}
+                            {{ form_widget(form.parent, {'attr': {'class': 'form-select'}}) }}
+                            {% if form.parent.vars.help %}
+                                <p class="mt-1 text-xs text-white-dark">{{ form.parent.vars.help|trans }}</p>
+                            {% endif %}
+                            {{ form_errors(form.parent) }}
+                        </div>
+                    </div>
+
+                    <div class="rounded border border-[#ebedf2] dark:border-[#1b2e4b]">
+                        <div class="border-b border-[#ebedf2] p-4 dark:border-[#1b2e4b]">
+                            <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                                <div>
+                                    <h6 class="font-semibold text-dark dark:text-white-light">{{ 'role.permissions'|trans }}</h6>
+                                    <p class="mt-1 text-xs text-white-dark">{{ form.permissions.vars.help|default('role.help.permissions'|trans)|trans }}</p>
+                                </div>
+                                <div class="flex flex-col gap-2 sm:flex-row">
+                                    <input type="text" class="form-input w-full sm:w-64" placeholder="{{ 'actions.search'|trans }}..." x-model="searchText">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" @click="selectAll()">{{ 'actions.select_all'|trans }}</button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" @click="deselectAll()">{{ 'actions.deselect_all'|trans }}</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="space-y-4 p-4">
+                            {% if groups|length > 0 %}
+                                {% for groupKey, permissions in groups %}
+                                    {% set groupLabelKey = 'permission.group.' ~ groupKey %}
+                                    {% set translatedGroupLabel = groupLabelKey|trans %}
+                                    {% set groupLabel = translatedGroupLabel == groupLabelKey ? groupKey|replace({'_': ' '})|title : translatedGroupLabel %}
+
+                                    <section class="rounded border border-[#d3d3d3] dark:border-[#1b2e4b]">
+                                        <div class="flex flex-col gap-3 border-b border-[#d3d3d3] bg-[#f7f7f7] p-4 dark:border-[#1b2e4b] dark:bg-[#1b2e4b] sm:flex-row sm:items-center sm:justify-between">
+                                            <div class="flex items-center gap-3">
+                                                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary dark:text-white">
+                                                    {{ groupLabel|slice(0, 1)|upper }}
+                                                </div>
+                                                <div>
+                                                    <h6 class="font-semibold text-dark dark:text-white-light">{{ groupLabel }}</h6>
+                                                    <p class="text-xs text-white-dark">{{ permissions|length }} {{ 'role.permissions'|trans }}</p>
+                                                </div>
+                                            </div>
+                                            <span class="badge rounded-full bg-primary/10 px-3 py-1 text-primary dark:bg-primary dark:text-white">
+                                                {{ permissions|length }}
+                                            </span>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-3 p-4 md:grid-cols-2">
+                                            {% for permissionEntity in permissions %}
+                                                {% set route = permissionEntity.route|default('') %}
+                                                {% set actionSummary %}
+                                                    {% if permissionEntity.controllerActions|length > 0 %}
+                                                        {% for action in permissionEntity.controllerActions|slice(0, 3) %}
+                                                            {{ action.action }}{% if not loop.last %}, {% endif %}
+                                                        {% endfor %}
+                                                        {% if permissionEntity.controllerActions|length > 3 %}+{{ permissionEntity.controllerActions|length - 3 }}{% endif %}
+                                                    {% endif %}
+                                                {% endset %}
+
+                                                {% for permissionField in form.permissions %}
+                                                    {% if permissionField.vars.value == permissionEntity.id %}
+                                                        <label class="flex cursor-pointer items-start gap-3 rounded-md border border-white-light/60 bg-white p-3 transition hover:border-primary hover:bg-primary/5 dark:border-[#1b2e4b] dark:bg-[#0e1726]"
+                                                               x-show="matches('{{ permissionEntity.name|default('')|lower|e('js') }}', '{{ route|lower|e('js') }}', '{{ groupLabel|lower|e('js') }}')">
+                                                            {{ form_widget(permissionField, {'attr': {'class': 'form-checkbox text-primary mt-1 role-permission-checkbox', 'onchange': 'updateRolePermissionCount()'}}) }}
+                                                            <span class="min-w-0 flex-1">
+                                                                <span class="block font-semibold text-dark dark:text-white-light">{{ permissionEntity.name }}</span>
+                                                                {% if route %}
+                                                                    <span class="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary dark:bg-primary dark:text-white">{{ route }}</span>
+                                                                {% endif %}
+                                                                {% if actionSummary|trim %}
+                                                                    <span class="mt-1 block text-xs text-white-dark">{{ actionSummary|trim }}</span>
+                                                                {% endif %}
+                                                            </span>
+                                                        </label>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </div>
+                                    </section>
+                                {% endfor %}
+                                {{ form_errors(form.permissions) }}
+                            {% else %}
+                                <div class="flex items-center justify-center py-12 text-center">
+                                    <div>
+                                        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-warning/10 text-warning">
+                                            <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M12 7V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                                <circle cx="12" cy="16.5" r="1" fill="currentColor"/>
+                                                <path d="M7.84308 3.80211C9.8718 2.6007 10.8862 2 12 2C13.1138 2 14.1282 2.6007 16.1569 3.80211L16.8431 4.20846C18.8718 5.40987 19.8862 6.01057 20.4431 7C21 7.98943 21 9.19084 21 11.5937V12.4063C21 14.8092 21 16.0106 20.4431 17C19.8862 17.9894 18.8718 18.5901 16.8431 19.7915L16.1569 20.1979C14.1282 21.3993 13.1138 22 12 22C10.8862 22 9.8718 21.3993 7.84308 20.1979L7.15692 19.7915C5.1282 18.5901 4.11384 17.9894 3.55692 17C3 16.0106 3 14.8092 3 12.4063V11.5937C3 9.19084 3 7.98943 3.55692 7C4.11384 6.01057 5.1282 5.40987 7.15692 4.20846L7.84308 3.80211Z" stroke="currentColor" stroke-width="1.5"/>
+                                            </svg>
+                                        </div>
+                                        <h6 class="font-semibold dark:text-white-light">{{ 'role.permissions_empty'|trans }}</h6>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="rounded-md bg-success/10 p-4">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-success">{{ 'role.permissions'|trans }}</span>
+                            <span class="badge bg-success text-white" id="selectedPermissionCount">0</span>
+                        </div>
+                    </div>
+
+                    {{ form_widget(form._token) }}
+
+                    <div class="flex flex-col-reverse gap-3 border-t border-[#ebedf2] pt-5 dark:border-[#1b2e4b] sm:flex-row sm:items-center sm:justify-end">
+                        <a href="{{ path('role_list') }}" class="btn btn-outline-danger">{{ 'role.cancel'|trans }}</a>
+                        <button type="submit" class="btn btn-primary">
+                            <svg class="h-5 w-5 ltr:mr-2 rtl:ml-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M7.5 12L10.5 15L16.5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                            {{ submitLabel }}
+                        </button>
+                    </div>
+                {{ form_end(form, {'render_rest': false}) }}
+            </div>
+        </div>
+
+        <aside class="xl:col-span-1">
+            <div class="panel">
+                <h5 class="mb-4 text-lg font-semibold dark:text-white-light">{{ 'help.title'|trans }}</h5>
+                <div class="space-y-3 text-sm">
+                    <div class="rounded-md bg-info/10 p-3">
+                        <div class="font-semibold text-info">{{ 'role.name'|trans }}</div>
+                        <div class="text-dark dark:text-white-light">{{ 'role.help.name'|trans }}</div>
+                    </div>
+                    <div class="rounded-md bg-warning/10 p-3">
+                        <div class="font-semibold text-warning">{{ 'role.parent'|trans }}</div>
+                        <div class="text-dark dark:text-white-light">{{ 'role.help.parent'|trans }}</div>
+                    </div>
+                    <div class="rounded-md bg-success/10 p-3">
+                        <div class="font-semibold text-success">{{ 'role.permissions'|trans }}</div>
+                        <div class="text-dark dark:text-white-light">{{ 'role.help.permissions'|trans }}</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+</div>
+
+<script>
+    function roleForm() {
+        return {
+            searchText: '',
+            matches(name, route, group) {
+                if (this.searchText === '') return true;
+                const search = this.searchText.toLowerCase();
+                return name.includes(search) || route.includes(search) || group.includes(search);
+            },
+            selectAll() {
+                document.querySelectorAll('.role-permission-checkbox').forEach((checkbox) => {
+                    checkbox.checked = true;
+                });
+                updateRolePermissionCount();
+            },
+            deselectAll() {
+                document.querySelectorAll('.role-permission-checkbox').forEach((checkbox) => {
+                    checkbox.checked = false;
+                });
+                updateRolePermissionCount();
+            }
+        }
+    }
+
+    function updateRolePermissionCount() {
+        const countElement = document.getElementById('selectedPermissionCount');
+        if (countElement) {
+            countElement.textContent = document.querySelectorAll('.role-permission-checkbox:checked').length;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', updateRolePermissionCount);
+</script>

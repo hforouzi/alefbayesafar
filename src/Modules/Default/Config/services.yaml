@@ -1,0 +1,5 @@
+
+services:
+  App\Modules\Default\Service\MenuService:
+    arguments:
+      $permissionChecker: '@App\Modules\User\Service\PermissionChecker'

@@ -1,0 +1,116 @@
+{% extends 'components/layout/default.html.twig' %}
+
+{% block page_title %}{% endblock %}
+{% block page_subtitle %}{% endblock %}
+{% block page_actions %}{% endblock %}
+
+{% block content %}
+    {% set menuItems = menus|default([]) %}
+
+    <div x-data="basic" class="space-y-6">
+        <div class="panel flex items-center justify-between gap-3 overflow-x-auto whitespace-nowrap p-4">
+            <div>
+                <h1 class="text-xl font-semibold dark:text-white-light">{{ 'menu.title'|trans }}</h1>
+                <p class="mt-1 text-sm text-white-dark">{{ 'menu.subtitle'|trans }}</p>
+            </div>
+
+            <a href="{{ path('menu_new') }}" class="btn btn-primary">
+                {{ ux_icon('flowbite:plus-outline', { class: 'w-5 h-5' }) }}
+                <span class="ltr:pl-2 rtl:pr-2">{{ 'menu.new'|trans }}</span>
+            </a>
+        </div>
+
+        <div class="panel">
+            <div class="mb-5 flex items-center justify-between">
+                <h5 class="text-lg font-semibold dark:text-white-light">{{ 'menu.list'|trans }}</h5>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table id="myTable" class="whitespace-nowrap table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Route</th>
+                            <th>Category</th>
+                            <th>Parent ID</th>
+                            <th>Position</th>
+                            <th>{{ 'common.status'|trans }}</th>
+                            <th>{{ 'common.actions'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for menu in menuItems %}
+                            <tr>
+                                <td>{{ menu.full_name }}</td>
+                                <td>
+                                    {{ menu.route ?: '-' }}
+                                    {% if menu.route_error %}
+                                        <div class="mt-1 text-xs text-white-dark">
+                                            {{ ('menu.route_status.' ~ menu.route_error)|trans }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {{ menu.category_label|trans }}
+                                    {% if menu.category_active is defined and not menu.category_active %}
+                                        <div class="mt-1 text-xs text-white-dark">
+                                            {{ 'menu_category.inactive'|trans }}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                                <td>{{ menu.parent_id ?: '-' }}</td>
+                                <td>{{ menu.position }}</td>
+                                <td>
+                                    <span class="badge {{ menu.is_linkable ? 'badge-outline-success' : 'badge-outline-danger' }}">
+                                        {{ menu.is_linkable ? ('menu.route_status.linkable'|trans) : ('menu.route_status.not_linkable'|trans) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <a href="{{ path('menu_edit', { id: menu.id }) }}" class="btn btn-sm btn-outline-primary">
+                                            {{ ux_icon('bytesize:edit', { class: 'w-4.5 h-4.5 ltr:mr-2 rtl:ml-2' }) }}
+                                            {{ 'common.edit'|trans }}
+                                        </a>
+                                        <form action="{{ path('menu_delete', { id: menu.id }) }}" method="post" onsubmit="return confirm('Are you sure?')">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ menu.id) }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                {{ ux_icon('bytesize:trash', { class: 'w-4.5 h-4.5 ltr:mr-2 rtl:ml-2' }) }}
+                                                {{ 'common.delete'|trans }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="px-4 py-6 text-center text-white-dark">
+                                    {{ 'dashboard.placeholder.no_data'|trans }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ asset('assets/js/simple-datatables.js') }}"></script>
+    <script>
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('basic', () => ({
+                init() {
+                    new simpleDatatables.DataTable('#myTable', {
+                        firstLast: true,
+                        labels: {
+                            perPage: '{select}',
+                        },
+                        layout: {
+                            top: '{search}',
+                            bottom: '{info}{select}{pager}',
+                        },
+                    });
+                },
+            }));
+        });
+    </script>
+{% endblock %}

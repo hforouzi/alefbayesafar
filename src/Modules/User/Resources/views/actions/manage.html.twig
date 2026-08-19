@@ -1,0 +1,21 @@
+{% extends "components/layout/default.html.twig" %}
+{% block content %}
+    <h1>Manage Controller Actions</h1>
+    
+    <table>
+        <thead>
+        <tr>
+            <th>Controller</th>
+            <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for action in actions %}
+            <tr>
+                <td>{{ action.controller }}</td>
+                <td>{{ action.action }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

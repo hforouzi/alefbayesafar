@@ -1,0 +1,50 @@
+{% set flash_types = {
+    success: {
+        label: 'flash.success',
+        classes: 'border-success/20 bg-success-light text-success dark:border-success/30 dark:bg-success-dark-light',
+    },
+    warning: {
+        label: 'flash.warning',
+        classes: 'border-warning/20 bg-warning-light text-warning dark:border-warning/30 dark:bg-warning-dark-light',
+    },
+    danger: {
+        label: 'flash.danger',
+        classes: 'border-danger/20 bg-danger-light text-danger dark:border-danger/30 dark:bg-danger-dark-light',
+    },
+    error: {
+        label: 'flash.danger',
+        classes: 'border-danger/20 bg-danger-light text-danger dark:border-danger/30 dark:bg-danger-dark-light',
+    },
+    info: {
+        label: 'flash.info',
+        classes: 'border-info/20 bg-info-light text-info dark:border-info/30 dark:bg-info-dark-light',
+    },
+} %}
+
+<div class="mb-6 space-y-3">
+    {% for type, config in flash_types %}
+        {% for message in app.flashes(type) %}
+            <div x-data="{ open: true }" x-show="open" class="rounded-2xl border p-4 shadow-sm {{ config.classes }}">
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/60 text-current dark:bg-black/10">
+                        <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 2.25C17.3848 2.25 21.75 6.61522 21.75 12C21.75 17.3848 17.3848 21.75 12 21.75C6.61522 21.75 2.25 17.3848 2.25 12C2.25 6.61522 6.61522 2.25 12 2.25Z" stroke="currentColor" stroke-width="1.5" opacity="0.35" />
+                            <path d="M12 7.5V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            <path d="M12 16.5H12.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="flex-1 pt-0.5 leading-6">
+                        <strong class="mr-1">{{ config.label|trans }}</strong>
+                        {{ message|trans|raw }}
+                    </div>
+                    <button type="button" class="text-current opacity-70 transition hover:opacity-100" @click="open = false" aria-label="{{ 'common.close'|trans }}">
+                        <svg class="h-5 w-5" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M18 6L6 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                            <path d="M6 6L18 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</div>

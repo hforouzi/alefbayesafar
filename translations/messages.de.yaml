@@ -1,0 +1,225 @@
+app:
+  name: 'Symfony App Template'
+  short_name: 'SAT'
+
+auth:
+  login:
+    title: 'Anmelden'
+    welcome_back: 'Willkommen zurück!'
+    prompt: 'Bitte geben Sie Ihre E-Mail und Ihr Passwort ein, um sich anzumelden.'
+    email: 'E-Mail'
+    email_placeholder: 'E-Mail eingeben'
+    password: 'Passwort'
+    password_placeholder: 'Passwort'
+    remember_me: 'Angemeldet bleiben'
+    submit: 'Anmelden'
+
+navigation:
+  dashboard: 'Dashboard'
+  main: 'Hauptmenü'
+  administration: 'Administration'
+  apps: 'Apps'
+  users: 'Benutzer'
+  roles: 'Rollen'
+  permissions: 'Berechtigungen'
+  menu: 'Menü'
+  menu_categories: 'Menükategorien'
+  settings: 'Einstellungen'
+  other: 'Weitere'
+  login: 'Anmelden'
+  login_cover: 'Anmeldung mit Cover'
+  login_boxed: 'Anmeldung im Boxed-Layout'
+  password_recovery: 'Passwort-Wiederherstellung'
+  more: 'Mehr'
+  user_permissions: 'Benutzer und Berechtigungen'
+
+language:
+  german: 'Deutsch'
+  english: 'Englisch'
+  current: 'Aktuelle Sprache'
+  switch: 'Sprache wechseln'
+
+dashboard:
+  title: 'Dashboard'
+  subtitle: 'Generische Administrationsübersicht'
+  description: 'Wiederverwendbares Administrations-Template.'
+  metric:
+    users: 'Benutzer'
+    roles: 'Rollen'
+    permissions: 'Berechtigungen'
+  panel:
+    administration: 'Administration'
+    administration_subtitle: 'Benutzer, Rollen und Berechtigungen verwalten.'
+    template_status: 'Template-Status'
+  placeholder:
+    no_data: 'Noch keine Daten vorhanden'
+  status:
+    browser_auth: 'Browser-Authentifizierung'
+    permissions: 'Berechtigungsprüfung'
+    menu: 'Dynamisches Menü'
+    ready: 'Bereit'
+
+common:
+  search: 'Suchen'
+  save: 'Speichern'
+  cancel: 'Abbrechen'
+  back: 'Zurück'
+  edit: 'Bearbeiten'
+  delete: 'Löschen'
+  show: 'Anzeigen'
+  close: 'Schließen'
+  search_action: 'Suchen'
+  actions: 'Aktionen'
+  status: 'Status'
+  created_at: 'Erstellt am'
+  updated_at: 'Aktualisiert am'
+  all_rights_reserved: 'Alle Rechte vorbehalten.'
+  form:
+    error_title: 'Das Formular konnte nicht gespeichert werden'
+    error_intro: 'Bitte prüfen Sie die folgenden Felder und korrigieren Sie die Eingaben.'
+    required: 'Pflichtfeld'
+    required_marker_label: 'Pflichtfeld'
+
+menu:
+  title: 'Menü'
+  subtitle: 'Menüpunkte verwalten'
+  list: 'Menüliste'
+  new: 'Neues Menü'
+  menu_category: 'Menükategorie'
+  menu_category_placeholder: 'Legacy-Kategorie verwenden'
+  help:
+    menu_category: 'Wenn gesetzt, wird diese Menükategorie bevorzugt. Andernfalls wird die Legacy-Kategorie verwendet.'
+  route_help: 'Nur parametrisierungsfreie Routen verwenden, z. B. app_dashboard oder user_list. Keine show/edit/delete-Routen.'
+  route:
+    help: 'Nur parametrisierungsfreie Routen verwenden, z. B. app_dashboard oder user_list. Keine show/edit/delete-Routen.'
+  route_status:
+    linkable: 'Verlinkbar'
+    not_linkable: 'Nicht verlinkbar'
+    empty_route: 'Keine Route'
+    controller_action_not_route_name: 'Controller-Aktion ist kein Routenname'
+    route_not_found: 'Route nicht gefunden'
+    route_requires_parameters: 'Route benötigt Parameter'
+  view: 'Menüs anzeigen'
+  create: 'Menüs erstellen'
+  update: 'Menüs bearbeiten'
+  delete: 'Menüs löschen'
+
+menu_category:
+  title: 'Menükategorien'
+  subtitle: 'Kategorien für die Navigation verwalten'
+  list: 'Menükategorien'
+  new: 'Neue Menükategorie'
+  edit: 'Menükategorie bearbeiten'
+  show: 'Menükategorie anzeigen'
+  code: 'Code'
+  name: 'Name'
+  label_key: 'Übersetzungsschlüssel'
+  icon: 'Icon'
+  position: 'Position'
+  active: 'Aktiv'
+  inactive: 'Inaktiv'
+  flash:
+    created: 'Menükategorie wurde erstellt.'
+    updated: 'Menükategorie wurde aktualisiert.'
+    deleted: 'Menükategorie wurde gelöscht.'
+    delete_blocked: 'Menükategorie kann nicht gelöscht werden, da ihr Menüs zugeordnet sind.'
+  help:
+    code: 'Maschineller Code in Kleinbuchstaben, z. B. administration.'
+    name: 'Anzeigename der Menükategorie.'
+    label_key: 'Optionaler Übersetzungsschlüssel, z. B. navigation.administration.'
+    icon: 'Optionales Icon, z. B. solar:home-bold.'
+  code_pattern: 'Der Code muss aus Kleinbuchstaben, Zahlen, Bindestrichen oder Unterstrichen bestehen.'
+
+layout:
+  logout: 'Abmelden'
+  profile: 'Profil'
+  search: 'Suche'
+  toggle_sidebar: 'Navigation umschalten'
+  notifications: 'Benachrichtigungen'
+  language: 'Sprache'
+  theme: 'Darstellung'
+  dark_mode: 'Dunkelmodus'
+  light_mode: 'Hellmodus'
+  system_mode: 'System'
+  account: 'Konto'
+  view_profile: 'Profil anzeigen'
+
+permission:
+  title: 'Berechtigungen'
+  subtitle: 'Berechtigungen verwalten und gruppieren'
+  list: 'Berechtigungen'
+  new: 'Neue Berechtigung'
+  edit: 'Berechtigung bearbeiten'
+  group:
+    permission: 'Berechtigungen'
+    role: 'Rollen'
+    menu: 'Menüs'
+    menu_category: 'Menükategorien'
+    user: 'Benutzer'
+    settings: 'Einstellungen'
+    dashboard: 'Dashboard'
+    other: 'Weitere'
+  name: 'Name'
+  route: 'Route'
+  controller_actions: 'Controller-Aktionen'
+  actions: 'Aktionen'
+  empty: 'Keine Berechtigungen vorhanden'
+  save: 'Speichern'
+  back: 'Zurück'
+  cancel: 'Abbrechen'
+  help:
+    route: 'Symfony-Routenname, z. B. user_list. Keine URL und keine Controller-Klasse.'
+    controller_actions: 'Controller-Aktionen oder Aktionsnamen gemäß bestehender Projektkonvention.'
+  flash:
+    created: 'Berechtigung wurde erstellt.'
+    updated: 'Berechtigung wurde aktualisiert.'
+  view: 'Berechtigungen anzeigen'
+  create: 'Berechtigungen erstellen'
+  update: 'Berechtigungen bearbeiten'
+  delete: 'Berechtigungen löschen'
+
+flash:
+  primary: 'Primär'
+  secondary: 'Sekundär'
+  success: 'Erfolg'
+  warning: 'Warnung'
+  danger: 'Fehler'
+  info: 'Info'
+
+security:
+  access_denied:
+    message: 'Sie haben keine Berechtigung, diese Seite aufzurufen.'
+  bootstrap:
+    roles_created: 'Rollen erstellt'
+    permissions_created: 'Berechtigungen erstellt'
+    user_promoted: 'Benutzer wurde zum Super Admin gemacht'
+    user_not_found: 'Benutzer wurde nicht gefunden'
+
+user:
+  management: 'Benutzerverwaltung'
+  list: 'Benutzer'
+  email: 'E-Mail'
+  password: 'Passwort'
+  roles: 'Rollen'
+  access:
+    denied: 'Sie dürfen diesen Benutzer nicht verwalten.'
+
+role:
+  title: 'Rollen'
+  new: 'Neue Rolle'
+  edit: 'Rolle bearbeiten'
+  name: 'Name'
+  parent: 'Übergeordnete Rolle'
+  permissions: 'Berechtigungen'
+  permissions_empty: 'Keine Berechtigungen vorhanden'
+  save: 'Speichern'
+  back: 'Zurück'
+  cancel: 'Abbrechen'
+  help:
+    name: 'Technischer Rollenname, z. B. ROLE_ADMIN.'
+    parent: 'Optionale übergeordnete Rolle.'
+    permissions: 'Wählen Sie die Berechtigungen für diese Rolle aus.'
+  view: 'Rollen anzeigen'
+  create: 'Rollen erstellen'
+  update: 'Rollen bearbeiten'
+  delete: 'Rollen löschen'

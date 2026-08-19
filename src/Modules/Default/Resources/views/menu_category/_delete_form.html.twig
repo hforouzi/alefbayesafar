@@ -1,0 +1,6 @@
+<form method="post" action="{{ path('menu_category_delete', { id: menuCategory.id }) }}" onsubmit="return confirm('Are you sure?');" class="inline-flex">
+    <input type="hidden" name="_token" value="{{ csrf_token('delete_menu_category_' ~ menuCategory.id) }}">
+    <button type="submit" class="btn btn-sm btn-outline-danger">
+        {{ 'common.delete'|trans }}
+    </button>
+</form>
