@@ -8,3 +8,4 @@
 /config/secrets/*/*.decrypt.private.php
 /public/assets/css/style.css.map
 /_reference/
+/custom-trip-finder/

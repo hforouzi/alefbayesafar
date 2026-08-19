@@ -1,6 +1,6 @@
 app:
-  name: 'Symfony App Template'
-  short_name: 'SAT'
+  name: 'AlefBayeSafar'
+  short_name: 'ABS'
 
 auth:
   login:
@@ -50,7 +50,7 @@ dashboard:
   panel:
     administration: 'Administration'
     administration_subtitle: 'Manage users, roles, and permissions.'
-    template_status: 'Template status'
+    template_status: 'Foundation status'
   placeholder:
     no_data: 'No data available yet'
   status:

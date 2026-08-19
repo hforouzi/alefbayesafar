@@ -7,7 +7,6 @@ use App\Modules\User\Entity\Role;
 use App\Modules\User\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -16,15 +15,6 @@ use Symfony\Component\Routing\Annotation\Route;
  */
 class DefaultController extends AbstractController
 {
-    /**
-     * Homepage route - redirects to login page.
-     */
-    #[Route('/', name: 'homepage')]
-    public function index(): RedirectResponse
-    {
-        return $this->redirectToRoute('app_login');
-    }
-    
     /**
      * Dashboard page - main application dashboard.
      */

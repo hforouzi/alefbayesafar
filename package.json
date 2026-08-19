@@ -1,7 +1,7 @@
 {
-  "name": "symfony-app-template",
+  "name": "alefbayesafar",
   "version": "1.0.0",
-  "description": "Reusable Symfony admin application template",
+  "description": "AlefBayeSafar travel planning application",
   "main": "index.js",
   "scripts": {
     "dev": "npx tailwindcss -i public/assets/css/tailwind.css -o public/assets/css/style.css --watch",

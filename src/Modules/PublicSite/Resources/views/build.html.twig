@@ -1,0 +1,251 @@
+{% extends 'layouts/public.html.twig' %}
+
+{% block title %}ساخت پکیج سفر | الفبای سفر{% endblock %}
+
+{% block body %}
+    <section class="w-full max-w-full overflow-x-hidden bg-[#fffaf4]">
+        <div class="mx-auto w-full max-w-3xl min-w-0 px-4 py-8 sm:px-6 lg:px-8" data-controller="trip-wizard" data-trip-wizard-current-value="1">
+            <div class="mb-6 min-w-0">
+                <h1 class="break-words text-2xl font-black text-[#18312f] sm:text-3xl">ساخت پکیج سفر</h1>
+                <p class="mt-2 text-sm font-semibold text-[#65716e]" data-trip-wizard-target="stepLabel">مرحله 1 از 4 — سفر</p>
+            </div>
+
+            <form class="w-full max-w-full overflow-hidden rounded-md border border-[#e7ddd0] bg-white p-4 shadow-xl shadow-[#b99b74]/10 sm:p-6" novalidate>
+                    <div class="mb-6 grid min-w-0 grid-cols-2 gap-2 sm:grid-cols-4" aria-label="مراحل ساخت پکیج">
+                        {% for step in [
+                            { number: 1, label: 'سفر' },
+                            { number: 2, label: 'پرواز / هتل' },
+                            { number: 3, label: 'فعالیت‌ها' },
+                            { number: 4, label: 'تأیید / نتایج' }
+                        ] %}
+                            <button type="button" class="min-w-0 rounded-md border px-2 py-3 text-center text-xs font-black transition sm:text-sm" data-trip-wizard-target="indicator" data-step="{{ step.number }}" data-action="trip-wizard#goTo">
+                                <span class="mx-auto mb-1 flex h-7 w-7 items-center justify-center rounded-md bg-[#efe6db] text-[#18312f]">{{ step.number }}</span>
+                                <span class="block truncate">{{ step.label }}</span>
+                            </button>
+                        {% endfor %}
+                    </div>
+                    <div class="mb-6 h-2 overflow-hidden rounded-full bg-[#efe6db]" aria-hidden="true">
+                        <div class="h-full rounded-full bg-[#0f766e] transition-all duration-300" data-trip-wizard-target="progress"></div>
+                    </div>
+
+                    <div data-trip-wizard-target="panel" data-step="1" data-controller="date-mode">
+                        <div class="grid min-w-0 gap-4 md:grid-cols-2">
+                            <label class="block">
+                                <span class="mb-2 block text-sm font-extrabold text-[#18312f]">مبدأ</span>
+                                <input type="text" name="origin" value="تهران" class="form-input form-input-lg" placeholder="مثلاً تهران" data-trip-wizard-target="field" data-summary-label="مبدأ">
+                            </label>
+                            <label class="block">
+                                <span class="mb-2 block text-sm font-extrabold text-[#18312f]">مقصد</span>
+                                <input type="text" name="destination" class="form-input form-input-lg" placeholder="مثلاً استانبول" data-trip-wizard-target="field" data-summary-label="مقصد">
+                            </label>
+                        </div>
+
+                        <div class="mt-6">
+                            <span class="mb-3 block text-sm font-extrabold text-[#18312f]">نوع تاریخ</span>
+                            <div class="grid min-w-0 gap-2 sm:grid-cols-2">
+                                <label class="cursor-pointer rounded-md border border-[#0f766e] bg-[#e0f2ef] p-3 text-center text-sm font-extrabold text-[#0f766e]">
+                                    <input class="sr-only" type="radio" name="dateMode" value="flexible" checked data-action="date-mode#change trip-wizard#refreshSummary" data-date-mode-target="mode" data-trip-wizard-target="field" data-summary-label="نوع تاریخ" data-summary-value="بازه زمانی + تعداد روز">
+                                    بازه زمانی + تعداد روز
+                                </label>
+                                <label class="cursor-pointer rounded-md border border-[#d8cab9] bg-white p-3 text-center text-sm font-extrabold text-[#596461]">
+                                    <input class="sr-only" type="radio" name="dateMode" value="exact" data-action="date-mode#change trip-wizard#refreshSummary" data-date-mode-target="mode" data-trip-wizard-target="field" data-summary-label="نوع تاریخ" data-summary-value="تاریخ دقیق">
+                                    تاریخ دقیق
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="flexibleFields">
+                            <div data-controller="jalali-date">
+                                <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="window-start">شروع بازه</label>
+                                <input id="window-start" type="text" name="windowStart" class="form-input form-input-lg" placeholder="مثلاً ۱ مرداد" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="شروع بازه">
+                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
+                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
+                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
+                                </div>
+                            </div>
+                            <div data-controller="jalali-date" data-jalali-date-min-source-value="input[name='windowStart']">
+                                <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="window-end">پایان بازه</label>
+                                <input id="window-end" type="text" name="windowEnd" class="form-input form-input-lg" placeholder="مثلاً ۳۱ مرداد" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="پایان بازه">
+                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
+                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
+                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 hidden grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="exactFields">
+                            <div data-controller="jalali-date">
+                                <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="departure-date">تاریخ رفت</label>
+                                <input id="departure-date" type="text" name="departureDate" class="form-input form-input-lg" placeholder="مثلاً ۱۵ شهریور" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="تاریخ رفت">
+                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
+                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
+                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
+                                </div>
+                            </div>
+                            <div data-controller="jalali-date" data-jalali-date-min-source-value="input[name='departureDate']">
+                                <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="return-date">تاریخ برگشت</label>
+                                <input id="return-date" type="text" name="returnDate" class="form-input form-input-lg" placeholder="مثلاً ۲۰ شهریور" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="تاریخ برگشت">
+                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
+                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
+                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 grid min-w-0 gap-4 md:grid-cols-3">
+                            <label>
+                                <span class="mb-2 block text-sm font-extrabold text-[#18312f]">مدت سفر (روز)</span>
+                                <input type="number" min="1" name="tripDays" value="5" class="form-input form-input-lg" data-trip-wizard-target="field" data-summary-label="مدت سفر">
+                            </label>
+                            <div data-controller="passenger-counter" data-passenger-counter-min-value="1">
+                                <span class="mb-2 block text-sm font-extrabold text-[#18312f]">بزرگسال</span>
+                                <div class="flex min-w-0 items-center overflow-hidden rounded-md border border-[#d8cab9]">
+                                    <button type="button" class="w-12 shrink-0 bg-[#f7f3ee] py-3 text-xl font-black" data-action="passenger-counter#decrement">−</button>
+                                    <input type="number" min="1" name="adults" value="2" class="min-w-0 flex-1 border-0 text-center font-black focus:ring-0" data-passenger-counter-target="input" data-trip-wizard-target="field" data-summary-label="بزرگسال">
+                                    <button type="button" class="w-12 shrink-0 bg-[#f7f3ee] py-3 text-xl font-black" data-action="passenger-counter#increment">+</button>
+                                </div>
+                            </div>
+                            <div data-controller="passenger-counter" data-passenger-counter-min-value="0">
+                                <span class="mb-2 block text-sm font-extrabold text-[#18312f]">کودک</span>
+                                <div class="flex min-w-0 items-center overflow-hidden rounded-md border border-[#d8cab9]">
+                                    <button type="button" class="w-12 shrink-0 bg-[#f7f3ee] py-3 text-xl font-black" data-action="passenger-counter#decrement">−</button>
+                                    <input type="number" min="0" name="children" value="0" class="min-w-0 flex-1 border-0 text-center font-black focus:ring-0" data-passenger-counter-target="input" data-trip-wizard-target="field" data-summary-label="کودک">
+                                    <button type="button" class="w-12 shrink-0 bg-[#f7f3ee] py-3 text-xl font-black" data-action="passenger-counter#increment">+</button>
+                                </div>
+                                <div class="mt-3 space-y-2" data-passenger-counter-target="ages"></div>
+                            </div>
+                        </div>
+
+                        <label class="mt-6 block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">بودجه تقریبی (تومان، اختیاری)</span>
+                            <input type="text" name="budget" class="form-input form-input-lg" placeholder="مثلاً ۱۵۰٬۰۰۰٬۰۰۰" data-trip-wizard-target="field" data-summary-label="بودجه">
+                        </label>
+                    </div>
+
+                    <div class="hidden" data-trip-wizard-target="panel" data-step="2">
+                        <div class="space-y-6">
+                            <div>
+                                <span class="mb-3 block text-sm font-extrabold text-[#18312f]">کلاس پرواز</span>
+                                <div class="flex min-w-0 flex-wrap gap-2">
+                                    {% for item in [
+                                        { value: 'economy', label: 'اکونومی', checked: true },
+                                        { value: 'business', label: 'بیزینس', checked: false }
+                                    ] %}
+                                        <label class="cursor-pointer">
+                                            <input class="peer sr-only" type="radio" name="flightClass" value="{{ item.value }}" {{ item.checked ? 'checked' : '' }} data-trip-wizard-target="field" data-summary-label="کلاس پرواز" data-summary-value="{{ item.label }}">
+                                            <span class="inline-flex rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-sm font-extrabold text-[#596461] transition peer-checked:border-[#0f766e] peer-checked:bg-[#0f766e] peer-checked:text-white">{{ item.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="mb-3 block text-sm font-extrabold text-[#18312f]">نوع مسیر</span>
+                                <div class="flex min-w-0 flex-wrap gap-2">
+                                    {% for item in [
+                                        { value: 'any', label: 'فرقی ندارد', checked: true },
+                                        { value: 'direct', label: 'مستقیم', checked: false }
+                                    ] %}
+                                        <label class="cursor-pointer">
+                                            <input class="peer sr-only" type="radio" name="stops" value="{{ item.value }}" {{ item.checked ? 'checked' : '' }} data-trip-wizard-target="field" data-summary-label="نوع مسیر" data-summary-value="{{ item.label }}">
+                                            <span class="inline-flex rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-sm font-extrabold text-[#596461] transition peer-checked:border-[#0f766e] peer-checked:bg-[#0f766e] peer-checked:text-white">{{ item.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="mb-3 block text-sm font-extrabold text-[#18312f]">ستاره هتل</span>
+                                <div class="flex min-w-0 flex-wrap gap-2">
+                                    {% for item in [
+                                        { value: '3', label: '۳ ستاره', checked: false },
+                                        { value: '4', label: '۴ ستاره', checked: true },
+                                        { value: '5', label: '۵ ستاره', checked: false }
+                                    ] %}
+                                        <label class="cursor-pointer">
+                                            <input class="peer sr-only" type="radio" name="hotelStars" value="{{ item.value }}" {{ item.checked ? 'checked' : '' }} data-trip-wizard-target="field" data-summary-label="ستاره هتل" data-summary-value="{{ item.label }}">
+                                            <span class="inline-flex rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-sm font-extrabold text-[#596461] transition peer-checked:border-[#0f766e] peer-checked:bg-[#0f766e] peer-checked:text-white">{{ item.label }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <span class="mb-3 block text-sm font-extrabold text-[#18312f]">نوع اتاق</span>
+                                <div class="flex min-w-0 flex-wrap gap-2">
+                                    {% for item in ['یک تخته', 'دو تخته', 'سه تخته', 'سوئیت خانوادگی'] %}
+                                        <label class="cursor-pointer">
+                                            <input class="peer sr-only" type="radio" name="roomType" value="{{ item }}" {{ item == 'دو تخته' ? 'checked' : '' }} data-trip-wizard-target="field" data-summary-label="نوع اتاق" data-summary-value="{{ item }}">
+                                            <span class="inline-flex rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-sm font-extrabold text-[#596461] transition peer-checked:border-[#0f766e] peer-checked:bg-[#0f766e] peer-checked:text-white">{{ item }}</span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        <label class="mt-5 flex items-center gap-3 rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-4 font-bold text-[#18312f]">
+                            <input type="checkbox" name="breakfast" value="صبحانه" checked class="form-checkbox" data-trip-wizard-target="field" data-summary-label="صبحانه">
+                            صبحانه برای هتل مهم است
+                        </label>
+                    </div>
+
+                    <div class="hidden" data-trip-wizard-target="panel" data-step="3">
+                        <p class="mb-4 text-sm leading-7 text-[#65716e]">علایق سفر را انتخاب کنید. این انتخاب‌ها فعلاً فقط در خلاصه نهایی نمایش داده می‌شوند.</p>
+                        <label class="mb-5 flex items-center gap-3 rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-4 font-bold text-[#18312f]">
+                            <input type="checkbox" name="cityTour" value="گشت شهری" checked class="form-checkbox" data-trip-wizard-target="field" data-summary-label="گشت">
+                            گشت شهری و بازدید از جاذبه‌های شهر
+                        </label>
+                        <div class="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                            {% for activity in ['پارک آبی', 'سافاری و کویر', 'قایق‌سواری', 'شهربازی', 'موزه و بناهای تاریخی', 'خرید و مراکز تجاری', 'رستوران‌گردی', 'تفریح خانوادگی', 'آرامش و ساحل'] %}
+                                <label class="cursor-pointer rounded-md border border-[#d8cab9] bg-white p-4 text-sm font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:bg-[#e0f2ef]">
+                                    <input type="checkbox" name="activities" value="{{ activity }}" class="form-checkbox" data-trip-wizard-target="field" data-summary-label="فعالیت‌ها">
+                                    {{ activity }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <label class="mt-5 block max-w-xs">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">تعداد روزهای گشت</span>
+                            <input type="number" min="0" name="tourDays" value="2" class="form-input form-input-lg" data-trip-wizard-target="field" data-summary-label="روزهای گشت">
+                        </label>
+                        <label class="mt-5 block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">توضیحات تکمیلی</span>
+                            <textarea name="notes" rows="4" class="form-textarea" placeholder="مثلاً سفر آرام، مناسب کودک، نزدیک مرکز شهر..." data-trip-wizard-target="field" data-summary-label="توضیحات"></textarea>
+                        </label>
+                    </div>
+
+                    <div class="hidden" data-trip-wizard-target="panel" data-step="4">
+                        <div class="mb-5 grid min-w-0 gap-3 sm:grid-cols-2">
+                            {% for service in [
+                                { name: 'visa', label: 'ویزا', desc: 'پیگیری مدارک و اخذ ویزا', checked: false },
+                                { name: 'insurance', label: 'بیمه مسافرتی', desc: 'بیمه سفر خارجی', checked: true },
+                                { name: 'transfer', label: 'ترانسفر فرودگاه', desc: 'رفت و برگشت فرودگاه به هتل', checked: true },
+                                { name: 'simcard', label: 'سیم‌کارت / اینترنت', desc: 'سیم‌کارت محلی یا eSIM', checked: false }
+                            ] %}
+                                <label class="flex items-center justify-between gap-3 rounded-md border border-[#e7ddd0] bg-white p-4">
+                                    <span>
+                                        <span class="block font-black text-[#18312f]">{{ service.label }}</span>
+                                        <span class="mt-1 block text-xs font-semibold text-[#65716e]">{{ service.desc }}</span>
+                                    </span>
+                                    <input type="checkbox" name="{{ service.name }}" value="{{ service.label }}" {{ service.checked ? 'checked' : '' }} class="form-checkbox" data-trip-wizard-target="field" data-summary-label="خدمات جانبی">
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <div class="rounded-md border border-[#0f766e]/30 bg-[#e0f2ef] p-5">
+                            <h2 class="text-2xl font-black text-[#18312f]">ترجیحات سفر شما آماده است.</h2>
+                            <p class="mt-3 leading-8 text-[#4b5a57]">جست‌وجوی سفر، قیمت واقعی، موجودی، هتل‌ها، پروازها و پیشنهادهای هوشمند در فازهای بعدی به منابع معتبر متصل می‌شوند. در این مرحله هیچ نتیجه یا قیمت ساختگی نمایش داده نمی‌شود.</p>
+                        </div>
+                        <div class="mt-5 rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-5">
+                            <h3 class="mb-3 text-lg font-black text-[#18312f]">خلاصه انتخاب‌ها</h3>
+                            <dl class="grid min-w-0 gap-3 text-sm sm:grid-cols-2" data-trip-wizard-target="summary"></dl>
+                        </div>
+                    </div>
+
+                    <div class="mt-8 hidden rounded-md border border-[#f0b5a2] bg-[#fff4ef] px-4 py-3 text-sm font-extrabold text-[#9a3412]" data-trip-wizard-target="validationMessage"></div>
+
+                    <div class="mt-8 flex flex-col-reverse gap-3 border-t border-[#e7ddd0] pt-5 sm:flex-row sm:justify-between">
+                        <button type="button" class="rounded-md border border-[#d8cab9] px-5 py-3 text-sm font-extrabold text-[#44514f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-trip-wizard-target="previousButton" data-action="trip-wizard#previous">مرحله قبل</button>
+                        <button type="button" class="rounded-md bg-[#0f766e] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#0b5f59]" data-trip-wizard-target="nextButton" data-action="trip-wizard#next">مرحله بعد</button>
+                    </div>
+            </form>
+        </div>
+    </section>
+{% endblock %}

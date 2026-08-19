@@ -21,6 +21,8 @@ class ControllerPermissionSubscriber implements EventSubscriberInterface
 {
     private const PUBLIC_ROUTE_NAMES = [
         'homepage',
+        'public_build',
+        'public_trips',
         'app_login',
         'app_logout',
         'app_captcha',

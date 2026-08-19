@@ -1,6 +1,6 @@
 {
-    "name": "hforouzi/symfony-app-template",
-    "description": "Reusable Symfony admin application template",
+    "name": "hforouzi/alefbayesafar",
+    "description": "AlefBayeSafar travel planning application",
     "type": "project",
     "license": "proprietary",
     "minimum-stability": "stable",
