@@ -11,10 +11,12 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CityRepository::class)]
 #[ORM\HasLifecycleCallbacks]
-#[ORM\UniqueConstraint(name: 'uniq_city_country_slug', columns: ['country_id', 'slug'])]
-#[ORM\UniqueConstraint(name: 'uniq_city_country_name', columns: ['country_id', 'name'])]
-#[UniqueEntity(fields: ['country', 'slug'])]
-#[UniqueEntity(fields: ['country', 'name'])]
+#[ORM\Index(name: 'idx_city_name', columns: ['name'])]
+#[ORM\Index(name: 'idx_city_name_fa', columns: ['name_fa'])]
+#[ORM\UniqueConstraint(name: 'uniq_city_country_state_slug', columns: ['country_id', 'state_id', 'slug'])]
+#[ORM\UniqueConstraint(name: 'uniq_city_country_state_name', columns: ['country_id', 'state_id', 'name'])]
+#[UniqueEntity(fields: ['country', 'state', 'slug'])]
+#[UniqueEntity(fields: ['country', 'state', 'name'])]
 class City
 {
     #[ORM\Id]
@@ -26,6 +28,10 @@ class City
     #[ORM\JoinColumn(nullable: false, onDelete: 'RESTRICT')]
     #[Assert\NotNull]
     private ?Country $country = null;
+
+    #[ORM\ManyToOne(targetEntity: State::class, inversedBy: 'cities')]
+    #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+    private ?State $state = null;
 
     #[ORM\Column(length: 180)]
     #[Assert\NotBlank]
@@ -71,9 +77,15 @@ class City
 
     public function __toString(): string
     {
-        $country = $this->country instanceof Country ? ' - ' . (string) $this->country : '';
+        $parts = [];
+        if ($this->state instanceof State) {
+            $parts[] = $this->state->getName();
+        }
+        if ($this->country instanceof Country) {
+            $parts[] = $this->country->getName();
+        }
 
-        return ($this->nameFa ?: $this->name) . $country;
+        return ($this->nameFa ?: $this->name) . ($parts !== [] ? ' - ' . implode(' - ', $parts) : '');
     }
 
     #[ORM\PrePersist]
@@ -103,6 +115,18 @@ class City
     public function setCountry(?Country $country): self
     {
         $this->country = $country;
+
+        return $this;
+    }
+
+    public function getState(): ?State
+    {
+        return $this->state;
+    }
+
+    public function setState(?State $state): self
+    {
+        $this->state = $state;
 
         return $this;
     }

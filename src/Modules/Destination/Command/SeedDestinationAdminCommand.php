@@ -7,7 +7,10 @@ use App\Modules\Default\Entity\MenuCategory;
 use App\Modules\Destination\Controller\AirportController;
 use App\Modules\Destination\Controller\CityController;
 use App\Modules\Destination\Controller\CountryController;
+use App\Modules\Destination\Controller\DestinationImportController;
+use App\Modules\Destination\Controller\DestinationLookupController;
 use App\Modules\Destination\Controller\DistrictController;
+use App\Modules\Destination\Controller\StateController;
 use App\Modules\User\Entity\ControllerAction;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
@@ -34,6 +37,10 @@ class SeedDestinationAdminCommand extends Command
         'destination.country.create' => ['label' => 'destination.country.create', 'route' => 'destination_country_new', 'controller' => CountryController::class, 'action' => 'new'],
         'destination.country.update' => ['label' => 'destination.country.update', 'route' => 'destination_country_edit', 'controller' => CountryController::class, 'action' => 'edit'],
         'destination.country.delete' => ['label' => 'destination.country.delete', 'route' => 'destination_country_delete', 'controller' => CountryController::class, 'action' => 'delete'],
+        'destination.state.view' => ['label' => 'destination.state.view', 'route' => 'destination_state_index', 'controller' => StateController::class, 'action' => 'index'],
+        'destination.state.create' => ['label' => 'destination.state.create', 'route' => 'destination_state_new', 'controller' => StateController::class, 'action' => 'new'],
+        'destination.state.update' => ['label' => 'destination.state.update', 'route' => 'destination_state_edit', 'controller' => StateController::class, 'action' => 'edit'],
+        'destination.state.delete' => ['label' => 'destination.state.delete', 'route' => 'destination_state_delete', 'controller' => StateController::class, 'action' => 'delete'],
         'destination.city.view' => ['label' => 'destination.city.view', 'route' => 'destination_city_index', 'controller' => CityController::class, 'action' => 'index'],
         'destination.city.create' => ['label' => 'destination.city.create', 'route' => 'destination_city_new', 'controller' => CityController::class, 'action' => 'new'],
         'destination.city.update' => ['label' => 'destination.city.update', 'route' => 'destination_city_edit', 'controller' => CityController::class, 'action' => 'edit'],
@@ -46,6 +53,15 @@ class SeedDestinationAdminCommand extends Command
         'destination.airport.create' => ['label' => 'destination.airport.create', 'route' => 'destination_airport_new', 'controller' => AirportController::class, 'action' => 'new'],
         'destination.airport.update' => ['label' => 'destination.airport.update', 'route' => 'destination_airport_edit', 'controller' => AirportController::class, 'action' => 'edit'],
         'destination.airport.delete' => ['label' => 'destination.airport.delete', 'route' => 'destination_airport_delete', 'controller' => AirportController::class, 'action' => 'delete'],
+        'destination.import.view' => ['label' => 'destination.import.view', 'route' => 'destination_import_index', 'controller' => DestinationImportController::class, 'action' => 'index'],
+        'destination.import.bootstrap' => ['label' => 'destination.import.bootstrap', 'route' => 'destination_import_bootstrap', 'controller' => DestinationImportController::class, 'action' => 'bootstrap'],
+        'destination.import.enrichment' => ['label' => 'destination.import.enrichment', 'route' => 'destination_import_enrichment_travel_areas', 'controller' => DestinationImportController::class, 'action' => 'refreshTravelAreas'],
+        'destination.import.airports' => ['label' => 'destination.import.airports', 'route' => 'destination_import_enrichment_airports', 'controller' => DestinationImportController::class, 'action' => 'refreshAirports'],
+        'destination.lookup.countries' => ['label' => 'destination.lookup.view', 'route' => 'destination_lookup_countries', 'controller' => DestinationLookupController::class, 'action' => 'countries'],
+        'destination.lookup.states' => ['label' => 'destination.lookup.view', 'route' => 'destination_lookup_states', 'controller' => DestinationLookupController::class, 'action' => 'states'],
+        'destination.lookup.cities' => ['label' => 'destination.lookup.view', 'route' => 'destination_lookup_cities', 'controller' => DestinationLookupController::class, 'action' => 'cities'],
+        'destination.lookup.districts' => ['label' => 'destination.lookup.view', 'route' => 'destination_lookup_districts', 'controller' => DestinationLookupController::class, 'action' => 'districts'],
+        'destination.lookup.airports' => ['label' => 'destination.lookup.view', 'route' => 'destination_lookup_airports', 'controller' => DestinationLookupController::class, 'action' => 'airports'],
     ];
 
     /**
@@ -53,9 +69,11 @@ class SeedDestinationAdminCommand extends Command
      */
     private const MENU_DEFINITIONS = [
         ['route' => 'destination_country_index', 'name' => 'destination.navigation.countries', 'icon' => 'solar:flag-bold', 'position' => 10, 'permission' => 'destination.country.view'],
-        ['route' => 'destination_city_index', 'name' => 'destination.navigation.cities', 'icon' => 'solar:city-bold', 'position' => 20, 'permission' => 'destination.city.view'],
-        ['route' => 'destination_district_index', 'name' => 'destination.navigation.districts', 'icon' => 'solar:map-point-bold', 'position' => 30, 'permission' => 'destination.district.view'],
-        ['route' => 'destination_airport_index', 'name' => 'destination.navigation.airports', 'icon' => 'solar:plane-bold', 'position' => 40, 'permission' => 'destination.airport.view'],
+        ['route' => 'destination_state_index', 'name' => 'destination.navigation.states', 'icon' => 'solar:map-bold', 'position' => 20, 'permission' => 'destination.state.view'],
+        ['route' => 'destination_city_index', 'name' => 'destination.navigation.cities', 'icon' => 'solar:city-bold', 'position' => 30, 'permission' => 'destination.city.view'],
+        ['route' => 'destination_district_index', 'name' => 'destination.navigation.districts', 'icon' => 'solar:map-point-bold', 'position' => 40, 'permission' => 'destination.district.view'],
+        ['route' => 'destination_airport_index', 'name' => 'destination.navigation.airports', 'icon' => 'solar:plane-bold', 'position' => 50, 'permission' => 'destination.airport.view'],
+        ['route' => 'destination_import_index', 'name' => 'destination.navigation.import', 'icon' => 'solar:download-square-bold', 'position' => 60, 'permission' => 'destination.import.view'],
     ];
 
     public function __construct(

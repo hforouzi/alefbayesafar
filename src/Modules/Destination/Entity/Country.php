@@ -11,6 +11,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: CountryRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(name: 'idx_country_name', columns: ['name'])]
+#[ORM\Index(name: 'idx_country_name_fa', columns: ['name_fa'])]
 #[UniqueEntity(fields: ['iso2'], ignoreNull: true)]
 #[UniqueEntity(fields: ['iso3'], ignoreNull: true)]
 class Country
@@ -54,9 +56,16 @@ class Country
     #[ORM\OneToMany(mappedBy: 'country', targetEntity: City::class)]
     private Collection $cities;
 
+    /**
+     * @var Collection<int, State>
+     */
+    #[ORM\OneToMany(mappedBy: 'country', targetEntity: State::class)]
+    private Collection $states;
+
     public function __construct()
     {
         $this->cities = new ArrayCollection();
+        $this->states = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -162,5 +171,13 @@ class Country
     public function getCities(): Collection
     {
         return $this->cities;
+    }
+
+    /**
+     * @return Collection<int, State>
+     */
+    public function getStates(): Collection
+    {
+        return $this->states;
     }
 }

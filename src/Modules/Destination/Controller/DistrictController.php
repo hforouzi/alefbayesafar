@@ -4,10 +4,14 @@ namespace App\Modules\Destination\Controller;
 
 use App\Modules\Destination\Entity\District;
 use App\Modules\Destination\Form\DistrictType;
+use App\Modules\Destination\Repository\CityRepository;
 use App\Modules\Destination\Repository\DistrictRepository;
+use App\Modules\Destination\Service\AdminFilterLabelResolver;
+use App\Modules\Destination\Service\AdminListRequest;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,19 +20,25 @@ use Symfony\Component\Routing\Attribute\Route;
 class DistrictController extends AbstractController
 {
     #[Route('/', name: 'destination_district_index', methods: ['GET'])]
-    public function index(DistrictRepository $districtRepository): Response
+    public function index(Request $request, DistrictRepository $districtRepository, AdminListRequest $adminListRequest, AdminFilterLabelResolver $labelResolver): Response
     {
+        $filters = $adminListRequest->districtFilters($request);
+        $districts = $districtRepository->findForAdminPage($filters);
+
         return $this->render('@Destination/district/index.html.twig', [
-            'districts' => $districtRepository->findForAdminList(),
+            'districts' => $districts->items,
+            'pagination' => $districts,
+            'filterLabels' => $labelResolver->labels($filters),
         ]);
     }
 
     #[Route('/new', name: 'destination_district_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, CityRepository $cityRepository): Response
     {
         $district = new District();
         $form = $this->createForm(DistrictType::class, $district);
         $form->handleRequest($request);
+        $this->assignSelectedCity($form, $district, $cityRepository);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($district);
@@ -46,10 +56,11 @@ class DistrictController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'destination_district_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, District $district, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, District $district, EntityManagerInterface $entityManager, CityRepository $cityRepository): Response
     {
         $form = $this->createForm(DistrictType::class, $district);
         $form->handleRequest($request);
+        $this->assignSelectedCity($form, $district, $cityRepository);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
@@ -83,5 +94,22 @@ class DistrictController extends AbstractController
         }
 
         return $this->redirectToRoute('destination_district_index');
+    }
+
+    private function assignSelectedCity(\Symfony\Component\Form\FormInterface $form, District $district, CityRepository $cityRepository): void
+    {
+        if (!$form->isSubmitted()) {
+            return;
+        }
+
+        $cityId = $form->get('cityId')->getData();
+        $city = $cityId !== null && $cityId !== '' ? $cityRepository->find((int) $cityId) : null;
+        if ($city === null) {
+            $form->get('cityId')->addError(new FormError('destination.lookup.city_required'));
+
+            return;
+        }
+
+        $district->setCity($city);
     }
 }

@@ -5,6 +5,8 @@ namespace App\Modules\Destination\Controller;
 use App\Modules\Destination\Entity\City;
 use App\Modules\Destination\Form\CityType;
 use App\Modules\Destination\Repository\CityRepository;
+use App\Modules\Destination\Service\AdminFilterLabelResolver;
+use App\Modules\Destination\Service\AdminListRequest;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,10 +18,15 @@ use Symfony\Component\Routing\Attribute\Route;
 class CityController extends AbstractController
 {
     #[Route('/', name: 'destination_city_index', methods: ['GET'])]
-    public function index(CityRepository $cityRepository): Response
+    public function index(Request $request, CityRepository $cityRepository, AdminListRequest $adminListRequest, AdminFilterLabelResolver $labelResolver): Response
     {
+        $filters = $adminListRequest->cityFilters($request);
+        $cities = $cityRepository->findForAdminPage($filters);
+
         return $this->render('@Destination/city/index.html.twig', [
-            'cities' => $cityRepository->findForAdminList(),
+            'cities' => $cities->items,
+            'pagination' => $cities,
+            'filterLabels' => $labelResolver->labels($filters),
         ]);
     }
 

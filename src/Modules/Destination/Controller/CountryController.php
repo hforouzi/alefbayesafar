@@ -5,6 +5,7 @@ namespace App\Modules\Destination\Controller;
 use App\Modules\Destination\Entity\Country;
 use App\Modules\Destination\Form\CountryType;
 use App\Modules\Destination\Repository\CountryRepository;
+use App\Modules\Destination\Service\AdminListRequest;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -16,10 +17,14 @@ use Symfony\Component\Routing\Attribute\Route;
 class CountryController extends AbstractController
 {
     #[Route('/', name: 'destination_country_index', methods: ['GET'])]
-    public function index(CountryRepository $countryRepository): Response
+    public function index(Request $request, CountryRepository $countryRepository, AdminListRequest $adminListRequest): Response
     {
+        $filters = $adminListRequest->countryFilters($request);
+        $countries = $countryRepository->findForAdminPage($filters);
+
         return $this->render('@Destination/country/index.html.twig', [
-            'countries' => $countryRepository->findForAdminList(),
+            'countries' => $countries->items,
+            'pagination' => $countries,
         ]);
     }
 

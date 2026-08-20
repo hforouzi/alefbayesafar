@@ -1,7 +1,35 @@
 {{ form_start(form, { attr: { class: 'space-y-6' } }) }}
     {{ form_errors(form) }}
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {% for field in [form.city, form.name, form.nameFa, form.iataCode, form.icaoCode, form.latitude, form.longitude] %}
+        <div
+            class="relative"
+            data-controller="geo-select"
+            data-geo-select-url-value="{{ path('destination_lookup_cities') }}"
+            data-geo-select-min-length-value="2"
+            data-loading-text="{{ 'destination.lookup.loading'|trans }}"
+            data-no-results-text="{{ 'destination.lookup.no_results'|trans }}"
+            data-error-text="{{ 'destination.lookup.error'|trans }}"
+        >
+            <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ form.cityId.vars.id }}_search">{{ form.cityId.vars.label|trans }}</label>
+            <div class="flex gap-2">
+                <input
+                    id="{{ form.cityId.vars.id }}_search"
+                    type="search"
+                    class="form-input"
+                    value="{{ airport.city ? airport.city : '' }}"
+                    placeholder="{{ 'destination.lookup.city_placeholder'|trans }}"
+                    data-geo-select-target="input"
+                    data-action="input->geo-select#search keydown->geo-select#keydown"
+                    autocomplete="off"
+                >
+                <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'destination.lookup.clear'|trans }}</button>
+            </div>
+            {{ form_widget(form.cityId, { value: airport.city ? airport.city.id : '', attr: { 'data-geo-select-target': 'hidden' } }) }}
+            <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+            <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+            {{ form_errors(form.cityId) }}
+        </div>
+        {% for field in [form.name, form.nameFa, form.iataCode, form.icaoCode, form.latitude, form.longitude] %}
             <div>
                 {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
                 {{ form_widget(field) }}

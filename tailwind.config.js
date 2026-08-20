@@ -13,6 +13,7 @@ module.exports = {
         './templates/**/*.html.twig',
         './src/Modules/**/Resources/views/**/*.twig',
         './src/Modules/**/Resources/views/**/*.html.twig',
+        './assets/**/*.js',
     ],
     darkMode: 'class',
     theme: {

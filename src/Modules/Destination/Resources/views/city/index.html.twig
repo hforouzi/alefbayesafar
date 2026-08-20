@@ -7,12 +7,15 @@
 {% endblock %}
 
 {% block body %}
+    {% include '@Destination/admin/_table_filters.html.twig' with { table: 'cities' } %}
+
     {% set table_body %}
         <thead>
             <tr>
                 <th>{{ 'destination.city.name'|trans }}</th>
                 <th>{{ 'destination.city.name_fa'|trans }}</th>
                 <th>{{ 'destination.city.country'|trans }}</th>
+                <th>{{ 'destination.city.state'|trans }}</th>
                 <th>{{ 'destination.common.active'|trans }}</th>
                 <th class="text-right">{{ 'common.actions'|trans }}</th>
             </tr>
@@ -23,6 +26,7 @@
                     <td class="font-semibold text-black dark:text-white-light">{{ city.name }}</td>
                     <td>{{ city.nameFa ?: '-' }}</td>
                     <td>{{ city.country }}</td>
+                    <td>{{ city.state ?: '-' }}</td>
                     <td>
                         {% include 'components/_status_badge.html.twig' with {
                             status: city.active ? 'active' : 'inactive',
@@ -40,9 +44,10 @@
                     </td>
                 </tr>
             {% else %}
-                <tr><td colspan="5" class="py-10 text-center text-white-dark">{{ 'destination.city.empty'|trans }}</td></tr>
+                <tr><td colspan="6" class="py-10 text-center text-white-dark"><div>{{ 'destination.datatable.no_results'|trans }}</div><a href="{{ path('destination_city_index') }}" class="mt-3 inline-flex text-primary hover:underline">{{ 'destination.datatable.reset_filters'|trans }}</a></td></tr>
             {% endfor %}
         </tbody>
     {% endset %}
     {% include 'components/_card.html.twig' with { body: include('components/_table.html.twig', { body: table_body }) } %}
+    {% include '@Destination/admin/_pagination.html.twig' %}
 {% endblock %}

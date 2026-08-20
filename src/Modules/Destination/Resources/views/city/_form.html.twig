@@ -1,7 +1,7 @@
 {{ form_start(form, { attr: { class: 'space-y-6' } }) }}
     {{ form_errors(form) }}
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        {% for field in [form.country, form.name, form.nameFa, form.slug] %}
+        {% for field in [form.country, form.state, form.name, form.nameFa, form.slug] %}
             <div>
                 {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
                 {{ form_widget(field) }}

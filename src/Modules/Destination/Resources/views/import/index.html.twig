@@ -1,0 +1,187 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'destination.import.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'destination.import.subtitle'|trans }}{% endblock %}
+
+{% macro geo_select(id, label, url, dependsCountry, dependsState, dependsCity) %}
+    <div
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ url }}"
+        {% if dependsCountry %}data-geo-select-depends-country-value="{{ dependsCountry }}"{% endif %}
+        {% if dependsState %}data-geo-select-depends-state-value="{{ dependsState }}"{% endif %}
+        {% if dependsCity %}data-geo-select-depends-city-value="{{ dependsCity }}"{% endif %}
+        data-loading-text="{{ 'destination.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'destination.lookup.no_results'|trans }}"
+        data-error-text="{{ 'destination.lookup.error'|trans }}"
+        class="relative"
+    >
+        <label for="{{ id }}_search" class="mb-2 block text-sm font-semibold text-black dark:text-white-light">{{ label }}</label>
+        <div class="flex gap-2">
+            <input id="{{ id }}_search" type="search" autocomplete="off" class="form-input" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+            <button type="button" class="btn btn-outline-secondary px-3" data-action="geo-select#clear">{{ 'destination.lookup.clear'|trans }}</button>
+        </div>
+        <input id="{{ id }}" name="{{ id }}" type="hidden" data-geo-select-target="hidden">
+        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        <div class="mt-1 min-h-5 text-xs text-white-dark" data-geo-select-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{% block body %}
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,520px)_1fr]">
+        <div class="space-y-6">
+            {% set geo_body %}
+                <div class="space-y-4">
+                    {% for item in [
+                        { key: 'countries', count: counts.countries, route: 'countries' },
+                        { key: 'states', count: counts.states, route: 'states' },
+                        { key: 'cities', count: counts.cities, route: 'cities' }
+                    ] %}
+                        <div class="rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+                            <div class="flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <div class="font-semibold text-black dark:text-white-light">{{ ('destination.import.bootstrap.' ~ item.key)|trans }}</div>
+                                    <div class="text-xs text-white-dark">{{ 'destination.import.records'|trans }}: {{ item.count }}</div>
+                                </div>
+                                <form method="post" action="{{ path('destination_import_bootstrap', { target: item.route }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('destination_import_bootstrap_' ~ item.route) }}">
+                                    <button type="submit" class="btn btn-primary">{{ 'destination.import.bootstrap.refresh'|trans }}</button>
+                                </form>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endset %}
+
+            {% include 'components/_card.html.twig' with {
+                title: 'destination.import.bootstrap.title'|trans,
+                body: geo_body,
+            } %}
+
+            {% set airport_body %}
+                <p class="text-sm leading-6 text-white-dark">{{ 'destination.import.airport_data_help'|trans }}</p>
+                <div class="mt-4 rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <div class="font-semibold text-black dark:text-white-light">OurAirports</div>
+                            <div class="text-xs text-white-dark">{{ 'destination.import.records'|trans }}: {{ counts.airports }}</div>
+                            <div class="text-xs text-white-dark">
+                                {{ 'destination.import.last_source_download'|trans }}:
+                                {{ airportSourceMetadata.downloadedAt|default(null) ? airportSourceMetadata.downloadedAt|locale_datetime : '-' }}
+                            </div>
+                            <div class="text-xs text-white-dark">
+                                {{ 'destination.import.last_global_import'|trans }}:
+                                {{ airportGlobalRun and airportGlobalRun.finishedAt ? airportGlobalRun.finishedAt|locale_datetime : '-' }}
+                            </div>
+                            <div class="text-xs text-white-dark">
+                                {{ 'destination.import.latest_status'|trans }}:
+                                {{ airportGlobalRun ? ('destination.import.run_statuses.' ~ airportGlobalRun.status)|trans : '-' }}
+                            </div>
+                        </div>
+                        <form method="post" action="{{ path('destination_import_bootstrap', { target: 'airports' }) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('destination_import_bootstrap_airports') }}">
+                            <button type="submit" class="btn btn-primary">{{ 'destination.import.bootstrap.refresh_airports'|trans }}</button>
+                        </form>
+                    </div>
+                </div>
+            {% endset %}
+
+            {% include 'components/_card.html.twig' with {
+                title: 'destination.import.airport_data_title'|trans,
+                body: airport_body,
+            } %}
+        </div>
+
+        <div class="space-y-6">
+            {% set enrichment_body %}
+                <form method="post" action="{{ path('destination_import_enrichment_travel_areas') }}" class="space-y-5">
+                    <input type="hidden" name="_token" value="{{ csrf_token('destination_import_enrichment_travel_areas') }}">
+                    <div class="grid gap-5 lg:grid-cols-3">
+                        {{ controls.geo_select('country_id', 'destination.import.country_selector'|trans, path('destination_lookup_countries'), null, null, null) }}
+                        {{ controls.geo_select('state_id', 'destination.import.state_selector'|trans, path('destination_lookup_states'), '#country_id', null, null) }}
+                        {{ controls.geo_select('city_id', 'destination.import.city_selector'|trans, path('destination_lookup_cities'), '#country_id', '#state_id', null) }}
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-3">
+                        <label class="rounded border border-success/30 bg-success/10 p-3">
+                            <input type="checkbox" class="form-checkbox" checked disabled>
+                            <span class="ms-2 font-semibold">Wikivoyage</span>
+                            <span class="mt-1 block text-xs text-white-dark">{{ 'destination.import.provider_available'|trans }}</span>
+                        </label>
+                        <label class="rounded border border-warning/30 bg-warning/10 p-3 opacity-70">
+                            <input type="checkbox" class="form-checkbox" disabled>
+                            <span class="ms-2 font-semibold">Booking</span>
+                            <span class="mt-1 block text-xs text-white-dark">{{ 'destination.import.provider_booking_unavailable'|trans }}</span>
+                        </label>
+                        <label class="rounded border border-warning/30 bg-warning/10 p-3 opacity-70">
+                            <input type="checkbox" class="form-checkbox" disabled>
+                            <span class="ms-2 font-semibold">Tripadvisor</span>
+                            <span class="mt-1 block text-xs text-white-dark">{{ 'destination.import.provider_tripadvisor_unavailable'|trans }}</span>
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">{{ 'destination.import.refresh_travel_areas'|trans }}</button>
+                </form>
+
+                <form method="post" action="{{ path('destination_import_enrichment_airports') }}" class="mt-6 space-y-5 border-t border-white-light/60 pt-6 dark:border-dark-light/20">
+                    <input type="hidden" name="_token" value="{{ csrf_token('destination_import_enrichment_airports') }}">
+                    <div>
+                        <h3 class="text-base font-semibold text-black dark:text-white-light">{{ 'destination.import.enrichment.airports_title'|trans }}</h3>
+                        <p class="mt-1 text-sm text-white-dark">{{ 'destination.import.enrichment.airports_help'|trans }}</p>
+                    </div>
+                    <div class="grid gap-5 lg:grid-cols-3">
+                        {{ controls.geo_select('airport_country_id', 'destination.import.country_selector'|trans, path('destination_lookup_countries'), null, null, null) }}
+                        {{ controls.geo_select('airport_state_id', 'destination.import.state_selector'|trans, path('destination_lookup_states'), '#airport_country_id', null, null) }}
+                        {{ controls.geo_select('airport_city_id', 'destination.import.city_selector'|trans, path('destination_lookup_cities'), '#airport_country_id', '#airport_state_id', null) }}
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary">{{ 'destination.import.refresh_airports_targeted'|trans }}</button>
+                </form>
+            {% endset %}
+
+            {% include 'components/_card.html.twig' with {
+                title: 'destination.import.enrichment.title'|trans,
+                body: enrichment_body,
+            } %}
+
+            {% include '@Destination/admin/_table_filters.html.twig' with { table: 'import_runs' } %}
+
+            {% set recent_table %}
+                <thead>
+                    <tr>
+                        <th>{{ 'destination.import.target'|trans }}</th>
+                        <th>{{ 'destination.import.providers'|trans }}</th>
+                        <th>{{ 'destination.import.status'|trans }}</th>
+                        <th>{{ 'destination.import.found'|trans }}</th>
+                        <th>{{ 'destination.import.started_at'|trans }}</th>
+                        <th>{{ 'destination.import.finished_at'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for run in recentRuns %}
+                        <tr>
+                            <td>{{ run.countryName }}{% if run.cityName %} / {{ run.cityName }}{% endif %}</td>
+                            <td>{{ run.providers|join(', ') }}</td>
+                            <td>{{ ('destination.import.run_statuses.' ~ run.status)|trans }}</td>
+                            <td>{{ run.foundCount }}</td>
+                            <td>{{ run.startedAt ? run.startedAt|locale_datetime : '-' }}</td>
+                            <td>{{ run.finishedAt ? run.finishedAt|locale_datetime : '-' }}</td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="6" class="py-10 text-center text-white-dark">
+                                <div>{{ 'destination.datatable.no_results'|trans }}</div>
+                                <a href="{{ path('destination_import_index') }}" class="mt-3 inline-flex text-primary hover:underline">{{ 'destination.datatable.reset_filters'|trans }}</a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            {% endset %}
+
+            {% include 'components/_card.html.twig' with {
+                title: 'destination.import.recent_runs'|trans,
+                body: include('components/_table.html.twig', { body: recent_table }),
+            } %}
+
+            {% include '@Destination/admin/_pagination.html.twig' %}
+        </div>
+    </div>
+{% endblock %}

@@ -9,6 +9,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: DistrictRepository::class)]
 #[ORM\HasLifecycleCallbacks]
+#[ORM\Index(name: 'idx_district_name', columns: ['name'])]
+#[ORM\Index(name: 'idx_district_name_fa', columns: ['name_fa'])]
 #[ORM\UniqueConstraint(name: 'uniq_district_city_slug', columns: ['city_id', 'slug'])]
 #[UniqueEntity(fields: ['city', 'slug'])]
 class District

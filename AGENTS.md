@@ -363,6 +363,24 @@ At minimum, protect:
 
 Do not delete tests simply to make a build pass.
 
+## 18.1 Admin DataTables
+
+Every AlefBayeSafar administrative DataTable must provide column-based filtering for meaningful columns and full pagination.
+
+Filtering must use appropriate controls per column: text inputs for text fields, selects for boolean/status fields, searchable async relation selectors for relations, code inputs for codes, and date ranges for date/time columns where useful. A single global search box may be added as a convenience, but it does not satisfy the filtering requirement by itself.
+
+Large datasets must use server-side filtering and server-side pagination. Do not render tens of thousands of rows or options into one admin page and rely on browser-side filtering as the primary mechanism.
+
+Pagination must include a bounded page-size selector, numbered/sliding page links, First / Previous / Next / Last navigation, direct Go To Page, filtered total context, and preservation of active filters across pagination. Previous/Next-only pagination does not satisfy the project requirement.
+
+## 18.2 Date and time presentation
+
+Canonical backend and database dates must remain standard Gregorian `DateTime` / `DateTimeImmutable` values. Do not persist Jalali/Shamsi strings as canonical timestamps.
+
+Locale conversion happens at the presentation/input boundary. Persian (`fa`) administrative UI displays and accepts Jalali/Shamsi dates. English (`en`) administrative UI displays and accepts Gregorian dates.
+
+Date filters must parse locale-specific input into Gregorian date boundaries before Doctrine queries. Date-only `from` filters use start of day and `to` filters use end of day, using the project/application timezone consistently.
+
 ---
 
 # 19. Required quality checks

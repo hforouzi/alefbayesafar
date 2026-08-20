@@ -5,9 +5,13 @@ namespace App\Modules\Destination\Controller;
 use App\Modules\Destination\Entity\Airport;
 use App\Modules\Destination\Form\AirportType;
 use App\Modules\Destination\Repository\AirportRepository;
+use App\Modules\Destination\Repository\CityRepository;
+use App\Modules\Destination\Service\AdminFilterLabelResolver;
+use App\Modules\Destination\Service\AdminListRequest;
 use Doctrine\DBAL\Exception\ForeignKeyConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\Form\FormError;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -16,19 +20,25 @@ use Symfony\Component\Routing\Attribute\Route;
 class AirportController extends AbstractController
 {
     #[Route('/', name: 'destination_airport_index', methods: ['GET'])]
-    public function index(AirportRepository $airportRepository): Response
+    public function index(Request $request, AirportRepository $airportRepository, AdminListRequest $adminListRequest, AdminFilterLabelResolver $labelResolver): Response
     {
+        $filters = $adminListRequest->airportFilters($request);
+        $airports = $airportRepository->findForAdminPage($filters);
+
         return $this->render('@Destination/airport/index.html.twig', [
-            'airports' => $airportRepository->findForAdminList(),
+            'airports' => $airports->items,
+            'pagination' => $airports,
+            'filterLabels' => $labelResolver->labels($filters),
         ]);
     }
 
     #[Route('/new', name: 'destination_airport_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
+    public function new(Request $request, EntityManagerInterface $entityManager, CityRepository $cityRepository): Response
     {
         $airport = new Airport();
         $form = $this->createForm(AirportType::class, $airport);
         $form->handleRequest($request);
+        $this->assignSelectedCity($form, $airport, $cityRepository);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->persist($airport);
@@ -46,10 +56,11 @@ class AirportController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'destination_airport_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, Airport $airport, EntityManagerInterface $entityManager): Response
+    public function edit(Request $request, Airport $airport, EntityManagerInterface $entityManager, CityRepository $cityRepository): Response
     {
         $form = $this->createForm(AirportType::class, $airport);
         $form->handleRequest($request);
+        $this->assignSelectedCity($form, $airport, $cityRepository);
 
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
@@ -83,5 +94,22 @@ class AirportController extends AbstractController
         }
 
         return $this->redirectToRoute('destination_airport_index');
+    }
+
+    private function assignSelectedCity(\Symfony\Component\Form\FormInterface $form, Airport $airport, CityRepository $cityRepository): void
+    {
+        if (!$form->isSubmitted()) {
+            return;
+        }
+
+        $cityId = $form->get('cityId')->getData();
+        $city = $cityId !== null && $cityId !== '' ? $cityRepository->find((int) $cityId) : null;
+        if ($city === null) {
+            $form->get('cityId')->addError(new FormError('destination.lookup.city_required'));
+
+            return;
+        }
+
+        $airport->setCity($city);
     }
 }
