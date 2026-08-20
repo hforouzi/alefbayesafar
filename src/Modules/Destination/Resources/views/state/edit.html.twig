@@ -1,0 +1,10 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'destination.state.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ state.name }}{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with {
+        body: include('@Destination/state/_form.html.twig', { form: form }),
+    } %}
+{% endblock %}

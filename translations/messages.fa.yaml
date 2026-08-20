@@ -1,0 +1,146 @@
+app:
+  name: "الفبای سفر"
+  short_name: "ABS"
+
+auth:
+  login:
+    title: "ورود"
+    welcome_back: "خوش آمدید"
+    prompt: "برای ورود ایمیل و رمز عبور خود را وارد کنید."
+    email: "ایمیل"
+    email_placeholder: "ایمیل را وارد کنید"
+    password: "رمز عبور"
+    password_placeholder: "رمز عبور"
+    remember_me: "مرا به خاطر بسپار"
+    submit: "ورود"
+
+navigation:
+  dashboard: "داشبورد"
+  main: "اصلی"
+  administration: "مدیریت"
+  apps: "برنامه‌ها"
+  users: "کاربران"
+  roles: "نقش‌ها"
+  permissions: "مجوزها"
+  menu: "منو"
+  menu_categories: "دسته‌های منو"
+  settings: "تنظیمات"
+  other: "سایر"
+  login: "ورود"
+  login_cover: "ورود با کاور"
+  login_boxed: "ورود با چیدمان جعبه‌ای"
+  password_recovery: "بازیابی رمز عبور"
+  more: "بیشتر"
+  user_permissions: "کاربران و مجوزها"
+
+language:
+  persian: "فارسی"
+  english: "انگلیسی"
+  current: "زبان فعلی"
+  switch: "تغییر زبان"
+
+dashboard:
+  title: "داشبورد"
+  subtitle: "نمای کلی مدیریت"
+  description: "زیرساخت مدیریت الفبای سفر."
+  metric:
+    users: "کاربران"
+    roles: "نقش‌ها"
+    permissions: "مجوزها"
+  panel:
+    administration: "مدیریت"
+    administration_subtitle: "مدیریت کاربران، نقش‌ها و مجوزها."
+    template_status: "وضعیت زیرساخت"
+  placeholder:
+    no_data: "هنوز داده‌ای موجود نیست"
+  status:
+    browser_auth: "احراز هویت مرورگر"
+    permissions: "بررسی مجوزها"
+    menu: "منوی پویا"
+    ready: "آماده"
+
+common:
+  search: "جستجو"
+  save: "ذخیره"
+  cancel: "انصراف"
+  back: "بازگشت"
+  edit: "ویرایش"
+  delete: "حذف"
+  show: "نمایش"
+  close: "بستن"
+  search_action: "جستجو"
+  actions: "عملیات"
+  status: "وضعیت"
+  created_at: "تاریخ ایجاد"
+  updated_at: "تاریخ به‌روزرسانی"
+  all_rights_reserved: "تمام حقوق محفوظ است."
+  form:
+    error_title: "فرم ذخیره نشد"
+    error_intro: "لطفاً فیلدهای زیر را بررسی و اصلاح کنید."
+    required: "الزامی"
+    required_marker_label: "الزامی"
+
+layout:
+  logout: "خروج"
+  profile: "پروفایل"
+  search: "جستجو"
+  toggle_sidebar: "باز و بسته کردن ناوبری"
+  notifications: "اعلان‌ها"
+  language: "زبان"
+  theme: "ظاهر"
+  dark_mode: "حالت تاریک"
+  light_mode: "حالت روشن"
+  system_mode: "سیستم"
+  account: "حساب کاربری"
+  view_profile: "مشاهده پروفایل"
+
+flash:
+  primary: "اصلی"
+  secondary: "ثانویه"
+  success: "موفق"
+  warning: "هشدار"
+  danger: "خطا"
+  info: "اطلاع"
+
+security:
+  access_denied:
+    message: "شما مجوز دسترسی به این صفحه را ندارید."
+
+menu:
+  title: "منو"
+  subtitle: "مدیریت آیتم‌های منو"
+  list: "فهرست منو"
+  new: "منوی جدید"
+
+menu_category:
+  title: "دسته‌های منو"
+  subtitle: "مدیریت دسته‌های ناوبری"
+  list: "دسته‌های منو"
+  new: "دسته منوی جدید"
+
+permission:
+  title: "مجوزها"
+  subtitle: "مدیریت و گروه‌بندی مجوزها"
+  list: "مجوزها"
+  new: "مجوز جدید"
+  edit: "ویرایش مجوز"
+  empty: "مجوزی یافت نشد"
+
+user:
+  management: "مدیریت کاربران"
+  list: "کاربران"
+  email: "ایمیل"
+  password: "رمز عبور"
+  roles: "نقش‌ها"
+
+role:
+  title: "نقش‌ها"
+  new: "نقش جدید"
+  edit: "ویرایش نقش"
+  name: "نام"
+  parent: "نقش والد"
+  permissions: "مجوزها"
+  permissions_empty: "مجوزی موجود نیست"
+  save: "ذخیره"
+  back: "بازگشت"
+  cancel: "انصراف"

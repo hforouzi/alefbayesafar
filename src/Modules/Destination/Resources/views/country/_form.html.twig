@@ -1,0 +1,28 @@
+{{ form_start(form, { attr: { class: 'space-y-6' } }) }}
+    {{ form_errors(form) }}
+
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {% for field in [form.name, form.nameFa, form.iso2, form.iso3] %}
+            <div>
+                {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(field) }}
+                {{ form_errors(field) }}
+            </div>
+        {% endfor %}
+
+        <div class="flex items-end">
+            <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                {{ form_widget(form.active) }}
+                <span>{{ form.active.vars.label|trans }}</span>
+            </label>
+            {{ form_errors(form.active) }}
+        </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'common.save'|trans }}</button>
+        <a href="{{ path('destination_country_index') }}" class="btn btn-light">{{ 'common.cancel'|trans }}</a>
+    </div>
+
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}

@@ -9,7 +9,7 @@ use Symfony\Component\Routing\Attribute\Route;
 
 final class LocaleController extends AbstractController
 {
-    private const SUPPORTED_LOCALES = ['de', 'en'];
+    private const SUPPORTED_LOCALES = ['fa', 'en'];
 
     #[Route('/locale/{locale}', name: 'app_locale_switch')]
     public function switch(Request $request, string $locale): RedirectResponse

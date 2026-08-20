@@ -37,6 +37,14 @@
 /* dragndrop */
 @import 'dragndrop.css';
 
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../fonts/vazirmatn/Vazirmatn[wght].woff2') format('woff2');
+    font-weight: 100 900;
+    font-style: normal;
+    font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -51,7 +59,7 @@
     }
 
     body {
-        @apply bg-[#fafafa] font-nunito;
+        @apply bg-[#fafafa] font-vazirmatn;
     }
 
     body.dark {
@@ -398,6 +406,51 @@
     }
     [dir='rtl'] select {
         background-position: left 0.5rem center;
+    }
+
+    .locale-date-picker {
+        @apply absolute z-30 mt-2 w-[min(20rem,calc(100vw-2rem))] rounded-md border border-white-light bg-white p-3 font-vazirmatn shadow-3xl dark:border-[#1b2e4b] dark:bg-[#0e1726];
+    }
+
+    .locale-date-picker__header {
+        @apply mb-3 flex items-center justify-between gap-2;
+    }
+
+    .locale-date-picker__title {
+        @apply min-w-0 flex-1 truncate text-center text-sm font-bold text-black dark:text-white-light;
+    }
+
+    .locale-date-picker__nav {
+        @apply flex h-8 w-8 items-center justify-center rounded-md border border-white-light text-lg font-bold text-dark transition hover:border-primary hover:text-primary focus:border-primary focus:outline-none dark:border-[#1b2e4b] dark:text-white-dark dark:hover:border-primary;
+    }
+
+    .locale-date-picker__weekdays,
+    .locale-date-picker__days {
+        @apply grid grid-cols-7 gap-1 text-center;
+    }
+
+    .locale-date-picker__weekdays {
+        @apply mb-1 text-[11px] font-bold text-white-dark;
+    }
+
+    .locale-date-picker__weekdays span {
+        @apply py-1;
+    }
+
+    .locale-date-picker__day {
+        @apply flex h-8 min-w-8 items-center justify-center rounded-md border border-transparent text-xs font-semibold text-black transition hover:border-primary hover:bg-primary/10 hover:text-primary focus:border-primary focus:outline-none dark:text-white-light dark:hover:bg-primary/10;
+    }
+
+    .locale-date-picker__day--today {
+        @apply border-primary/40 text-primary;
+    }
+
+    .locale-date-picker__day--selected {
+        @apply border-primary bg-primary text-white hover:bg-primary hover:text-white dark:text-white;
+    }
+
+    .locale-date-picker__actions {
+        @apply mt-3 flex items-center justify-between gap-2 border-t border-white-light pt-3 dark:border-[#1b2e4b];
     }
 
     .has-error .form-input,

@@ -1,0 +1,172 @@
+{% macro text_filter(name, label, value, type) %}
+    <label class="block">
+        <span class="mb-1 block text-xs font-semibold text-white-dark">{{ label }}</span>
+        <input type="{{ type|default('text') }}" name="{{ name }}" value="{{ value|default('') }}" class="form-input form-input-sm" autocomplete="off">
+    </label>
+{% endmacro %}
+
+{% macro date_filter(name, label, value) %}
+    <div
+        class="relative"
+        data-controller="locale-date"
+        data-locale-date-locale-value="{{ app.request.locale|default('fa') }}"
+        data-locale-date-today-text-value="{{ 'destination.date.today'|trans }}"
+        data-locale-date-clear-text-value="{{ 'destination.date.clear'|trans }}"
+        data-locale-date-select-date-text-value="{{ 'destination.date.select_date'|trans }}"
+        data-locale-date-previous-month-text-value="{{ 'destination.date.previous_month'|trans }}"
+        data-locale-date-next-month-text-value="{{ 'destination.date.next_month'|trans }}"
+        data-locale-date-invalid-date-text-value="{{ 'destination.date.invalid_date'|trans }}"
+    >
+        <label for="{{ name }}_display" class="mb-1 block text-xs font-semibold text-white-dark">{{ label }}</label>
+        <div class="relative">
+            <input id="{{ name }}_display" name="{{ name }}_display" type="text" value="" class="form-input form-input-sm ltr:pr-9 rtl:pl-9" autocomplete="off" placeholder="{{ 'destination.date.select_date'|trans }}" data-locale-date-target="display" data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown">
+            <button type="button" class="absolute top-1/2 -translate-y-1/2 rounded p-1 text-white-dark hover:text-primary ltr:right-2 rtl:left-2" data-action="locale-date#toggle" aria-label="{{ 'destination.date.select_date'|trans }}">
+                <span aria-hidden="true">⌄</span>
+            </button>
+        </div>
+        <input type="hidden" name="{{ name }}" value="{{ value|default('') }}" data-locale-date-target="value">
+        <div class="mt-1 min-h-4 text-xs text-danger" data-locale-date-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% macro active_filter(value) %}
+    <label class="block">
+        <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'destination.datatable.columns.active'|trans }}</span>
+        <select name="active" class="form-select form-select-sm">
+            <option value="">{{ 'destination.datatable.all'|trans }}</option>
+            <option value="1" {{ value|default('') == '1' ? 'selected' : '' }}>{{ 'destination.common.active'|trans }}</option>
+            <option value="0" {{ value|default('') == '0' ? 'selected' : '' }}>{{ 'destination.common.inactive'|trans }}</option>
+        </select>
+    </label>
+{% endmacro %}
+
+{% macro relation_filter(name, id, label, url, value, selectedLabel, dependsCountry, dependsState, dependsCity) %}
+    <div
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ url }}"
+        {% if dependsCountry %}data-geo-select-depends-country-value="{{ dependsCountry }}"{% endif %}
+        {% if dependsState %}data-geo-select-depends-state-value="{{ dependsState }}"{% endif %}
+        {% if dependsCity %}data-geo-select-depends-city-value="{{ dependsCity }}"{% endif %}
+        data-loading-text="{{ 'destination.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'destination.lookup.no_results'|trans }}"
+        data-error-text="{{ 'destination.lookup.error'|trans }}"
+        class="relative"
+    >
+        <label for="{{ id }}_search" class="mb-1 block text-xs font-semibold text-white-dark">{{ label }}</label>
+        <div class="flex gap-2">
+            <input id="{{ id }}_search" type="search" value="{{ selectedLabel|default('') }}" autocomplete="off" class="form-input form-input-sm" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-2" data-action="geo-select#clear">{{ 'destination.lookup.clear'|trans }}</button>
+        </div>
+        <input id="{{ id }}" name="{{ name }}" value="{{ value|default('') }}" type="hidden" data-geo-select-target="hidden">
+        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        <div class="mt-1 min-h-4 text-xs text-white-dark" data-geo-select-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{% set table = table|default('') %}
+{% set filters = pagination.filters %}
+{% set filterLabels = filterLabels|default({}) %}
+
+<form method="get" class="mb-4 rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+    <div class="mb-4">
+        {{ controls.text_filter('q', 'destination.datatable.search'|trans, filters.q|default('')) }}
+    </div>
+
+    {% if table == 'countries' %}
+        <div class="grid gap-3 md:grid-cols-5">
+            {{ controls.text_filter('name', 'destination.datatable.columns.name'|trans, filters.name|default('')) }}
+            {{ controls.text_filter('nameFa', 'destination.datatable.columns.name_fa'|trans, filters.nameFa|default('')) }}
+            {{ controls.text_filter('iso2', 'destination.datatable.columns.iso2'|trans, filters.iso2|default('')) }}
+            {{ controls.text_filter('iso3', 'destination.datatable.columns.iso3'|trans, filters.iso3|default('')) }}
+            {{ controls.active_filter(filters.active|default('')) }}
+        </div>
+    {% elseif table == 'states' %}
+        <div class="grid gap-3 md:grid-cols-5">
+            {{ controls.text_filter('name', 'destination.datatable.columns.name'|trans, filters.name|default('')) }}
+            {{ controls.text_filter('nameFa', 'destination.datatable.columns.name_fa'|trans, filters.nameFa|default('')) }}
+            {{ controls.relation_filter('country', 'filter_country', 'destination.datatable.columns.country'|trans, path('destination_lookup_countries'), filters.country|default(''), filterLabels.country|default(''), null, null, null) }}
+            {{ controls.text_filter('code', 'destination.datatable.columns.admin1_code'|trans, filters.code|default('')) }}
+            {{ controls.active_filter(filters.active|default('')) }}
+        </div>
+    {% elseif table == 'cities' %}
+        <div class="grid gap-3 md:grid-cols-5">
+            {{ controls.text_filter('name', 'destination.datatable.columns.name'|trans, filters.name|default('')) }}
+            {{ controls.text_filter('nameFa', 'destination.datatable.columns.name_fa'|trans, filters.nameFa|default('')) }}
+            {{ controls.relation_filter('country', 'filter_country', 'destination.datatable.columns.country'|trans, path('destination_lookup_countries'), filters.country|default(''), filterLabels.country|default(''), null, null, null) }}
+            {{ controls.relation_filter('state', 'filter_state', 'destination.datatable.columns.state'|trans, path('destination_lookup_states'), filters.state|default(''), filterLabels.state|default(''), '#filter_country', null, null) }}
+            {{ controls.active_filter(filters.active|default('')) }}
+        </div>
+    {% elseif table == 'districts' %}
+        <div class="grid gap-3 md:grid-cols-5">
+            {{ controls.text_filter('name', 'destination.datatable.columns.name'|trans, filters.name|default('')) }}
+            {{ controls.text_filter('nameFa', 'destination.datatable.columns.name_fa'|trans, filters.nameFa|default('')) }}
+            {{ controls.relation_filter('country', 'filter_country', 'destination.datatable.columns.country'|trans, path('destination_lookup_countries'), filters.country|default(''), filterLabels.country|default(''), null, null, null) }}
+            {{ controls.relation_filter('city', 'filter_city', 'destination.datatable.columns.city'|trans, path('destination_lookup_cities'), filters.city|default(''), filterLabels.city|default(''), '#filter_country', null, null) }}
+            {{ controls.active_filter(filters.active|default('')) }}
+        </div>
+    {% elseif table == 'airports' %}
+        <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
+            {{ controls.text_filter('name', 'destination.datatable.columns.name'|trans, filters.name|default('')) }}
+            {{ controls.text_filter('nameFa', 'destination.datatable.columns.name_fa'|trans, filters.nameFa|default('')) }}
+            {{ controls.text_filter('iata', 'destination.datatable.columns.iata'|trans, filters.iata|default('')) }}
+            {{ controls.text_filter('icao', 'destination.datatable.columns.icao'|trans, filters.icao|default('')) }}
+            {{ controls.relation_filter('country', 'filter_country', 'destination.datatable.columns.country'|trans, path('destination_lookup_countries'), filters.country|default(''), filterLabels.country|default(''), null, null, null) }}
+            {{ controls.relation_filter('state', 'filter_state', 'destination.datatable.columns.state'|trans, path('destination_lookup_states'), filters.state|default(''), filterLabels.state|default(''), '#filter_country', null, null) }}
+            {{ controls.relation_filter('city', 'filter_city', 'destination.datatable.columns.city'|trans, path('destination_lookup_cities'), filters.city|default(''), filterLabels.city|default(''), '#filter_country', '#filter_state', null) }}
+            {{ controls.active_filter(filters.active|default('')) }}
+        </div>
+    {% elseif table == 'import_runs' %}
+        <div class="grid gap-3 md:grid-cols-4 xl:grid-cols-8">
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'destination.datatable.columns.provider'|trans }}</span>
+                <select name="provider" class="form-select form-select-sm">
+                    <option value="">{{ 'destination.datatable.all'|trans }}</option>
+                    {% for provider in ['geonames', 'ourairports', 'wikivoyage', 'booking', 'tripadvisor'] %}
+                        <option value="{{ provider }}" {{ filters.provider|default('') == provider ? 'selected' : '' }}>{{ provider }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'destination.datatable.columns.target_type'|trans }}</span>
+                <select name="targetType" class="form-select form-select-sm">
+                    <option value="">{{ 'destination.datatable.all'|trans }}</option>
+                    {% for target in ['country', 'state', 'city', 'district', 'airport'] %}
+                        <option value="{{ target }}" {{ filters.targetType|default('') == target ? 'selected' : '' }}>{{ ('destination.import.types.' ~ target)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {{ controls.text_filter('country', 'destination.datatable.columns.country_target'|trans, filters.country|default('')) }}
+            <label class="block">
+                <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'destination.datatable.columns.status'|trans }}</span>
+                <select name="status" class="form-select form-select-sm">
+                    <option value="">{{ 'destination.datatable.all'|trans }}</option>
+                    {% for status in ['running', 'completed', 'completed_with_errors', 'failed'] %}
+                        <option value="{{ status }}" {{ filters.status|default('') == status ? 'selected' : '' }}>{{ ('destination.import.run_statuses.' ~ status)|trans }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            {{ controls.date_filter('startedFrom', 'destination.datatable.columns.started_from'|trans, filters.startedFrom|default('')) }}
+            {{ controls.date_filter('startedTo', 'destination.datatable.columns.started_to'|trans, filters.startedTo|default('')) }}
+            {{ controls.date_filter('finishedFrom', 'destination.datatable.columns.finished_from'|trans, filters.finishedFrom|default('')) }}
+            {{ controls.date_filter('finishedTo', 'destination.datatable.columns.finished_to'|trans, filters.finishedTo|default('')) }}
+        </div>
+    {% endif %}
+
+    <div class="mt-4 flex flex-wrap items-end justify-between gap-3">
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'destination.datatable.rows_per_page'|trans }}</span>
+            <select name="pageSize" class="form-select form-select-sm w-28">
+                {% for size in [25, 50, 100] %}
+                    <option value="{{ size }}" {{ pagination.pageSize == size ? 'selected' : '' }}>{{ size }}</option>
+                {% endfor %}
+            </select>
+        </label>
+
+        <div class="flex flex-wrap gap-2">
+            <button type="submit" class="btn btn-primary">{{ 'destination.datatable.filter'|trans }}</button>
+            <a href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})) }}" class="btn btn-outline-secondary">{{ 'destination.datatable.reset_filters'|trans }}</a>
+        </div>
+    </div>
+</form>

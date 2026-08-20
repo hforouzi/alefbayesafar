@@ -1,0 +1,59 @@
+{% set route = app.request.attributes.get('_route') %}
+{% set route_params = app.request.attributes.get('_route_params')|default({}) %}
+{% set filters = pagination.filters|filter((value, key) => key != 'page' and value is not same as('') and value is not null) %}
+{% set pages = pagination.pages %}
+{% set current = pagination.page %}
+{% set start = max(1, current - 3) %}
+{% set end = min(pages, current + 3) %}
+
+<div class="mt-4 space-y-3 text-sm text-white-dark">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            {{ 'destination.datatable.showing'|trans({
+                '%from%': pagination.firstItemNumber,
+                '%to%': pagination.lastItemNumber,
+                '%total%': pagination.total
+            }) }}
+            <span class="mx-2 text-white-light">|</span>
+            {{ 'destination.datatable.page_x_of_y'|trans({ '%page%': current, '%pages%': pages }) }}
+        </div>
+
+        {% if pages > 1 %}
+            <nav class="flex flex-wrap items-center gap-1" aria-label="{{ 'destination.datatable.pagination'|trans }}">
+                <a href="{{ path(route, route_params|merge(filters)|merge({ page: 1 })) }}" class="btn btn-sm btn-outline-secondary {{ current <= 1 ? 'pointer-events-none opacity-50' : '' }}">{{ 'destination.datatable.first'|trans }}</a>
+                <a href="{{ path(route, route_params|merge(filters)|merge({ page: current > 1 ? current - 1 : 1 })) }}" class="btn btn-sm btn-outline-secondary {{ current <= 1 ? 'pointer-events-none opacity-50' : '' }}">{{ 'destination.datatable.previous'|trans }}</a>
+
+                {% if start > 1 %}
+                    <a href="{{ path(route, route_params|merge(filters)|merge({ page: 1 })) }}" class="btn btn-sm btn-outline-secondary px-3">1</a>
+                    {% if start > 2 %}<span class="px-2">...</span>{% endif %}
+                {% endif %}
+
+                {% for pageNumber in start..end %}
+                    <a
+                        href="{{ path(route, route_params|merge(filters)|merge({ page: pageNumber })) }}"
+                        class="btn btn-sm {{ pageNumber == current ? 'btn-primary pointer-events-none' : 'btn-outline-secondary' }} px-3"
+                    >{{ pageNumber }}</a>
+                {% endfor %}
+
+                {% if end < pages %}
+                    {% if end < pages - 1 %}<span class="px-2">...</span>{% endif %}
+                    <a href="{{ path(route, route_params|merge(filters)|merge({ page: pages })) }}" class="btn btn-sm btn-outline-secondary px-3">{{ pages }}</a>
+                {% endif %}
+
+                <a href="{{ path(route, route_params|merge(filters)|merge({ page: current < pages ? current + 1 : pages })) }}" class="btn btn-sm btn-outline-secondary {{ current >= pages ? 'pointer-events-none opacity-50' : '' }}">{{ 'destination.datatable.next'|trans }}</a>
+                <a href="{{ path(route, route_params|merge(filters)|merge({ page: pages })) }}" class="btn btn-sm btn-outline-secondary {{ current >= pages ? 'pointer-events-none opacity-50' : '' }}">{{ 'destination.datatable.last'|trans }}</a>
+            </nav>
+        {% endif %}
+    </div>
+
+    {% if pages > 1 %}
+        <form method="get" class="flex flex-wrap items-center gap-2">
+            {% for key, value in filters %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+            {% endfor %}
+            <label for="goto_page" class="font-semibold">{{ 'destination.datatable.page'|trans }}</label>
+            <input id="goto_page" name="page" type="number" min="1" max="{{ pages }}" value="{{ current }}" class="form-input form-input-sm w-24">
+            <button type="submit" class="btn btn-sm btn-outline-primary">{{ 'destination.datatable.go'|trans }}</button>
+        </form>
+    {% endif %}
+</div>

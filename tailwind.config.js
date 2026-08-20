@@ -13,6 +13,7 @@ module.exports = {
         './templates/**/*.html.twig',
         './src/Modules/**/Resources/views/**/*.twig',
         './src/Modules/**/Resources/views/**/*.html.twig',
+        './assets/**/*.js',
     ],
     darkMode: 'class',
     theme: {
@@ -68,7 +69,9 @@ module.exports = {
                 },
             },
             fontFamily: {
-                nunito: ['Nunito', 'sans-serif'],
+                sans: ['Vazirmatn', 'Nunito', 'Tahoma', 'Arial', 'sans-serif'],
+                nunito: ['Vazirmatn', 'Nunito', 'Tahoma', 'Arial', 'sans-serif'],
+                vazirmatn: ['Vazirmatn', 'Nunito', 'Tahoma', 'Arial', 'sans-serif'],
             },
             spacing: {
                 4.5: '18px',

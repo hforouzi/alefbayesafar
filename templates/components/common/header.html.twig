@@ -170,7 +170,7 @@
                     <a href="javascript:;"
                         class="flex items-center gap-2 rounded-full bg-white-light/40 px-2 py-2 text-sm font-semibold text-dark dark:bg-dark/40 dark:text-white-dark hover:text-primary hover:bg-white-light/90 dark:hover:bg-dark/60"
                         @click="toggle">
-                        <img src="{{ asset('assets/images/flags/' ~ app.request.locale|upper ~ '.svg') }}" alt="image"
+                        <img src="{{ asset('assets/images/flags/' ~ (app.request.locale|lower == 'fa' ? 'IR' : 'EN') ~ '.svg') }}" alt="image"
                             class="w-5 h-5 object-cover rounded-full" />
                         <span class="hidden sm:inline">{{ 'language.current'|trans }}:</span>
                         <span class="uppercase">{{ app.request.locale }}</span>
@@ -181,10 +181,10 @@
                             {{ 'language.switch'|trans }}
                         </li>
                         <li>
-                            <a href="{{ path('app_locale_switch', { locale: 'de' }) }}" class="hover:text-primary flex items-center gap-3"
-                                :class="{ 'bg-primary/10 text-primary': '{{ app.request.locale }}' === 'de' }">
-                                <img class="w-5 h-5 object-cover rounded-full" src="{{ asset('assets/images/flags/DE.svg') }}" alt="German" />
-                                <span>{{ 'language.german'|trans }}</span>
+                            <a href="{{ path('app_locale_switch', { locale: 'fa' }) }}" class="hover:text-primary flex items-center gap-3"
+                                :class="{ 'bg-primary/10 text-primary': '{{ app.request.locale }}' === 'fa' }">
+                                <img class="w-5 h-5 object-cover rounded-full" src="{{ asset('assets/images/flags/IR.svg') }}" alt="فارسی" />
+                                <span>{{ 'language.persian'|trans }}</span>
                             </a>
                         </li>
                         <li>

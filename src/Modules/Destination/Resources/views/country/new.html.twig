@@ -1,0 +1,10 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'destination.country.new'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'destination.country.subtitle'|trans }}{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with {
+        body: include('@Destination/country/_form.html.twig', { form: form }),
+    } %}
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'destination.country.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'destination.country.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('destination_country_new') }}" class="btn btn-primary">{{ 'destination.country.new'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% include '@Destination/admin/_table_filters.html.twig' with { table: 'countries' } %}
+
+    {% set table_body %}
+        <thead>
+            <tr>
+                <th>{{ 'destination.country.name'|trans }}</th>
+                <th>{{ 'destination.country.name_fa'|trans }}</th>
+                <th>{{ 'destination.country.iso2'|trans }}</th>
+                <th>{{ 'destination.common.active'|trans }}</th>
+                <th class="text-right">{{ 'common.actions'|trans }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for country in countries %}
+                <tr>
+                    <td class="font-semibold text-black dark:text-white-light">{{ country.name }}</td>
+                    <td>{{ country.nameFa ?: '-' }}</td>
+                    <td class="whitespace-nowrap">{{ country.iso2 ?: '-' }}</td>
+                    <td>
+                        {% include 'components/_status_badge.html.twig' with {
+                            status: country.active ? 'active' : 'inactive',
+                            label: country.active ? 'destination.common.active' : 'destination.common.inactive',
+                        } %}
+                    </td>
+                    <td class="whitespace-nowrap text-right">
+                        <div class="flex flex-wrap justify-end gap-2">
+                            <a href="{{ path('destination_country_edit', { id: country.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'common.edit'|trans }}</a>
+                            <form method="post" action="{{ path('destination_country_delete', { id: country.id }) }}" onsubmit="return confirm('{{ 'destination.common.delete_confirmation'|trans }}');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_destination_country_' ~ country.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'common.delete'|trans }}</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="py-10 text-center text-white-dark">
+                        <div>{{ 'destination.datatable.no_results'|trans }}</div>
+                        <a href="{{ path('destination_country_index') }}" class="mt-3 inline-flex text-primary hover:underline">{{ 'destination.datatable.reset_filters'|trans }}</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    {% endset %}
+
+    {% include 'components/_card.html.twig' with {
+        body: include('components/_table.html.twig', { body: table_body }),
+    } %}
+
+    {% include '@Destination/admin/_pagination.html.twig' %}
+{% endblock %}

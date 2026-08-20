@@ -30,11 +30,11 @@
                         </a>
                         <div class="ms-auto flex items-center rounded-lg border border-white-dark/30 bg-white p-1 text-xs font-semibold uppercase text-white-dark dark:bg-black"
                              aria-label="{{ 'language.switch'|trans }}">
-                            {% set currentLocale = app.request.locale|default('de') %}
-                            <a href="{{ path('app_locale_switch', {locale: 'de'}) }}"
-                               class="rounded-md px-2 py-1 transition {{ currentLocale == 'de' ? 'bg-primary text-white' : 'hover:text-primary' }}"
-                               aria-current="{{ currentLocale == 'de' ? 'true' : 'false' }}"
-                               title="{{ 'language.german'|trans }}">DE</a>
+                            {% set currentLocale = app.request.locale|default('fa') %}
+                            <a href="{{ path('app_locale_switch', {locale: 'fa'}) }}"
+                               class="rounded-md px-2 py-1 transition {{ currentLocale == 'fa' ? 'bg-primary text-white' : 'hover:text-primary' }}"
+                               aria-current="{{ currentLocale == 'fa' ? 'true' : 'false' }}"
+                               title="{{ 'language.persian'|trans }}">FA</a>
                             <a href="{{ path('app_locale_switch', {locale: 'en'}) }}"
                                class="rounded-md px-2 py-1 transition {{ currentLocale == 'en' ? 'bg-primary text-white' : 'hover:text-primary' }}"
                                aria-current="{{ currentLocale == 'en' ? 'true' : 'false' }}"
