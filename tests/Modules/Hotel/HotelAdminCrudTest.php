@@ -381,12 +381,12 @@ class HotelAdminCrudTest extends WebTestCase
 
         $amenity = $this->entityManager()->getRepository(HotelAmenity::class)->findOneBy(['name' => 'Amenity ' . $suffix]);
         self::assertInstanceOf(HotelAmenity::class, $amenity);
-        self::assertSame('amenity-' . strtolower($suffix), $amenity->getCode());
+        self::assertSame('amenity_' . strtolower($suffix), $amenity->getCode());
 
         $client->request('GET', '/admin/catalog/hotel-amenities/', [
             'name' => 'Amenity ' . $suffix,
             'nameFa' => 'امکان',
-            'code' => 'amenity-' . strtolower($suffix),
+            'code' => 'amenity_' . strtolower($suffix),
             'active' => '1',
             'pageSize' => 25,
         ]);

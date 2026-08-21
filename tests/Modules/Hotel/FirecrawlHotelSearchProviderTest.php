@@ -33,8 +33,13 @@ class FirecrawlHotelSearchProviderTest extends KernelTestCase
                         'stars' => 5,
                         'latitude' => 41.1,
                         'longitude' => 29.1,
+                        'markdown' => 'Gallery https://img.example.test/arts-a.jpg and https://img.example.test/arts-b.webp',
+                        'images' => [
+                            ['url' => 'https://img.example.test/arts-a.jpg', 'alt' => 'Duplicate image'],
+                        ],
                         'metadata' => [
                             'title' => 'Fallback title',
+                            'ogImage' => 'https://img.example.test/arts-og.png',
                         ],
                     ]],
                 ],
@@ -60,6 +65,10 @@ class FirecrawlHotelSearchProviderTest extends KernelTestCase
         self::assertSame('hotel-123', $result->candidates[0]->externalId);
         self::assertSame('Arts Hotel Istanbul', $result->candidates[0]->name);
         self::assertSame(5, $result->candidates[0]->stars);
+        self::assertCount(3, $result->candidates[0]->images);
+        self::assertSame('https://img.example.test/arts-a.jpg', $result->candidates[0]->images[0]['url']);
+        self::assertArrayNotHasKey('markdown', $result->candidates[0]->rawData);
+        self::assertStringContainsString('Gallery', (string) ($result->candidates[0]->rawData['amenityText'] ?? ''));
         self::assertSame(1, $result->metadata['rawCount']);
         self::assertSame(1, $result->metadata['count']);
     }

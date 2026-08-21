@@ -52,7 +52,7 @@ class HotelEntityTest extends KernelTestCase
         self::assertTrue($hotel->isActive());
         self::assertFalse($hotel->isVerified());
         self::assertCount(1, $hotel->getAmenities());
-        self::assertSame('free-wifi', $amenity->getCode());
+        self::assertSame('free_wifi', $amenity->getCode());
     }
 
     public function testHotelValidationRules(): void

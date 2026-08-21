@@ -5,6 +5,7 @@ namespace App\Modules\Hotel\Service;
 use App\Modules\Destination\Entity\City;
 use App\Modules\Destination\Entity\District;
 use App\Modules\Hotel\Entity\Hotel;
+use App\Modules\Hotel\Entity\HotelImage;
 use App\Modules\Hotel\Entity\HotelSourceReference;
 use App\Modules\Hotel\Repository\HotelRepository;
 use App\Modules\Hotel\Repository\HotelSourceReferenceRepository;
@@ -13,17 +14,20 @@ use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class HotelImportService
 {
+    private const IMAGE_LIMIT = 8;
+
     public function __construct(
         private EntityManagerInterface $entityManager,
         private HotelRepository $hotelRepository,
         private HotelSourceReferenceRepository $sourceReferenceRepository,
         private HotelCandidateNormalizer $normalizer,
         private HotelDuplicateResolver $duplicateResolver,
+        private HotelAmenityMapper $amenityMapper,
     ) {
     }
 
     /**
-     * @return array{hotel: Hotel, created: bool, matchedBy: string|null}
+     * @return array{hotel: Hotel, created: bool, matchedBy: string|null, imagesAdded: int, amenitiesAdded: int}
      */
     public function import(HotelCandidate $candidate, City $city, ?District $district = null): array
     {
@@ -55,13 +59,24 @@ final readonly class HotelImportService
             $this->entityManager->persist($hotel);
             $created = true;
         } else {
-            $this->normalizer->applyToHotel($hotel, $candidate, $matchedBy === 'source_external_id');
+            $this->normalizer->applyToHotel($hotel, $candidate, false);
+            if ($hotel->getDistrict() === null && $district instanceof District) {
+                $hotel->setDistrict($district);
+            }
         }
 
         $this->upsertSourceReference($hotel, $candidate, $matchedBy);
+        $imagesAdded = $this->addImages($hotel, $candidate);
+        $amenitiesAdded = $this->amenityMapper->apply($hotel, $candidate);
         $this->entityManager->flush();
 
-        return ['hotel' => $hotel, 'created' => $created, 'matchedBy' => $matchedBy];
+        return [
+            'hotel' => $hotel,
+            'created' => $created,
+            'matchedBy' => $matchedBy,
+            'imagesAdded' => $imagesAdded,
+            'amenitiesAdded' => $amenitiesAdded,
+        ];
     }
 
     private function uniqueSlug(City $city, HotelCandidate $candidate): string
@@ -100,12 +115,7 @@ final readonly class HotelImportService
             ->setChecksum($this->normalizer->checksum($candidate))
             ->setSyncStatus(HotelSourceReference::STATUS_SYNCED)
             ->setLastError(null)
-            ->setMetadata([
-                'provider' => $candidate->providerCode,
-                'sourceName' => $candidate->sourceName,
-                'matchedBy' => $matchedBy,
-                'candidate' => $candidate->toPayload(),
-            ])
+            ->setMetadata($this->metadata($candidate, $matchedBy))
             ->markSeen();
 
         if (!$hotel->getSourceReferences()->contains($reference)) {
@@ -113,5 +123,63 @@ final readonly class HotelImportService
         }
 
         return $reference;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function metadata(HotelCandidate $candidate, ?string $matchedBy): array
+    {
+        $rawData = $candidate->rawData;
+        unset($rawData['markdown'], $rawData['html'], $rawData['content']);
+
+        return [
+            'provider' => $candidate->providerCode,
+            'sourceName' => $candidate->sourceName,
+            'matchedBy' => $matchedBy,
+            'candidate' => [
+                'name' => $candidate->name,
+                'sourceUrl' => $candidate->sourceUrl,
+                'sourceTitle' => $candidate->sourceTitle,
+                'stars' => $candidate->stars,
+                'address' => $candidate->address,
+                'imageCount' => \count($candidate->images),
+            ],
+            'rawData' => $rawData,
+        ];
+    }
+
+    private function addImages(Hotel $hotel, HotelCandidate $candidate): int
+    {
+        $existing = [];
+        $hasPrimary = false;
+        $maxPosition = -1;
+        foreach ($hotel->getImages() as $image) {
+            $existing[$image->getPath()] = true;
+            $hasPrimary = $hasPrimary || $image->isPrimary();
+            $maxPosition = max($maxPosition, $image->getPosition());
+        }
+
+        $added = 0;
+        foreach (array_slice($candidate->images, 0, self::IMAGE_LIMIT) as $imageData) {
+            $url = trim($imageData['url']);
+            if ($url === '' || preg_match('#^https?://#i', $url) !== 1 || isset($existing[$url])) {
+                continue;
+            }
+
+            $image = (new HotelImage())
+                ->setHotel($hotel)
+                ->setPath($url)
+                ->setAlt($imageData['alt'] ?? $candidate->name)
+                ->setPosition(++$maxPosition)
+                ->setPrimary(!$hasPrimary);
+            $hotel->addImage($image);
+            $this->entityManager->persist($image);
+            $existing[$url] = true;
+            $hasPrimary = true;
+            ++$added;
+        }
+
+        return $added;
     }
 }

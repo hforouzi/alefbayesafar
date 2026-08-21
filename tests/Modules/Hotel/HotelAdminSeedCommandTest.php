@@ -3,6 +3,7 @@
 namespace App\Tests\Modules\Hotel;
 
 use App\Modules\Default\Entity\Menu;
+use App\Modules\Hotel\Entity\HotelAmenity;
 use App\Modules\User\Entity\Permission;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Console\Application;
@@ -44,5 +45,10 @@ class HotelAdminSeedCommandTest extends KernelTestCase
         self::assertInstanceOf(Menu::class, $amenityMenu);
         self::assertSame('hotel.navigation.hotels', $hotelMenu->getName());
         self::assertSame('hotel.navigation.amenities', $amenityMenu->getName());
+
+        $amenityRepository = $em->getRepository(HotelAmenity::class);
+        foreach (['wifi', 'pool', 'spa', 'parking', 'airport_shuttle', 'fitness_center', 'family_rooms', 'non_smoking_rooms', 'breakfast', 'restaurant', 'bar'] as $code) {
+            self::assertInstanceOf(HotelAmenity::class, $amenityRepository->findOneBy(['code' => $code]));
+        }
     }
 }

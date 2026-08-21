@@ -8,6 +8,8 @@ use App\Modules\Hotel\Controller\HotelAmenityController;
 use App\Modules\Hotel\Controller\HotelController;
 use App\Modules\Hotel\Controller\HotelImageController;
 use App\Modules\Hotel\Controller\HotelSearchController;
+use App\Modules\Hotel\Entity\HotelAmenity;
+use App\Modules\Hotel\Service\HotelAmenityCatalog;
 use App\Modules\User\Entity\ControllerAction;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
@@ -66,6 +68,7 @@ class SeedHotelAdminCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly RouterInterface $router,
+        private readonly HotelAmenityCatalog $amenityCatalog,
     ) {
         parent::__construct();
     }
@@ -78,15 +81,17 @@ class SeedHotelAdminCommand extends Command
         $categoryRepository = $this->entityManager->getRepository(MenuCategory::class);
         $menuRepository = $this->entityManager->getRepository(Menu::class);
         $roleRepository = $this->entityManager->getRepository(Role::class);
+        $amenityRepository = $this->entityManager->getRepository(HotelAmenity::class);
 
         $permissions = $this->seedPermissions($permissionRepository, $controllerActionRepository);
         $catalogCategory = $this->catalogCategory($categoryRepository);
         $this->seedMenus($menuRepository, $catalogCategory, $permissions);
+        $amenitiesCreated = $this->amenityCatalog->seed($amenityRepository, $this->entityManager);
         $this->assignToSuperAdmin($roleRepository, $permissions);
 
         $this->entityManager->flush();
 
-        $io->success('Hotel admin permissions and menus seeded.');
+        $io->success(sprintf('Hotel admin permissions, menus and amenities seeded. Amenities created: %d.', $amenitiesCreated));
 
         return Command::SUCCESS;
     }

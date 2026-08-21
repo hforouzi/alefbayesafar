@@ -12,6 +12,8 @@ use App\Modules\SearchSource\Provider\ProviderRequestException;
 
 final readonly class FirecrawlHotelSearchProvider implements HotelSearchProviderInterface
 {
+    private const IMAGE_LIMIT = 8;
+
     public function __construct(private FirecrawlProvider $firecrawlProvider)
     {
     }
@@ -155,8 +157,8 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
             sourceUrl: $url,
             sourceTitle: $title,
             name: $name,
-            nameFa: null,
-            address: $this->string($item['address'] ?? null),
+            nameFa: $this->string($item['nameFa'] ?? $metadata['nameFa'] ?? null),
+            address: $this->string($item['address'] ?? $metadata['address'] ?? null),
             countryName: $request->city->getCountry()?->getName(),
             cityName: $request->city->getName(),
             districtName: $request->district?->getName(),
@@ -166,9 +168,9 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
             website: $url,
             phone: $this->string($item['phone'] ?? null),
             descriptionOriginal: $description,
-            descriptionFa: null,
+            descriptionFa: $this->string($item['descriptionFa'] ?? $metadata['descriptionFa'] ?? null),
             images: $this->images($item),
-            rawData: $item,
+            rawData: $this->compactRawData($item),
         );
     }
 
@@ -202,6 +204,14 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
     {
         $value = $item['stars'] ?? $item['starRating'] ?? null;
         if (!is_numeric($value)) {
+            $text = implode(' ', array_filter([
+                $this->string($item['title'] ?? null),
+                $this->string($item['description'] ?? null),
+                $this->string($item['markdown'] ?? null),
+            ]));
+            $value = preg_match('/\b([1-5])\s*-?\s*star\b/i', $text, $match) === 1 ? $match[1] : null;
+        }
+        if (!is_numeric($value)) {
             return null;
         }
 
@@ -231,7 +241,36 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
      */
     private function images(array $item): array
     {
-        $images = $item['images'] ?? $item['image'] ?? [];
+        $urls = [];
+        $metadata = \is_array($item['metadata'] ?? null) ? $item['metadata'] : [];
+        foreach ([$item['images'] ?? null, $item['image'] ?? null, $metadata['ogImage'] ?? null, $metadata['image'] ?? null] as $images) {
+            foreach ($this->imageUrlsFromValue($images) as $url) {
+                $urls[$url] = $url;
+            }
+        }
+
+        foreach (['markdown', 'description'] as $field) {
+            $text = $this->string($item[$field] ?? null);
+            if ($text !== null && preg_match_all('#https?://[^\s\]\)"\'<>]+?\.(?:jpe?g|png|webp|gif)(?:\?[^\s\]\)"\'<>]*)?#i', $text, $matches) > 0) {
+                foreach ($matches[0] as $url) {
+                    $urls[$url] = $url;
+                }
+            }
+        }
+
+        $normalized = [];
+        foreach (array_slice(array_values($urls), 0, self::IMAGE_LIMIT) as $url) {
+            $normalized[] = ['url' => $url, 'alt' => $this->string($item['title'] ?? null)];
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @return string[]
+     */
+    private function imageUrlsFromValue(mixed $images): array
+    {
         if (\is_string($images)) {
             $images = [$images];
         }
@@ -239,15 +278,47 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
             return [];
         }
 
-        $normalized = [];
+        $urls = [];
         foreach ($images as $image) {
-            $url = \is_array($image) ? $this->string($image['url'] ?? null) : $this->string($image);
-            if ($url !== null && str_starts_with($url, 'http')) {
-                $normalized[] = ['url' => $url, 'alt' => \is_array($image) ? $this->string($image['alt'] ?? null) : null];
+            $url = \is_array($image) ? $this->string($image['url'] ?? $image['src'] ?? null) : $this->string($image);
+            if ($url !== null && preg_match('#^https?://#i', $url) === 1) {
+                $urls[] = $url;
             }
         }
 
-        return $normalized;
+        return $urls;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     *
+     * @return array<string, mixed>
+     */
+    private function compactRawData(array $item): array
+    {
+        $amenityText = $this->amenityText($item);
+        unset($item['markdown'], $item['html'], $item['content']);
+        if ($amenityText !== null) {
+            $item['amenityText'] = $amenityText;
+        }
+
+        return $item;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     */
+    private function amenityText(array $item): ?string
+    {
+        $parts = [];
+        foreach (['description', 'snippet', 'markdown'] as $field) {
+            $value = $this->string($item[$field] ?? null);
+            if ($value !== null) {
+                $parts[] = mb_substr(preg_replace('/\s+/u', ' ', $value) ?? $value, 0, 2000);
+            }
+        }
+
+        return $parts !== [] ? implode(' ', $parts) : null;
     }
 
     private function string(mixed $value): ?string
