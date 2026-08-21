@@ -56,7 +56,7 @@ class HotelController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}', name: 'hotel_show', methods: ['GET'])]
+    #[Route('/{id}', name: 'hotel_show', requirements: ['id' => '\d+'], methods: ['GET'])]
     public function show(Hotel $hotel, HotelRepository $hotelRepository): Response
     {
         $loadedHotel = $hotel->getId() !== null ? $hotelRepository->findWithDetails($hotel->getId()) : null;
@@ -66,7 +66,7 @@ class HotelController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/edit', name: 'hotel_edit', methods: ['GET', 'POST'])]
+    #[Route('/{id}/edit', name: 'hotel_edit', requirements: ['id' => '\d+'], methods: ['GET', 'POST'])]
     public function edit(Request $request, Hotel $hotel, EntityManagerInterface $entityManager, CityRepository $cityRepository, DistrictRepository $districtRepository): Response
     {
         $form = $this->createForm(HotelType::class, $hotel);
@@ -87,7 +87,7 @@ class HotelController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/delete', name: 'hotel_delete', methods: ['POST'])]
+    #[Route('/{id}/delete', name: 'hotel_delete', requirements: ['id' => '\d+'], methods: ['POST'])]
     public function delete(Request $request, Hotel $hotel, EntityManagerInterface $entityManager): Response
     {
         if (!$this->isCsrfTokenValid('delete_hotel_' . $hotel->getId(), (string) $request->request->get('_token'))) {

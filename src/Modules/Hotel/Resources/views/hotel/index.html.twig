@@ -3,7 +3,10 @@
 {% block page_title %}{{ 'hotel.hotel.title'|trans }}{% endblock %}
 {% block page_subtitle %}{{ 'hotel.hotel.subtitle'|trans }}{% endblock %}
 {% block page_actions %}
-    <a href="{{ path('hotel_new') }}" class="btn btn-primary">{{ 'hotel.hotel.new'|trans }}</a>
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('hotel_search') }}" class="btn btn-outline-primary">{{ 'hotel.search.action'|trans }}</a>
+        <a href="{{ path('hotel_new') }}" class="btn btn-primary">{{ 'hotel.hotel.new'|trans }}</a>
+    </div>
 {% endblock %}
 
 {% block body %}

@@ -7,6 +7,9 @@ use App\Modules\Default\Entity\MenuCategory;
 use App\Modules\Hotel\Controller\HotelAmenityController;
 use App\Modules\Hotel\Controller\HotelController;
 use App\Modules\Hotel\Controller\HotelImageController;
+use App\Modules\Hotel\Controller\HotelSearchController;
+use App\Modules\Hotel\Entity\HotelAmenity;
+use App\Modules\Hotel\Service\HotelAmenityCatalog;
 use App\Modules\User\Entity\ControllerAction;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
@@ -31,6 +34,8 @@ class SeedHotelAdminCommand extends Command
         'hotel.create' => ['label' => 'hotel.create', 'route' => 'hotel_new', 'controller' => HotelController::class, 'action' => 'new'],
         'hotel.update' => ['label' => 'hotel.update', 'route' => 'hotel_edit', 'controller' => HotelController::class, 'action' => 'edit'],
         'hotel.delete' => ['label' => 'hotel.delete', 'route' => 'hotel_delete', 'controller' => HotelController::class, 'action' => 'delete'],
+        'hotel.search' => ['label' => 'hotel.search', 'route' => 'hotel_search', 'controller' => HotelSearchController::class, 'action' => 'search'],
+        'hotel.import' => ['label' => 'hotel.import', 'route' => 'hotel_search_import', 'controller' => HotelSearchController::class, 'action' => 'import'],
         'hotel.image.create' => ['label' => 'hotel.image.create', 'route' => 'hotel_image_new', 'controller' => HotelImageController::class, 'action' => 'new'],
         'hotel.image.update' => ['label' => 'hotel.image.update', 'route' => 'hotel_image_edit', 'controller' => HotelImageController::class, 'action' => 'edit'],
         'hotel.image.delete' => ['label' => 'hotel.image.delete', 'route' => 'hotel_image_delete', 'controller' => HotelImageController::class, 'action' => 'delete'],
@@ -63,6 +68,7 @@ class SeedHotelAdminCommand extends Command
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly RouterInterface $router,
+        private readonly HotelAmenityCatalog $amenityCatalog,
     ) {
         parent::__construct();
     }
@@ -75,15 +81,17 @@ class SeedHotelAdminCommand extends Command
         $categoryRepository = $this->entityManager->getRepository(MenuCategory::class);
         $menuRepository = $this->entityManager->getRepository(Menu::class);
         $roleRepository = $this->entityManager->getRepository(Role::class);
+        $amenityRepository = $this->entityManager->getRepository(HotelAmenity::class);
 
         $permissions = $this->seedPermissions($permissionRepository, $controllerActionRepository);
         $catalogCategory = $this->catalogCategory($categoryRepository);
         $this->seedMenus($menuRepository, $catalogCategory, $permissions);
+        $amenitiesCreated = $this->amenityCatalog->seed($amenityRepository, $this->entityManager);
         $this->assignToSuperAdmin($roleRepository, $permissions);
 
         $this->entityManager->flush();
 
-        $io->success('Hotel admin permissions and menus seeded.');
+        $io->success(sprintf('Hotel admin permissions, menus and amenities seeded. Amenities created: %d.', $amenitiesCreated));
 
         return Command::SUCCESS;
     }

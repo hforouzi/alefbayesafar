@@ -1,0 +1,37 @@
+{% set signed = payloadSigner.sign(candidate) %}
+<div class="rounded border border-white-light/60 bg-white p-4 shadow-sm dark:border-dark-light/20 dark:bg-[#0e1726]">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="min-w-0 flex-1">
+            <div class="flex flex-wrap items-center gap-2">
+                <h3 class="text-base font-semibold text-black dark:text-white-light">{{ candidate.name }}</h3>
+                <span class="badge badge-outline-primary">{{ candidate.sourceName }}</span>
+                {% if candidate.stars %}
+                    <span class="badge badge-outline-warning">{{ 'hotel.hotel.stars_value'|trans({ '%stars%': candidate.stars }) }}</span>
+                {% endif %}
+            </div>
+            <div class="mt-2 space-y-1 text-sm text-white-dark">
+                <div>{{ candidate.cityName ?: city }}{% if candidate.districtName %} - {{ candidate.districtName }}{% endif %}</div>
+                {% if candidate.address %}<div>{{ candidate.address }}</div>{% endif %}
+                {% if candidate.descriptionOriginal %}<p class="line-clamp-2">{{ candidate.descriptionOriginal }}</p>{% endif %}
+                {% if candidate.sourceUrl %}
+                    <a href="{{ candidate.sourceUrl }}" target="_blank" rel="noopener" class="inline-flex text-primary hover:underline">{{ candidate.sourceUrl }}</a>
+                {% endif %}
+            </div>
+            {% if candidate.images|length > 0 %}
+                <div class="mt-3 flex gap-2 overflow-x-auto">
+                    {% for image in candidate.images|slice(0, 3) %}
+                        <img src="{{ image.url }}" alt="{{ image.alt|default(candidate.name) }}" class="h-16 w-24 rounded object-cover">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        <form method="post" action="{{ path('hotel_search_import') }}" class="shrink-0">
+            <input type="hidden" name="_token" value="{{ csrf_token('hotel_search_import') }}">
+            <input type="hidden" name="candidate" value="{{ signed.payload }}">
+            <input type="hidden" name="signature" value="{{ signed.signature }}">
+            <input type="hidden" name="city" value="{{ city.id }}">
+            <input type="hidden" name="district" value="{{ district ? district.id : '' }}">
+            <button type="submit" class="btn btn-primary">{{ 'hotel.search.import'|trans }}</button>
+        </form>
+    </div>
+</div>

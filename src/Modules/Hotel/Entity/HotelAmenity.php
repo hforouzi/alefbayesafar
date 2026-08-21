@@ -34,7 +34,7 @@ class HotelAmenity
     #[ORM\Column(length: 120)]
     #[Assert\NotBlank]
     #[Assert\Length(max: 120)]
-    #[Assert\Regex(pattern: '/^[a-z0-9][a-z0-9-]*$/')]
+    #[Assert\Regex(pattern: '/^[a-z0-9][a-z0-9_]*$/')]
     private string $code = '';
 
     #[ORM\Column(type: 'boolean', options: ['default' => true])]
@@ -151,8 +151,8 @@ class HotelAmenity
     public static function normalizeCode(string $code): string
     {
         $code = strtolower(trim($code));
-        $code = preg_replace('/[^a-z0-9]+/', '-', $code) ?? '';
+        $code = preg_replace('/[^a-z0-9]+/', '_', $code) ?? '';
 
-        return trim($code, '-');
+        return trim($code, '_');
     }
 }

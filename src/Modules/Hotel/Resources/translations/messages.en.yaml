@@ -57,6 +57,23 @@ hotel:
     city_required: "Select a city."
   validation:
     district_city_mismatch: "The selected district must belong to the selected city."
+  search:
+    title: "Search External Hotels"
+    subtitle: "Search enabled hotel-capable data sources and import selected candidates into the canonical catalog."
+    action: "Search External Hotels"
+    criteria: "Search criteria"
+    query: "Hotel name / query"
+    query_required: "Enter a hotel name or search query."
+    search: "Search"
+    import: "Import"
+    no_candidates: "No hotel candidates were found."
+    source_no_candidates: "No hotel candidates found for this source."
+    source: "Source"
+    provider: "Provider"
+    flash:
+      imported: "Hotel candidate imported successfully."
+      matched: "Existing hotel matched and source reference updated."
+      invalid_import: "The selected hotel candidate could not be imported."
   hotel:
     title: "Hotels"
     subtitle: "Manage canonical hotel catalog records."

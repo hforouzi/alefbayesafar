@@ -8,11 +8,16 @@ use App\Modules\Destination\Entity\District;
 use App\Modules\Destination\Entity\State;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\Hotel\Entity\HotelAmenity;
+use App\Modules\SearchSource\Entity\SearchSource;
+use App\Modules\SearchSource\Enum\SearchSourceProviderType;
+use App\Modules\SearchSource\Provider\FirecrawlClient;
 use App\Modules\User\Entity\Role;
 use App\Modules\User\Entity\UserEntity;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\HttpClient\MockHttpClient;
+use Symfony\Component\HttpClient\Response\MockResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Routing\RouterInterface;
 
@@ -30,6 +35,8 @@ class HotelAdminCrudTest extends WebTestCase
             'hotel_show',
             'hotel_edit',
             'hotel_delete',
+            'hotel_search',
+            'hotel_search_import',
             'hotel_amenity_index',
             'hotel_amenity_new',
             'hotel_amenity_edit',
@@ -311,6 +318,50 @@ class HotelAdminCrudTest extends WebTestCase
         self::assertSelectorExists('select[name="pageSize"] option[value="100"][selected]');
     }
 
+    public function testHotelSearchPageAndImportCsrfProtection(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $client->loginUser($this->createSuperAdminUser());
+        [$city] = $this->persistGeography(self::uniqueSuffix());
+        $this->persistHotelSearchSource();
+        self::getContainer()->set(FirecrawlClient::class, new FirecrawlClient(new MockHttpClient(new MockResponse(json_encode([
+            'success' => true,
+            'data' => [
+                'web' => [[
+                    'title' => 'Arts Hotel Istanbul Harbiye - Booking',
+                    'url' => 'https://www.booking.com/hotel/tr/arts-hotel-istanbul.html',
+                    'description' => 'Hotel candidate from mocked Firecrawl.',
+                ]],
+            ],
+        ], JSON_THROW_ON_ERROR))), 'key', 'https://firecrawl.test'));
+
+        $crawler = $client->request('GET', '/admin/catalog/hotels/search');
+        self::assertResponseIsSuccessful();
+        self::assertSame('get', strtolower($crawler->filter('form[name="hotel_search"]')->attr('method') ?? ''));
+        self::assertSelectorExists('input[name="hotel_search[query]"]');
+        self::assertSelectorExists('input[name="hotel_search[cityId]"]');
+        self::assertSelectorTextContains('body', 'جستجوی هتل');
+
+        $client->submit($crawler->filter('form')->form([
+            'hotel_search[query]' => 'Arts Hotel',
+            'hotel_search[cityId]' => (string) $city->getId(),
+            'hotel_search[districtId]' => '',
+        ]));
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('/admin/catalog/hotels/search?', $client->getRequest()->getUri());
+        self::assertSelectorTextContains('body', 'Arts Hotel Istanbul Harbiye');
+        self::assertSelectorExists('form[action="/admin/catalog/hotels/search/import"][method="post"]');
+
+        $client->request('POST', '/admin/catalog/hotels/search/import', [
+            '_token' => 'bad',
+            'candidate' => 'bad',
+            'signature' => 'bad',
+            'city' => $city->getId(),
+        ]);
+        self::assertResponseRedirects('/admin/catalog/hotels/search');
+    }
+
     public function testAmenityCrudAndFilters(): void
     {
         $client = self::createClient();
@@ -330,12 +381,12 @@ class HotelAdminCrudTest extends WebTestCase
 
         $amenity = $this->entityManager()->getRepository(HotelAmenity::class)->findOneBy(['name' => 'Amenity ' . $suffix]);
         self::assertInstanceOf(HotelAmenity::class, $amenity);
-        self::assertSame('amenity-' . strtolower($suffix), $amenity->getCode());
+        self::assertSame('amenity_' . strtolower($suffix), $amenity->getCode());
 
         $client->request('GET', '/admin/catalog/hotel-amenities/', [
             'name' => 'Amenity ' . $suffix,
             'nameFa' => 'امکان',
-            'code' => 'amenity-' . strtolower($suffix),
+            'code' => 'amenity_' . strtolower($suffix),
             'active' => '1',
             'pageSize' => 25,
         ]);
@@ -401,6 +452,24 @@ class HotelAdminCrudTest extends WebTestCase
         $em->flush();
 
         return [$city, $district];
+    }
+
+    private function persistHotelSearchSource(): SearchSource
+    {
+        $source = (new SearchSource())
+            ->setName('Booking')
+            ->setDomain('booking.com')
+            ->setProvider('firecrawl')
+            ->setProviderType(SearchSourceProviderType::FIRECRAWL)
+            ->setCapabilities([SearchSource::CAPABILITY_HOTEL])
+            ->setPriority(0)
+            ->setEnabled(true);
+
+        $em = $this->entityManager();
+        $em->persist($source);
+        $em->flush();
+
+        return $source;
     }
 
     private function deleteToken(Crawler $crawler, int $entityId): string
