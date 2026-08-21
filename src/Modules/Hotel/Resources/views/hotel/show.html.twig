@@ -1,0 +1,107 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ hotel.name }}{% endblock %}
+{% block page_subtitle %}{{ 'hotel.hotel.detail'|trans }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('hotel_index') }}" class="btn btn-outline-secondary">{{ 'hotel.hotel.back_to_list'|trans }}</a>
+        <a href="{{ path('hotel_edit', { id: hotel.id }) }}" class="btn btn-primary">{{ 'common.edit'|trans }}</a>
+        <a href="{{ path('hotel_image_new', { hotel: hotel.id }) }}" class="btn btn-outline-primary">{{ 'hotel.image.add'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <div class="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {% set identity %}
+            <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.name'|trans }}</dt><dd class="font-semibold text-black dark:text-white-light">{{ hotel.name }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.name_fa'|trans }}</dt><dd>{{ hotel.nameFa ?: '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.common.slug'|trans }}</dt><dd>{{ hotel.slug }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.stars'|trans }}</dt><dd>{{ hotel.stars ? 'hotel.hotel.stars_value'|trans({ '%stars%': hotel.stars }) : 'hotel.hotel.unrated'|trans }}</dd></div>
+            </dl>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.identity'|trans, body: identity } %}
+
+        {% set location %}
+            <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.city'|trans }}</dt><dd>{{ hotel.city }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.district'|trans }}</dt><dd>{{ hotel.district ?: '-' }}</dd></div>
+                <div class="md:col-span-2"><dt class="text-xs text-white-dark">{{ 'hotel.hotel.address'|trans }}</dt><dd>{{ hotel.address ?: '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.latitude'|trans }}</dt><dd>{{ hotel.latitude ?: '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.longitude'|trans }}</dt><dd>{{ hotel.longitude ?: '-' }}</dd></div>
+            </dl>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.location'|trans, body: location } %}
+
+        {% set contact %}
+            <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.website'|trans }}</dt><dd>{% if hotel.website %}<a href="{{ hotel.website }}" class="text-primary hover:underline" rel="noopener" target="_blank">{{ hotel.website }}</a>{% else %}-{% endif %}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.phone'|trans }}</dt><dd>{{ hotel.phone ?: '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.check_in'|trans }}</dt><dd>{{ hotel.checkIn ? hotel.checkIn|date('H:i') : '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.check_out'|trans }}</dt><dd>{{ hotel.checkOut ? hotel.checkOut|date('H:i') : '-' }}</dd></div>
+            </dl>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.contact'|trans, body: contact } %}
+
+        {% set status %}
+            <dl class="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.common.active'|trans }}</dt><dd>{{ hotel.active ? 'hotel.common.active'|trans : 'hotel.common.inactive'|trans }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.common.verified'|trans }}</dt><dd>{{ hotel.verified ? 'hotel.common.verified'|trans : 'hotel.common.unverified'|trans }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.created'|trans }}</dt><dd>{{ hotel.createdAt ? hotel.createdAt|locale_datetime : '-' }}</dd></div>
+                <div><dt class="text-xs text-white-dark">{{ 'hotel.hotel.updated'|trans }}</dt><dd>{{ hotel.updatedAt ? hotel.updatedAt|locale_datetime : '-' }}</dd></div>
+            </dl>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.status'|trans, body: status } %}
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {% set content %}
+            <div class="space-y-5">
+                <div>
+                    <h4 class="mb-2 text-sm font-semibold">{{ 'hotel.hotel.description_original'|trans }}</h4>
+                    <p class="whitespace-pre-wrap text-white-dark">{{ hotel.descriptionOriginal ?: '-' }}</p>
+                </div>
+                <div>
+                    <h4 class="mb-2 text-sm font-semibold">{{ 'hotel.hotel.description_fa'|trans }}</h4>
+                    <p class="whitespace-pre-wrap text-white-dark">{{ hotel.descriptionFa ?: '-' }}</p>
+                </div>
+            </div>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.descriptions'|trans, body: content } %}
+
+        {% set amenities %}
+            <div class="flex flex-wrap gap-2">
+                {% for amenity in hotel.amenities %}
+                    <span class="rounded border border-primary/30 bg-primary/10 px-3 py-1 text-sm text-primary">{{ amenity }}</span>
+                {% else %}
+                    <span class="text-white-dark">{{ 'hotel.amenity.empty'|trans }}</span>
+                {% endfor %}
+            </div>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.amenities'|trans, body: amenities } %}
+    </div>
+
+    <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
+        {% set images %}{% include '@Hotel/image/_grid.html.twig' with { hotel: hotel } %}{% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.images'|trans, body: images } %}
+
+        {% set sources %}
+            <div class="space-y-3">
+                {% for sourceReference in hotel.sourceReferences %}
+                    <div class="rounded border border-white-light/60 p-3 dark:border-dark-light/20">
+                        <div class="font-semibold">{{ sourceReference.source }}</div>
+                        <div class="text-xs text-white-dark">{{ 'hotel.source.external_id'|trans }}: {{ sourceReference.externalId ?: '-' }}</div>
+                        <div class="text-xs text-white-dark">{{ 'hotel.source.status'|trans }}: {{ sourceReference.syncStatus }}</div>
+                        <div class="text-xs text-white-dark">{{ 'hotel.source.last_synced_at'|trans }}: {{ sourceReference.lastSyncedAt ? sourceReference.lastSyncedAt|locale_datetime : '-' }}</div>
+                        {% if sourceReference.sourceUrl %}
+                            <a href="{{ sourceReference.sourceUrl }}" class="text-xs text-primary hover:underline" rel="noopener" target="_blank">{{ sourceReference.sourceTitle ?: sourceReference.sourceUrl }}</a>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="text-white-dark">{{ 'hotel.source.empty'|trans }}</div>
+                {% endfor %}
+            </div>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.sections.sources'|trans, body: sources } %}
+    </div>
+{% endblock %}

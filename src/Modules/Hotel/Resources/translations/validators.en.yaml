@@ -1,0 +1,5 @@
+hotel:
+  image:
+    validation:
+      image_file: "Upload a valid image file."
+      path_or_file_required: "Upload an image file or provide an image URL/path."

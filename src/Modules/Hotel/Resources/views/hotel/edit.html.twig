@@ -1,0 +1,11 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.hotel.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ hotel.name }}{% endblock %}
+
+{% block body %}
+    <div class="space-y-6">
+        {% include 'components/_card.html.twig' with { body: include('@Hotel/hotel/_form.html.twig', { form: form, hotel: hotel }) } %}
+        {% include 'components/_card.html.twig' with { body: include('@Hotel/image/_grid.html.twig', { hotel: hotel }) } %}
+    </div>
+{% endblock %}

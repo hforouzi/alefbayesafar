@@ -1,0 +1,148 @@
+{{ form_start(form, { attr: { class: 'space-y-8' } }) }}
+    {{ form_errors(form) }}
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.identity'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.name, form.nameFa, form.slug, form.stars] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.location'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div
+                class="relative"
+                data-controller="geo-select"
+                data-geo-select-url-value="{{ path('destination_lookup_cities') }}"
+                data-geo-select-min-length-value="2"
+                data-loading-text="{{ 'hotel.lookup.loading'|trans }}"
+                data-no-results-text="{{ 'hotel.lookup.no_results'|trans }}"
+                data-error-text="{{ 'hotel.lookup.error'|trans }}"
+            >
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ form.cityId.vars.id }}_search">{{ form.cityId.vars.label|trans }}</label>
+                <div class="flex gap-2">
+                    <input id="{{ form.cityId.vars.id }}_search" type="search" class="form-input" value="{{ hotel.city ? hotel.city : '' }}" placeholder="{{ 'hotel.lookup.city_placeholder'|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+                    <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'hotel.lookup.clear'|trans }}</button>
+                </div>
+                {{ form_widget(form.cityId, { value: hotel.city ? hotel.city.id : '', attr: { 'data-geo-select-target': 'hidden' } }) }}
+                <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+                <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+                {{ form_errors(form.cityId) }}
+            </div>
+
+            <div
+                class="relative"
+                data-controller="geo-select"
+                data-geo-select-url-value="{{ path('destination_lookup_districts') }}"
+                data-geo-select-depends-city-value="#{{ form.cityId.vars.id }}"
+                data-geo-select-min-length-value="2"
+                data-loading-text="{{ 'hotel.lookup.loading'|trans }}"
+                data-no-results-text="{{ 'hotel.lookup.no_results'|trans }}"
+                data-error-text="{{ 'hotel.lookup.error'|trans }}"
+            >
+                <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ form.districtId.vars.id }}_search">{{ form.districtId.vars.label|trans }}</label>
+                <div class="flex gap-2">
+                    <input id="{{ form.districtId.vars.id }}_search" type="search" class="form-input" value="{{ hotel.district ? hotel.district : '' }}" placeholder="{{ 'hotel.lookup.district_placeholder'|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+                    <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'hotel.lookup.clear'|trans }}</button>
+                </div>
+                {{ form_widget(form.districtId, { value: hotel.district ? hotel.district.id : '', attr: { 'data-geo-select-target': 'hidden' } }) }}
+                <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+                <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+                {{ form_errors(form.districtId) }}
+            </div>
+
+            <div class="lg:col-span-2">
+                {{ form_label(form.address, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(form.address) }}
+                {{ form_errors(form.address) }}
+            </div>
+            {% for field in [form.latitude, form.longitude] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.contact'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for field in [form.website, form.phone] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.stay'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for field in [form.checkIn, form.checkOut] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.descriptions'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for field in [form.descriptionOriginal, form.descriptionFa] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.amenities'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {% for choice in form.amenities %}
+                <label class="inline-flex items-center gap-3 rounded border border-white-light/60 bg-white px-3 py-2 dark:border-dark-light/20 dark:bg-[#0e1726]">
+                    {{ form_widget(choice) }}
+                    <span>{{ choice.vars.label }}</span>
+                </label>
+            {% else %}
+                <div class="text-sm text-white-dark">{{ 'hotel.amenity.empty'|trans }}</div>
+            {% endfor %}
+        </div>
+        {{ form_errors(form.amenities) }}
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'hotel.sections.status'|trans }}</h3>
+        <div class="flex flex-wrap gap-4">
+            {% for field in [form.active, form.verified] %}
+                <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                    {{ form_widget(field) }}
+                    <span>{{ field.vars.label|trans }}</span>
+                </label>
+                {{ form_errors(field) }}
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'common.save'|trans }}</button>
+        <a href="{{ hotel.id ? path('hotel_show', { id: hotel.id }) : path('hotel_index') }}" class="btn btn-light">{{ 'common.cancel'|trans }}</a>
+    </div>
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}
