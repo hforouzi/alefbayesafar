@@ -1,0 +1,6 @@
+search_source:
+  validation:
+    language_format: 'Use a locale code such as fa, en, or en-US.'
+    config_json: 'Configuration must be valid JSON.'
+    config_object: 'Configuration must be a JSON object.'
+    config_secret: 'Configuration must not contain secret key "{{ key }}". Store secrets in environment variables.'

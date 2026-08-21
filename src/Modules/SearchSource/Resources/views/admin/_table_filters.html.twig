@@ -1,0 +1,67 @@
+{% macro text_filter(name, label, value) %}
+    <label class="block">
+        <span class="mb-1 block text-xs font-semibold text-white-dark">{{ label }}</span>
+        <input type="text" name="{{ name }}" value="{{ value|default('') }}" class="form-input form-input-sm" autocomplete="off">
+    </label>
+{% endmacro %}
+
+{% macro country_filter(value, selectedLabel) %}
+    <div
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ path('destination_lookup_countries') }}"
+        data-loading-text="{{ 'search_source.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'search_source.lookup.no_results'|trans }}"
+        data-error-text="{{ 'search_source.lookup.error'|trans }}"
+        class="relative"
+    >
+        <label for="filter_country_search" class="mb-1 block text-xs font-semibold text-white-dark">{{ 'search_source.source.country'|trans }}</label>
+        <div class="flex gap-2">
+            <input id="filter_country_search" type="search" value="{{ selectedLabel|default('') }}" autocomplete="off" class="form-input form-input-sm" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+            <button type="button" class="btn btn-sm btn-outline-secondary px-2" data-action="geo-select#clear">{{ 'search_source.lookup.clear'|trans }}</button>
+        </div>
+        <input id="filter_country" name="country" value="{{ value|default('') }}" type="hidden" data-geo-select-target="hidden">
+        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        <div class="mt-1 min-h-4 text-xs text-white-dark" data-geo-select-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+{% set filters = pagination.filters %}
+{% set filterLabels = filterLabels|default({}) %}
+
+<form method="get" class="mb-4 rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+    <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+        {{ controls.text_filter('q', 'search_source.datatable.search'|trans, filters.q|default('')) }}
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'search_source.source.provider_type'|trans }}</span>
+            <select name="providerType" class="form-select form-select-sm">
+                <option value="">{{ 'search_source.datatable.all'|trans }}</option>
+                {% for value in ['FIRECRAWL', 'API', 'SCRAPER', 'AFFILIATE_API', 'MANUAL'] %}
+                    <option value="{{ value }}" {{ filters.providerType|default('') == value ? 'selected' : '' }}>{{ ('search_source.provider_type.' ~ value|lower)|trans }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        {{ controls.country_filter(filters.country|default(''), filterLabels.country|default('')) }}
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'search_source.common.enabled'|trans }}</span>
+            <select name="enabled" class="form-select form-select-sm">
+                <option value="">{{ 'search_source.datatable.all'|trans }}</option>
+                <option value="1" {{ filters.enabled|default('') == '1' ? 'selected' : '' }}>{{ 'search_source.common.enabled'|trans }}</option>
+                <option value="0" {{ filters.enabled|default('') == '0' ? 'selected' : '' }}>{{ 'search_source.common.disabled'|trans }}</option>
+            </select>
+        </label>
+        <label class="block">
+            <span class="mb-1 block text-xs font-semibold text-white-dark">{{ 'search_source.datatable.rows_per_page'|trans }}</span>
+            <select name="pageSize" class="form-select form-select-sm">
+                {% for size in [25, 50, 100] %}
+                    <option value="{{ size }}" {{ pagination.pageSize == size ? 'selected' : '' }}>{{ size }}</option>
+                {% endfor %}
+            </select>
+        </label>
+    </div>
+
+    <div class="mt-4 flex flex-wrap justify-end gap-2">
+        <button type="submit" class="btn btn-primary">{{ 'search_source.datatable.filter'|trans }}</button>
+        <a href="{{ path(app.request.attributes.get('_route'), app.request.attributes.get('_route_params')|default({})) }}" class="btn btn-outline-secondary">{{ 'search_source.datatable.reset_filters'|trans }}</a>
+    </div>
+</form>

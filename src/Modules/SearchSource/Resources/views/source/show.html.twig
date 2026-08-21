@@ -1,0 +1,50 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ source.name }}{% endblock %}
+{% block page_subtitle %}{{ 'search_source.source.detail'|trans }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('search_source_edit', { id: source.id }) }}" class="btn btn-primary">{{ 'common.edit'|trans }}</a>
+        <a href="{{ path('search_source_index') }}" class="btn btn-outline-secondary">{{ 'common.back'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <div class="grid gap-5 lg:grid-cols-2">
+        {% set identity %}
+            <dl class="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+                <div><dt class="text-white-dark">{{ 'search_source.source.name'|trans }}</dt><dd class="font-semibold text-black dark:text-white-light">{{ source.name }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.domain'|trans }}</dt><dd>{{ source.domain }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.provider'|trans }}</dt><dd>{{ source.provider }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.provider_type'|trans }}</dt><dd>{{ ('search_source.provider_type.' ~ source.providerType.value|lower)|trans }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.country'|trans }}</dt><dd>{{ source.country ?: '-' }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.language'|trans }}</dt><dd>{{ source.language ?: '-' }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.source.priority'|trans }}</dt><dd>{{ source.priority }}</dd></div>
+                <div><dt class="text-white-dark">{{ 'search_source.common.enabled'|trans }}</dt><dd>{{ source.enabled ? 'search_source.common.enabled'|trans : 'search_source.common.disabled'|trans }}</dd></div>
+            </dl>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'search_source.sections.identity'|trans, body: identity } %}
+
+        {% set capabilities %}
+            <div class="flex flex-wrap gap-2">
+                {% for capability in source.capabilities %}
+                    <span class="badge badge-outline-primary">{{ ('search_source.capability.' ~ capability)|trans }}</span>
+                {% else %}
+                    <span class="text-white-dark">{{ 'search_source.source.no_capabilities'|trans }}</span>
+                {% endfor %}
+            </div>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'search_source.sections.capabilities'|trans, body: capabilities } %}
+    </div>
+
+    {% set config %}
+        {% if source.config is not empty %}
+            <pre class="overflow-auto rounded bg-gray-100 p-4 text-xs dark:bg-black/30">{{ source.config|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
+        {% else %}
+            <div class="text-sm text-white-dark">{{ 'search_source.source.empty_config'|trans }}</div>
+        {% endif %}
+    {% endset %}
+    <div class="mt-5">
+        {% include 'components/_card.html.twig' with { title: 'search_source.sections.config'|trans, body: config } %}
+    </div>
+{% endblock %}
