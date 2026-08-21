@@ -5,6 +5,7 @@ namespace App\Modules\SearchSource\Repository;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\SearchSource\Enum\SearchSourceProviderType;
 use App\Shared\Admin\Pagination\PaginatedResult;
+use App\Modules\Destination\Entity\Country;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
 use Doctrine\ORM\Tools\Pagination\Paginator;
@@ -54,6 +55,33 @@ class SearchSourceRepository extends ServiceEntityRepository
         }
 
         return $this->paginate($builder, $filters['page'], $filters['pageSize'], $filters);
+    }
+
+    /**
+     * @return SearchSource[]
+     */
+    public function findEnabledForCapability(string $capability, ?Country $country = null): array
+    {
+        $builder = $this->createQueryBuilder('source')
+            ->addSelect('country')
+            ->leftJoin('source.country', 'country')
+            ->andWhere('source.enabled = :enabled')
+            ->andWhere('source.capabilities LIKE :capability')
+            ->setParameter('enabled', true)
+            ->setParameter('capability', '%"' . strtolower($capability) . '"%')
+            ->orderBy('source.priority', 'ASC')
+            ->addOrderBy('source.name', 'ASC')
+            ->addOrderBy('source.id', 'ASC');
+
+        if ($country instanceof Country) {
+            $builder
+                ->andWhere('source.country IS NULL OR source.country = :country')
+                ->setParameter('country', $country);
+        } else {
+            $builder->andWhere('source.country IS NULL');
+        }
+
+        return $builder->getQuery()->getResult();
     }
 
     /**

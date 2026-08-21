@@ -1,0 +1,100 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.search.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'hotel.search.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('hotel_index') }}" class="btn btn-outline-secondary">{{ 'hotel.hotel.back_to_list'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% set search_form %}
+        {{ form_start(form, { attr: { class: 'space-y-5' } }) }}
+            {{ form_errors(form) }}
+            <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+                <div>
+                    {{ form_label(form.query, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(form.query) }}
+                    {{ form_errors(form.query) }}
+                </div>
+
+                <div
+                    class="relative"
+                    data-controller="geo-select"
+                    data-geo-select-url-value="{{ path('destination_lookup_cities') }}"
+                    data-geo-select-min-length-value="2"
+                    data-loading-text="{{ 'hotel.lookup.loading'|trans }}"
+                    data-no-results-text="{{ 'hotel.lookup.no_results'|trans }}"
+                    data-error-text="{{ 'hotel.lookup.error'|trans }}"
+                >
+                    <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ form.cityId.vars.id }}_search">{{ form.cityId.vars.label|trans }}</label>
+                    <div class="flex gap-2">
+                        <input id="{{ form.cityId.vars.id }}_search" type="search" class="form-input" value="{{ city ? city : '' }}" placeholder="{{ 'hotel.lookup.city_placeholder'|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+                        <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'hotel.lookup.clear'|trans }}</button>
+                    </div>
+                    {{ form_widget(form.cityId, { value: city ? city.id : '', attr: { 'data-geo-select-target': 'hidden' } }) }}
+                    <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+                    <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+                    {{ form_errors(form.cityId) }}
+                </div>
+
+                <div
+                    class="relative"
+                    data-controller="geo-select"
+                    data-geo-select-url-value="{{ path('destination_lookup_districts') }}"
+                    data-geo-select-depends-city-value="#{{ form.cityId.vars.id }}"
+                    data-geo-select-min-length-value="2"
+                    data-loading-text="{{ 'hotel.lookup.loading'|trans }}"
+                    data-no-results-text="{{ 'hotel.lookup.no_results'|trans }}"
+                    data-error-text="{{ 'hotel.lookup.error'|trans }}"
+                >
+                    <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ form.districtId.vars.id }}_search">{{ form.districtId.vars.label|trans }}</label>
+                    <div class="flex gap-2">
+                        <input id="{{ form.districtId.vars.id }}_search" type="search" class="form-input" value="{{ district ? district : '' }}" placeholder="{{ 'hotel.lookup.district_placeholder'|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+                        <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'hotel.lookup.clear'|trans }}</button>
+                    </div>
+                    {{ form_widget(form.districtId, { value: district ? district.id : '', attr: { 'data-geo-select-target': 'hidden' } }) }}
+                    <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+                    <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+                    {{ form_errors(form.districtId) }}
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="submit" class="btn btn-primary">{{ 'hotel.search.search'|trans }}</button>
+                <a href="{{ path('hotel_search') }}" class="btn btn-outline-secondary">{{ 'hotel.datatable.reset_filters'|trans }}</a>
+            </div>
+        {{ form_end(form) }}
+    {% endset %}
+    {% include 'components/_card.html.twig' with { title: 'hotel.search.criteria'|trans, body: search_form } %}
+
+    {% if summary %}
+        <div class="mt-6 space-y-4">
+            {% for result in summary.results %}
+                {% if not result.success %}
+                    <div class="rounded border border-danger/30 bg-danger/10 p-4 text-danger">
+                        <div class="font-semibold">{{ result.source.name }}</div>
+                        {% for error in result.errors %}
+                            <div class="text-sm">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% elseif result.candidates|length == 0 %}
+                    <div class="rounded border border-white-light/60 bg-white p-4 text-white-dark dark:border-dark-light/20 dark:bg-[#0e1726]">
+                        <div class="font-semibold text-black dark:text-white-light">{{ result.source.name }}</div>
+                        <div class="text-sm">{{ 'hotel.search.source_no_candidates'|trans }}</div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+
+            {% if summary.candidates|length > 0 %}
+                <div class="space-y-4">
+                    {% for candidate in summary.candidates %}
+                        {% include '@Hotel/search/_candidate_card.html.twig' with { candidate: candidate, city: city, district: district, payloadSigner: payloadSigner } %}
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="rounded border border-white-light/60 bg-white p-6 text-center text-white-dark dark:border-dark-light/20 dark:bg-[#0e1726]">
+                    {{ 'hotel.search.no_candidates'|trans }}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

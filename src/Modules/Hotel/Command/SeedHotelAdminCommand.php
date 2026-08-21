@@ -7,6 +7,7 @@ use App\Modules\Default\Entity\MenuCategory;
 use App\Modules\Hotel\Controller\HotelAmenityController;
 use App\Modules\Hotel\Controller\HotelController;
 use App\Modules\Hotel\Controller\HotelImageController;
+use App\Modules\Hotel\Controller\HotelSearchController;
 use App\Modules\User\Entity\ControllerAction;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
@@ -31,6 +32,8 @@ class SeedHotelAdminCommand extends Command
         'hotel.create' => ['label' => 'hotel.create', 'route' => 'hotel_new', 'controller' => HotelController::class, 'action' => 'new'],
         'hotel.update' => ['label' => 'hotel.update', 'route' => 'hotel_edit', 'controller' => HotelController::class, 'action' => 'edit'],
         'hotel.delete' => ['label' => 'hotel.delete', 'route' => 'hotel_delete', 'controller' => HotelController::class, 'action' => 'delete'],
+        'hotel.search' => ['label' => 'hotel.search', 'route' => 'hotel_search', 'controller' => HotelSearchController::class, 'action' => 'search'],
+        'hotel.import' => ['label' => 'hotel.import', 'route' => 'hotel_search_import', 'controller' => HotelSearchController::class, 'action' => 'import'],
         'hotel.image.create' => ['label' => 'hotel.image.create', 'route' => 'hotel_image_new', 'controller' => HotelImageController::class, 'action' => 'new'],
         'hotel.image.update' => ['label' => 'hotel.image.update', 'route' => 'hotel_image_edit', 'controller' => HotelImageController::class, 'action' => 'edit'],
         'hotel.image.delete' => ['label' => 'hotel.image.delete', 'route' => 'hotel_image_delete', 'controller' => HotelImageController::class, 'action' => 'delete'],

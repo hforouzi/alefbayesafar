@@ -25,4 +25,14 @@ class HotelSourceReferenceRepository extends ServiceEntityRepository
 
         return $result instanceof HotelSourceReference ? $result : null;
     }
+
+    public function findOneBySourceAndSourceUrl(string $source, string $sourceUrl): ?HotelSourceReference
+    {
+        $result = $this->findOneBy([
+            'source' => strtolower(trim($source)),
+            'sourceUrl' => trim($sourceUrl),
+        ]);
+
+        return $result instanceof HotelSourceReference ? $result : null;
+    }
 }

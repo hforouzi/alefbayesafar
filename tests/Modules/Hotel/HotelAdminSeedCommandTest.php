@@ -30,11 +30,15 @@ class HotelAdminSeedCommandTest extends KernelTestCase
         self::assertInstanceOf(EntityManagerInterface::class, $em);
 
         $hotelPermission = $em->getRepository(Permission::class)->findOneBy(['route' => 'hotel_index']);
+        $searchPermission = $em->getRepository(Permission::class)->findOneBy(['route' => 'hotel_search']);
+        $importPermission = $em->getRepository(Permission::class)->findOneBy(['route' => 'hotel_search_import']);
         $amenityPermission = $em->getRepository(Permission::class)->findOneBy(['route' => 'hotel_amenity_index']);
         $hotelMenu = $em->getRepository(Menu::class)->findOneBy(['route' => 'hotel_index']);
         $amenityMenu = $em->getRepository(Menu::class)->findOneBy(['route' => 'hotel_amenity_index']);
 
         self::assertInstanceOf(Permission::class, $hotelPermission);
+        self::assertInstanceOf(Permission::class, $searchPermission);
+        self::assertInstanceOf(Permission::class, $importPermission);
         self::assertInstanceOf(Permission::class, $amenityPermission);
         self::assertInstanceOf(Menu::class, $hotelMenu);
         self::assertInstanceOf(Menu::class, $amenityMenu);

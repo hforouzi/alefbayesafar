@@ -81,6 +81,66 @@ class HotelRepository extends ServiceEntityRepository
         return $city instanceof City && $district->getCity() === $city;
     }
 
+    public function findOneByNormalizedWebsite(string $website): ?Hotel
+    {
+        $normalized = $this->normalizeWebsite($website);
+        if ($normalized === null) {
+            return null;
+        }
+
+        $result = $this->createQueryBuilder('hotel')
+            ->andWhere('hotel.website = :website OR hotel.website = :httpsWebsite OR hotel.website = :httpWebsite')
+            ->setParameter('website', $normalized)
+            ->setParameter('httpsWebsite', 'https://' . $normalized)
+            ->setParameter('httpWebsite', 'http://' . $normalized)
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result instanceof Hotel ? $result : null;
+    }
+
+    public function findOneByCityAndSlug(City $city, string $slug): ?Hotel
+    {
+        $result = $this->findOneBy(['city' => $city, 'slug' => $slug]);
+
+        return $result instanceof Hotel ? $result : null;
+    }
+
+    public function findOneNearCoordinates(City $city, null|float|string $latitude, null|float|string $longitude, float $tolerance = 0.0005): ?Hotel
+    {
+        if (!is_numeric($latitude) || !is_numeric($longitude)) {
+            return null;
+        }
+
+        $lat = (float) $latitude;
+        $lng = (float) $longitude;
+        $result = $this->createQueryBuilder('hotel')
+            ->andWhere('hotel.city = :city')
+            ->andWhere('hotel.latitude BETWEEN :minLat AND :maxLat')
+            ->andWhere('hotel.longitude BETWEEN :minLng AND :maxLng')
+            ->setParameter('city', $city)
+            ->setParameter('minLat', (string) ($lat - $tolerance))
+            ->setParameter('maxLat', (string) ($lat + $tolerance))
+            ->setParameter('minLng', (string) ($lng - $tolerance))
+            ->setParameter('maxLng', (string) ($lng + $tolerance))
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result instanceof Hotel ? $result : null;
+    }
+
+    private function normalizeWebsite(string $website): ?string
+    {
+        $website = strtolower(trim($website));
+        $website = preg_replace('#^https?://#', '', $website) ?? $website;
+        $website = preg_replace('/^www\./', '', $website) ?? $website;
+        $website = trim($website, "/ \t\n\r\0\x0B");
+
+        return $website !== '' ? $website : null;
+    }
+
     private function createAdminListBuilder(): QueryBuilder
     {
         return $this->createQueryBuilder('hotel')
