@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'search_source.source.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ source.name }}{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with { body: include('@SearchSource/source/_form.html.twig') } %}
+{% endblock %}

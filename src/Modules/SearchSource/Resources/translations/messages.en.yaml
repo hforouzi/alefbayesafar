@@ -1,0 +1,76 @@
+search_source:
+  navigation:
+    data_sources: 'Data Sources'
+    sources: Sources
+  common:
+    enabled: Enabled
+    disabled: Disabled
+    enable: Enable
+    disable: Disable
+    enable_confirmation: 'Enable this search source?'
+    disable_confirmation: 'Disable this search source?'
+  source:
+    title: 'Search Sources'
+    subtitle: 'Configure external data sources and provider infrastructure.'
+    new: 'Add Search Source'
+    edit: 'Edit Search Source'
+    detail: 'Search Source Detail'
+    form_subtitle: 'Store non-sensitive source configuration only.'
+    name: Name
+    domain: Domain
+    provider: Provider
+    provider_type: 'Provider Type'
+    country: Country
+    language: Language
+    capabilities: Capabilities
+    priority: Priority
+    config: Configuration
+    config_help: 'JSON object for non-sensitive options only. Store API keys in environment variables, not here.'
+    no_capabilities: 'No capabilities selected.'
+    empty_config: 'No configuration stored.'
+    flash:
+      created: 'Search source created.'
+      updated: 'Search source updated.'
+      enabled: 'Search source enabled.'
+      disabled: 'Search source disabled.'
+  provider_type:
+    firecrawl: Firecrawl
+    api: API
+    scraper: Scraper
+    affiliate_api: 'Affiliate API'
+    manual: Manual
+  capability:
+    hotel: Hotels
+    flight: Flights
+    airline: Airlines
+    review: Reviews
+    activity: Activities
+    tour: Tours
+  sections:
+    identity: Identity
+    scope: Scope
+    capabilities: Capabilities
+    config: Configuration
+    status: Status
+  datatable:
+    search: Search
+    filter: Filter
+    reset_filters: 'Reset Filters'
+    all: All
+    no_results: 'No results found.'
+    rows_per_page: 'Rows per page'
+    showing: 'Showing %from%-%to% of %total%'
+    page_x_of_y: 'Page %page% of %pages%'
+    pagination: Pagination
+    first: First
+    previous: Previous
+    next: Next
+    last: Last
+    page: Page
+    go: Go
+  lookup:
+    loading: Loading...
+    no_results: 'No results found.'
+    error: 'Lookup failed.'
+    clear: Clear
+    country_placeholder: 'Search country'

@@ -1,0 +1,6 @@
+search_source:
+  validation:
+    language_format: 'کد زبان باید مانند fa، en یا en-US باشد.'
+    config_json: 'پیکربندی باید JSON معتبر باشد.'
+    config_object: 'پیکربندی باید یک شیء JSON باشد.'
+    config_secret: 'پیکربندی نباید کلید محرمانه "{{ key }}" داشته باشد. اطلاعات محرمانه را در متغیرهای محیطی ذخیره کنید.'
