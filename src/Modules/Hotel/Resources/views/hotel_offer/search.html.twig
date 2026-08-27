@@ -1,0 +1,343 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.offer.external_test_title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ hotel.name }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        {% if developerDiagnosticsEnabled|default(false) %}
+            <span class="badge bg-warning text-white">DEV DIAGNOSTICS ENABLED</span>
+        {% endif %}
+        <a href="{{ path('hotel_show', { id: hotel.id }) }}" class="btn btn-outline-secondary">{{ 'hotel.offer.back_to_hotel'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% macro travel_date_field(formField, label) %}
+    <div
+        data-controller="locale-date"
+        data-locale-date-locale-value="{{ app.request.locale|default('fa') }}"
+        data-locale-date-today-text-value="{{ 'hotel.offer.date.today'|trans }}"
+        data-locale-date-clear-text-value="{{ 'hotel.offer.date.clear'|trans }}"
+        data-locale-date-select-date-text-value="{{ 'hotel.offer.date.select_date'|trans }}"
+        data-locale-date-previous-month-text-value="{{ 'hotel.offer.date.previous_month'|trans }}"
+        data-locale-date-next-month-text-value="{{ 'hotel.offer.date.next_month'|trans }}"
+        data-locale-date-invalid-date-text-value="{{ 'hotel.offer.date.invalid_date'|trans }}"
+    >
+        <label class="form-label" for="{{ formField.vars.id }}_display">{{ label|trans }}</label>
+        <div class="relative">
+            <input
+                id="{{ formField.vars.id }}_display"
+                type="text"
+                class="form-input ltr:pr-9 rtl:pl-9"
+                autocomplete="off"
+                placeholder="{{ 'hotel.offer.date.select_date'|trans }}"
+                data-locale-date-target="display"
+                data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown"
+            >
+            <button type="button" class="absolute top-1/2 -translate-y-1/2 rounded p-1 text-white-dark hover:text-primary ltr:right-2 rtl:left-2" data-action="locale-date#toggle" aria-label="{{ 'hotel.offer.date.select_date'|trans }}">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M7 2v3M17 2v3M3.5 9.1h17M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+        {{ form_widget(formField) }}
+        <input
+            type="hidden"
+            name="hotel_offer_search_visible[{{ formField.vars.name }}]"
+            value=""
+            data-date-diagnostic-display-for="{{ formField.vars.id }}_display"
+        >
+        <input
+            type="hidden"
+            name="hotel_offer_search_submitted[{{ formField.vars.name }}]"
+            value="{{ formField.vars.value }}"
+            data-date-diagnostic-value-for="{{ formField.vars.id }}"
+        >
+        <div class="mt-1 min-h-4 text-xs text-danger">{{ form_errors(formField) }}</div>
+        <div class="mt-1 min-h-4 text-xs text-danger" data-locale-date-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% block body %}
+    {% set diagnosticRaw = 0 %}
+    {% set diagnosticAccepted = 0 %}
+    {% set diagnosticRejected = 0 %}
+    {% set diagnosticProviderCalled = false %}
+    {% set diagnosticProviderFailed = false %}
+    {% set diagnosticSource = '-' %}
+    {% set diagnosticProvider = '-' %}
+    {% if summary %}
+        {% for result in summary.results %}
+            {% if loop.first %}
+                {% set diagnosticSource = result.source.name %}
+                {% set diagnosticProvider = result.metadata.provider|default(result.source.provider|default('-')) %}
+            {% endif %}
+            {% set diagnosticRaw = diagnosticRaw + result.metadata.rawResultCount|default(0) %}
+            {% set diagnosticAccepted = diagnosticAccepted + result.metadata.acceptedCandidateCount|default(result.candidates|length) %}
+            {% set diagnosticRejected = diagnosticRejected + result.metadata.rejectedCandidateCount|default(0) %}
+            {% if result.metadata.firecrawlRequest is defined %}
+                {% set diagnosticProviderCalled = true %}
+            {% endif %}
+            {% if not result.success %}
+                {% set diagnosticProviderFailed = true %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+    {% set diagnosticsState = (formSubmitted and formValid is same as(false)) or diagnosticProviderFailed ? 'danger' : (diagnosticAccepted > 0 ? 'success' : 'warning') %}
+
+    {% if formSubmitted %}
+        <section
+            id="hotel-offer-search-result"
+            style="scroll-margin-top: 120px;"
+            class="mb-6 block w-full rounded border-2 p-4 text-black shadow-lg dark:text-white-light {{ diagnosticsState == 'success' ? 'border-success bg-success-light dark:bg-success-dark-light' : (diagnosticsState == 'danger' ? 'border-danger bg-danger-light dark:bg-danger-dark-light' : 'border-warning bg-warning-light dark:bg-warning-dark-light') }}"
+        >
+            <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-2xl font-black uppercase">SEARCH COMPLETED</h2>
+                <span class="badge {{ diagnosticsState == 'success' ? 'bg-success' : (diagnosticsState == 'danger' ? 'bg-danger' : 'bg-warning') }} text-white">
+                    {{ diagnosticsState == 'success' ? 'OFFERS_FOUND' : (diagnosticsState == 'danger' ? 'PROVIDER_ERROR' : 'NO_DATA') }}
+                </span>
+            </div>
+
+            <dl class="grid gap-3 text-base font-semibold sm:grid-cols-2 lg:grid-cols-4">
+                <div class="rounded bg-white p-3 dark:bg-black/20">Hotel: {{ hotel.name }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Source: {{ diagnosticSource }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Form valid: {{ formValid is same as(true) ? 'YES' : 'NO' }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Search service: {{ diagnostics.controller.searchServiceCalled|default(false) ? 'YES' : 'NO' }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Provider: {{ diagnosticProvider }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Raw offers: {{ diagnosticRaw }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Accepted: {{ diagnosticAccepted }}</div>
+                <div class="rounded bg-white p-3 dark:bg-black/20">Stored: {{ storedCount|default(0) }}</div>
+            </dl>
+            {% if storedCount is not null %}
+                <div class="mt-3 text-sm font-semibold">{{ 'hotel.offer.stored_count'|trans({ '%count%': storedCount }) }}</div>
+            {% endif %}
+
+            <div class="mt-5 space-y-3">
+                {% if searchPerformed and summary %}
+                    {% if summary.results is empty %}
+                        <div class="rounded border border-warning bg-white p-4 text-warning dark:bg-black/20">
+                            {{ 'hotel.offer.no_sources_selected'|trans }}
+                        </div>
+                    {% endif %}
+
+                    {% for result in summary.results %}
+                        {% set rawResultCount = result.metadata.rawResultCount|default(result.candidates|length) %}
+                        <div class="rounded border-2 bg-white p-4 dark:bg-black/20 {{ result.status.value == 'provider_error' ? 'border-danger' : (result.status.value == 'offers_found' ? 'border-success' : 'border-warning') }}">
+                            <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+                                <h3 class="text-xl font-black">{{ result.source.name }}</h3>
+                                {% if result.status.value == 'provider_error' %}
+                                    <span class="badge bg-danger text-white">{{ 'hotel.offer.lookup_failed'|trans }}</span>
+                                {% elseif result.status.value == 'offers_found' %}
+                                    <span class="badge bg-success text-white">{{ 'hotel.offer.status.offers_found'|trans }}</span>
+                                {% elseif result.status.value == 'sold_out' %}
+                                    <span class="badge bg-warning text-white">{{ 'hotel.offer.status.sold_out'|trans }}</span>
+                                {% endif %}
+                                {% if result.status.value == 'no_data' %}
+                                    <span class="badge bg-warning text-white">{{ 'hotel.offer.status.no_data'|trans }}</span>
+                                {% endif %}
+                            </div>
+
+                            {% if result.status.value == 'provider_error' %}
+                                <div class="rounded border border-danger bg-danger-light p-4 text-danger dark:bg-danger-dark-light">
+                                    {{ result.source.name }} - {{ 'hotel.offer.lookup_failed'|trans }}
+                                    {% if result.errors is not empty %}
+                                        <div class="mt-2 text-sm">{{ result.errors|join(' ') }}</div>
+                                    {% endif %}
+                                </div>
+                            {% elseif result.status.value == 'sold_out' %}
+                                <div class="rounded border border-warning bg-warning-light p-4 text-warning dark:bg-warning-dark-light">
+                                    <div class="font-black">{{ result.source.name }} - {{ 'hotel.offer.status.sold_out'|trans }}</div>
+                                    <div class="mt-2">{{ 'hotel.offer.sold_out_help'|trans }}</div>
+                                </div>
+                            {% elseif result.candidates is empty %}
+                                <div class="rounded border border-warning bg-warning-light p-4 text-warning dark:bg-warning-dark-light">
+                                    <div class="font-black">{{ result.source.name }} - {{ 'hotel.offer.no_reliable_offer'|trans }}</div>
+                                    <div class="mt-2">Search completed successfully.</div>
+                                    <div class="mt-2">{{ result.metadata.noDataReason|default('Firecrawl returned no reliable pricing data for this page/context.') }}</div>
+                                    {% if rawResultCount == 0 %}
+                                        <div class="mt-3 font-black">Firecrawl returned 0 raw offers.</div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="mb-3 rounded border border-success bg-success-light p-3 font-black text-success dark:bg-success-dark-light">
+                                    {{ result.source.name }} - {{ result.candidates|length }} offer(s) found
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>{{ 'hotel.offer.room'|trans }}</th>
+                                                <th>{{ 'hotel.offer.board'|trans }}</th>
+                                                <th>{{ 'hotel.offer.price'|trans }}</th>
+                                                <th>{{ 'hotel.offer.availability'|trans }}</th>
+                                                <th>{{ 'common.actions'|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for candidate in result.candidates %}
+                                                <tr>
+                                                    <td>{{ candidate.roomName ?: '-' }}</td>
+                                                    <td>{{ candidate.boardType ?: '-' }}</td>
+                                                    <td class="font-semibold">{{ candidate.totalPrice }} {{ candidate.currency }}</td>
+                                                    <td>{{ candidate.availabilityStatus ? ('hotel.offer.availability_status.' ~ candidate.availabilityStatus)|trans : 'hotel.offer.availability_status.unknown'|trans }}</td>
+                                                    <td>
+                                                        {% if candidate.bookingUrl %}
+                                                            <a href="{{ candidate.bookingUrl }}" class="text-primary hover:underline" rel="noopener" target="_blank">{{ 'hotel.offer.open_offer'|trans }}</a>
+                                                        {% else %}
+                                                            <span class="text-white-dark">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% elseif formErrors is not empty %}
+                    <div class="rounded border border-danger bg-white p-4 text-danger dark:bg-black/20">
+                        {{ 'hotel.offer.validation.fix_errors_to_search'|trans }}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if developerDiagnosticsEnabled %}
+                <div
+                    id="hotel-offer-developer-diagnostics"
+                    data-dev-diagnostics-panel
+                    class="mt-5 block w-full rounded border-2 border-warning bg-warning-light p-4 text-black dark:bg-warning-dark-light dark:text-white-light"
+                >
+                    <h3 class="mb-1 text-xl font-black">Developer Diagnostics</h3>
+                    <div class="mb-4 text-lg font-black uppercase">SEARCH EXECUTED</div>
+                    <div class="grid gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Form valid: {{ formValid is same as(true) ? 'YES' : 'NO' }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Search service called: {{ diagnostics.controller.searchServiceCalled|default(false) ? 'YES' : 'NO' }} <span class="text-white-dark">searchServiceCalled</span></div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Provider called: {{ diagnosticProviderCalled ? 'YES' : 'NO' }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Source: {{ diagnosticSource }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Raw offers: {{ diagnosticRaw }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Accepted offers: {{ diagnosticAccepted }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">Stored offers: {{ storedCount|default(0) }}</div>
+                        <div class="rounded bg-white p-3 dark:bg-black/20">storeServiceCalled: {{ diagnostics.controller.storeServiceCalled|default(false) ? 'true' : 'false' }}</div>
+                    </div>
+
+                    {% if diagnosticRaw == 0 %}
+                        <div class="mt-4 rounded border border-warning bg-white p-4 text-lg font-black text-warning dark:bg-black/20">
+                            Firecrawl returned 0 raw offers.
+                        </div>
+                    {% endif %}
+
+                    <div class="mt-5 space-y-5">
+                        <div class="rounded border border-white-light bg-white p-4 dark:bg-black/20">
+                            <h4 class="mb-2 font-bold">Search context</h4>
+                            <pre class="overflow-auto rounded bg-black p-3 text-xs text-white">{{ diagnostics.search|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                        </div>
+
+                        <div class="rounded border border-white-light bg-white p-4 dark:bg-black/20">
+                            <h4 class="mb-2 font-bold">Form</h4>
+                            <pre class="overflow-auto rounded bg-black p-3 text-xs text-white">{{ diagnostics.form|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                        </div>
+
+                        {% if summary %}
+                            {% for result in summary.results %}
+                                {% set rawOffers = result.metadata.structuredExtraction.offers|default([]) %}
+                                <div class="rounded border-2 {{ result.success ? (rawOffers|length > 0 ? 'border-success' : 'border-warning') : 'border-danger' }} bg-white p-4 dark:bg-black/20">
+                                    <h4 class="mb-3 text-lg font-black">{{ result.source.name }}</h4>
+                                    <dl class="grid gap-3 text-sm sm:grid-cols-2">
+                                        <div><dt class="font-semibold text-white-dark">source ID</dt><dd>{{ result.source.id }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">urlSelection</dt><dd>{{ result.metadata.urlSelection|default('-') }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Hotel:</dt><dd>{{ hotel.name }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Stored source URL:</dt><dd class="break-all">{{ result.metadata.originalSourceUrl|default('-') }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Context URL sent to Firecrawl:</dt><dd class="break-all">{{ result.metadata.sourceUrlUsed|default('-') }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">contextUrlUsed</dt><dd>{{ result.metadata.contextUrlUsed|default(false) ? 'true' : 'false' }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Firecrawl endpoint:</dt><dd>{{ result.metadata.firecrawlRequest.endpoint|default('-') }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Firecrawl success:</dt><dd>{{ result.success ? 'true' : 'false' }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Raw offers:</dt><dd>{{ result.metadata.rawResultCount|default(rawOffers|length) }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Accepted:</dt><dd>{{ result.metadata.acceptedCandidateCount|default(result.candidates|length) }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Rejected:</dt><dd>{{ result.metadata.rejectedCandidateCount|default(0) }}</dd></div>
+                                        <div><dt class="font-semibold text-white-dark">Stored:</dt><dd>{{ storedCount|default(0) }}</dd></div>
+                                    </dl>
+
+                                    <div class="mt-4">
+                                        <h5 class="mb-2 font-bold">Structured extraction / structuredExtraction JSON</h5>
+                                        <pre class="max-h-[420px] overflow-auto rounded bg-black p-3 text-xs text-white">{{ result.metadata.structuredExtraction|default({ offers: [] })|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                    </div>
+
+                                    {% if rawOffers is not empty %}
+                                        <div class="mt-4 space-y-3">
+                                            <h5 class="font-bold">Raw offers</h5>
+                                            {% for offer in rawOffers %}
+                                                {% set offerDiagnostic = result.metadata.offerDiagnostics[loop.index0]|default({ accepted: false, reasons: ['missing diagnostic'] }) %}
+                                                <div class="rounded border {{ offerDiagnostic.accepted|default(false) ? 'border-success bg-success-light dark:bg-success-dark-light' : 'border-danger bg-danger-light dark:bg-danger-dark-light' }} p-3">
+                                                    <div class="mb-2 flex flex-wrap items-center justify-between gap-2 font-bold">
+                                                        <span>Raw offer #{{ loop.index }}</span>
+                                                        <span>{{ offerDiagnostic.accepted|default(false) ? 'accepted' : 'rejected' }}</span>
+                                                    </div>
+                                                    <div class="mb-2 text-sm">Rejection reason: {{ offerDiagnostic.accepted|default(false) ? '-' : offerDiagnostic.reasons|default(['missing diagnostic'])|join(', ') }}</div>
+                                                    <pre class="max-h-80 overflow-auto rounded bg-black p-3 text-xs text-white">{{ offer|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+
+                                    <div class="mt-4">
+                                        <h5 class="mb-2 font-bold">Offer diagnostics</h5>
+                                        <pre class="max-h-[420px] overflow-auto rounded bg-black p-3 text-xs text-white">{{ result.metadata.offerDiagnostics|default([])|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    <div class="mb-6">
+        {% set formBody %}
+            {{ form_start(form) }}
+                {% if formSubmitted and formErrors is not empty %}
+                    <div class="mb-4 rounded border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+                        <div class="font-semibold">{{ 'hotel.offer.validation.summary'|trans }}</div>
+                        <ul class="mt-2 list-disc space-y-1 ltr:ml-5 rtl:mr-5">
+                            {% for error in formErrors %}
+                                <li>{{ error.message|trans }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5" data-controller="child-ages">
+                    {{ _self.travel_date_field(form.checkIn, 'hotel.offer.check_in') }}
+                    {{ _self.travel_date_field(form.checkOut, 'hotel.offer.check_out') }}
+                    {{ form_row(form.adults) }}
+                    {{ form_row(form.children) }}
+                    <div data-child-ages-target="row">
+                        {{ form_row(form.childrenAges) }}
+                    </div>
+                </div>
+                <div class="mt-5 flex justify-end">
+                    <button type="submit" class="btn btn-primary">{{ 'hotel.offer.search_action'|trans }}</button>
+                </div>
+            {{ form_end(form) }}
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.offer.external_test_criteria'|trans, body: formBody } %}
+    </div>
+
+    <div class="mt-6">
+        {% set offersBody %}{% include '@Hotel/hotel_offer/_offers.html.twig' with { offers: recentOffers } %}{% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.offer.recent_offers'|trans, body: offersBody } %}
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {% if formSubmitted %}
+        <script>
+            window.addEventListener('load', function () {
+                var result = document.getElementById('hotel-offer-search-result');
+                if (result) {
+                    result.scrollIntoView({ block: 'start', behavior: 'auto' });
+                }
+            });
+        </script>
+    {% endif %}
+{% endblock %}

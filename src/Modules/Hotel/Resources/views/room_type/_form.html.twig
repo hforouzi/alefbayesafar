@@ -1,0 +1,19 @@
+{{ form_start(form) }}
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {{ form_row(form.name) }}
+        {{ form_row(form.nameFa) }}
+        {{ form_row(form.code) }}
+        {{ form_row(form.maxAdults) }}
+        {{ form_row(form.maxChildren) }}
+        {{ form_row(form.maxOccupancy) }}
+        {{ form_row(form.bedConfiguration) }}
+        {{ form_row(form.sizeSqm) }}
+        <div class="md:col-span-2">{{ form_row(form.descriptionOriginal) }}</div>
+        <div class="md:col-span-2">{{ form_row(form.descriptionFa) }}</div>
+        <div class="md:col-span-2">{{ form_row(form.active) }}</div>
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+        <a href="{{ path('hotel_room_type_index', { hotel: hotel.id }) }}" class="btn btn-outline-secondary">{{ 'hotel.room_type.back_to_list'|trans }}</a>
+        <button type="submit" class="btn btn-primary">{{ 'common.save'|trans }}</button>
+    </div>
+{{ form_end(form) }}

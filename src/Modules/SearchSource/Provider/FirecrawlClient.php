@@ -52,19 +52,19 @@ final readonly class FirecrawlClient
         }
 
         if ($statusCode === 401 || $statusCode === 403) {
-            throw new ProviderRequestException(ProviderRequestException::TYPE_AUTHENTICATION, 'Firecrawl authentication failed.', $statusCode);
+            throw new ProviderRequestException(ProviderRequestException::TYPE_AUTHENTICATION, $this->httpError($statusCode, 'authentication failed', $content), $statusCode);
         }
 
         if ($statusCode === 429) {
-            throw new ProviderRequestException(ProviderRequestException::TYPE_RATE_LIMIT, 'Firecrawl rate limit reached.', $statusCode);
+            throw new ProviderRequestException(ProviderRequestException::TYPE_RATE_LIMIT, $this->httpError($statusCode, 'rate limit reached', $content), $statusCode);
         }
 
         if ($statusCode >= 500) {
-            throw new ProviderRequestException(ProviderRequestException::TYPE_SERVER, 'Firecrawl server error.', $statusCode);
+            throw new ProviderRequestException(ProviderRequestException::TYPE_SERVER, $this->httpError($statusCode, 'server error', $content), $statusCode);
         }
 
         if ($statusCode >= 400) {
-            throw new ProviderRequestException(ProviderRequestException::TYPE_REQUEST, 'Firecrawl request failed.', $statusCode);
+            throw new ProviderRequestException(ProviderRequestException::TYPE_REQUEST, $this->httpError($statusCode, 'request failed', $content), $statusCode);
         }
 
         try {
@@ -83,5 +83,25 @@ final readonly class FirecrawlClient
         }
 
         return $decoded;
+    }
+
+    private function httpError(int $statusCode, string $fallback, string $content): string
+    {
+        $message = null;
+        try {
+            $decoded = json_decode($content, true, 512, JSON_THROW_ON_ERROR);
+            if (is_array($decoded)) {
+                foreach (['error', 'message', 'detail'] as $key) {
+                    if (is_scalar($decoded[$key] ?? null)) {
+                        $message = trim((string) $decoded[$key]);
+                        break;
+                    }
+                }
+            }
+        } catch (\JsonException) {
+            // Keep the provider response out of diagnostics when it is not JSON.
+        }
+
+        return sprintf('Firecrawl HTTP %d: %s%s', $statusCode, $fallback, $message !== null && $message !== '' ? ' (' . mb_substr($message, 0, 500) . ')' : '');
     }
 }

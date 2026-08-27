@@ -23,11 +23,13 @@ final readonly class HotelImportService
         private HotelCandidateNormalizer $normalizer,
         private HotelDuplicateResolver $duplicateResolver,
         private HotelAmenityMapper $amenityMapper,
+        private HotelSourceIdentityMatcher $identityMatcher,
+        private HotelRoomTypeImporter $roomTypeImporter,
     ) {
     }
 
     /**
-     * @return array{hotel: Hotel, created: bool, matchedBy: string|null, imagesAdded: int, amenitiesAdded: int}
+     * @return array{hotel: Hotel, created: bool, matchedBy: string|null, imagesAdded: int, amenitiesAdded: int, roomTypesCreated: int, roomTypesUpdated: int, roomTypesSkipped: int}
      */
     public function import(HotelCandidate $candidate, City $city, ?District $district = null): array
     {
@@ -68,6 +70,7 @@ final readonly class HotelImportService
         $this->upsertSourceReference($hotel, $candidate, $matchedBy);
         $imagesAdded = $this->addImages($hotel, $candidate);
         $amenitiesAdded = $this->amenityMapper->apply($hotel, $candidate);
+        $roomTypes = $this->roomTypeImporter->apply($hotel, $candidate);
         $this->entityManager->flush();
 
         return [
@@ -76,6 +79,9 @@ final readonly class HotelImportService
             'matchedBy' => $matchedBy,
             'imagesAdded' => $imagesAdded,
             'amenitiesAdded' => $amenitiesAdded,
+            'roomTypesCreated' => $roomTypes['created'],
+            'roomTypesUpdated' => $roomTypes['updated'],
+            'roomTypesSkipped' => $roomTypes['skipped'],
         ];
     }
 
@@ -92,8 +98,13 @@ final readonly class HotelImportService
         return $slug;
     }
 
-    private function upsertSourceReference(Hotel $hotel, HotelCandidate $candidate, ?string $matchedBy): HotelSourceReference
+    private function upsertSourceReference(Hotel $hotel, HotelCandidate $candidate, ?string $matchedBy): ?HotelSourceReference
     {
+        $identity = $this->identityMatcher->evaluate($hotel, $candidate->sourceTitle ?? $candidate->name, $candidate->sourceUrl, $candidate->rawData);
+        if (!$identity['match']) {
+            return null;
+        }
+
         $reference = null;
         if ($candidate->externalId !== null) {
             $reference = $this->sourceReferenceRepository->findOneBySourceAndExternalId($candidate->sourceIdentifier, $candidate->externalId);

@@ -3,6 +3,7 @@
 namespace App\Modules\Hotel\Provider;
 
 use App\Modules\Hotel\ValueObject\HotelCandidate;
+use App\Modules\Hotel\ValueObject\HotelRoomTypeCandidate;
 use App\Modules\Hotel\ValueObject\HotelSearchRequest;
 use App\Modules\Hotel\ValueObject\HotelSearchResult;
 use App\Modules\SearchSource\Entity\SearchSource;
@@ -171,6 +172,7 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
             descriptionFa: $this->string($item['descriptionFa'] ?? $metadata['descriptionFa'] ?? null),
             images: $this->images($item),
             rawData: $this->compactRawData($item),
+            roomTypes: $this->roomTypes($item),
         );
     }
 
@@ -303,6 +305,42 @@ final readonly class FirecrawlHotelSearchProvider implements HotelSearchProvider
         }
 
         return $item;
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     *
+     * @return HotelRoomTypeCandidate[]
+     */
+    private function roomTypes(array $item): array
+    {
+        $rawRooms = [];
+        foreach ([
+            $item['rooms'] ?? null,
+            $item['roomTypes'] ?? null,
+            \is_array($item['json'] ?? null) ? ($item['json']['rooms'] ?? null) : null,
+            \is_array($item['extract'] ?? null) ? ($item['extract']['rooms'] ?? null) : null,
+            \is_array($item['metadata'] ?? null) ? ($item['metadata']['rooms'] ?? null) : null,
+        ] as $candidateRooms) {
+            if (\is_array($candidateRooms)) {
+                $rawRooms = $candidateRooms;
+                break;
+            }
+        }
+
+        $rooms = [];
+        foreach ($rawRooms as $rawRoom) {
+            if (!\is_array($rawRoom)) {
+                continue;
+            }
+
+            $room = HotelRoomTypeCandidate::fromArray($rawRoom);
+            if ($room instanceof HotelRoomTypeCandidate) {
+                $rooms[] = $room;
+            }
+        }
+
+        return $rooms;
     }
 
     /**

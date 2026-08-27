@@ -1,0 +1,66 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.room_type.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ hotel.name }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('hotel_show', { id: hotel.id }) }}" class="btn btn-outline-secondary">{{ 'hotel.offer.back_to_hotel'|trans }}</a>
+        <a href="{{ path('hotel_room_type_new', { hotel: hotel.id }) }}" class="btn btn-primary">{{ 'hotel.room_type.manual_new'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <div class="panel">
+        <p class="mb-4 text-sm text-white-dark">{{ 'hotel.room_type.catalog_help'|trans }}</p>
+        <div class="table-responsive">
+            <table class="table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ 'hotel.room_type.name'|trans }}</th>
+                        <th>{{ 'hotel.room_type.source'|trans }}</th>
+                        <th>{{ 'hotel.room_type.code'|trans }}</th>
+                        <th>{{ 'hotel.room_type.occupancy'|trans }}</th>
+                        <th>{{ 'hotel.room_type.beds_size'|trans }}</th>
+                        <th>{{ 'hotel.common.active'|trans }}</th>
+                        <th>{{ 'common.actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for roomType in roomTypes %}
+                        <tr>
+                            <td>
+                                <div class="font-semibold">{{ roomType.name }}</div>
+                                <div class="text-xs text-white-dark">{{ roomType.nameFa ?: '-' }}</div>
+                            </td>
+                            <td>
+                                <div>{{ roomType.source ?: 'hotel.room_type.manual_source'|trans }}</div>
+                                <div class="text-xs text-white-dark">{{ roomType.externalId ?: '-' }}</div>
+                            </td>
+                            <td>{{ roomType.code ?: '-' }}</td>
+                            <td>
+                                {% if roomType.maxAdults is not null or roomType.maxChildren is not null or roomType.maxOccupancy is not null %}
+                                    {{ roomType.maxAdults ?? '-' }} {{ 'hotel.rate.adults'|trans }}, {{ roomType.maxChildren ?? '-' }} {{ 'hotel.rate.children'|trans }}{% if roomType.maxOccupancy %}, {{ roomType.maxOccupancy }} max{% endif %}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                            <td>{{ roomType.bedConfiguration ?: '-' }}{% if roomType.sizeSqm %}<div class="text-xs text-white-dark">{{ roomType.sizeSqm }} m2</div>{% endif %}</td>
+                            <td>{{ roomType.active ? 'hotel.common.active'|trans : 'hotel.common.inactive'|trans }}</td>
+                            <td>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ path('hotel_room_type_edit', { hotel: hotel.id, roomType: roomType.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'common.edit'|trans }}</a>
+                                    <form method="post" action="{{ path('hotel_room_type_toggle', { hotel: hotel.id, roomType: roomType.id }) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('toggle_hotel_room_type_' ~ roomType.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{{ roomType.active ? 'hotel.common.inactive'|trans : 'hotel.common.active'|trans }}</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="7" class="text-center text-white-dark">{{ 'hotel.room_type.empty'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

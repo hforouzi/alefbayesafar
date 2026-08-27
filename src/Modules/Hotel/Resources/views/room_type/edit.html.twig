@@ -1,0 +1,9 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.room_type.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ hotel.name }}{% endblock %}
+
+{% block body %}
+    {% set body %}{% include '@Hotel/room_type/_form.html.twig' with { form: form, hotel: hotel } %}{% endset %}
+    {% include 'components/_card.html.twig' with { title: 'hotel.room_type.edit'|trans, body: body } %}
+{% endblock %}

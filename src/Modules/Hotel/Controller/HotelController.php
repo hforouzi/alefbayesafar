@@ -6,7 +6,10 @@ use App\Modules\Destination\Repository\CityRepository;
 use App\Modules\Destination\Repository\DistrictRepository;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\Hotel\Form\HotelType;
+use App\Modules\Hotel\Repository\HotelOfferRepository;
+use App\Modules\Hotel\Repository\HotelRateRepository;
 use App\Modules\Hotel\Repository\HotelRepository;
+use App\Modules\Hotel\Repository\HotelRoomTypeRepository;
 use App\Modules\Hotel\Service\HotelAdminFilterLabelResolver;
 use App\Modules\Hotel\Service\HotelAdminListRequest;
 use Doctrine\ORM\EntityManagerInterface;
@@ -57,12 +60,23 @@ class HotelController extends AbstractController
     }
 
     #[Route('/{id}', name: 'hotel_show', requirements: ['id' => '\d+'], methods: ['GET'])]
-    public function show(Hotel $hotel, HotelRepository $hotelRepository): Response
+    public function show(
+        Hotel $hotel,
+        HotelRepository $hotelRepository,
+        HotelOfferRepository $offerRepository,
+        HotelRoomTypeRepository $roomTypeRepository,
+        HotelRateRepository $rateRepository,
+    ): Response
     {
         $loadedHotel = $hotel->getId() !== null ? $hotelRepository->findWithDetails($hotel->getId()) : null;
+        $hotel = $loadedHotel ?? $hotel;
 
         return $this->render('@Hotel/hotel/show.html.twig', [
-            'hotel' => $loadedHotel ?? $hotel,
+            'hotel' => $hotel,
+            'recentOffers' => $offerRepository->findRecentForHotel($hotel, 10),
+            'activeRoomTypeCount' => $roomTypeRepository->countActiveForHotel($hotel),
+            'importedRoomTypeCount' => $roomTypeRepository->countImportedForHotel($hotel),
+            'activeRateCount' => $rateRepository->countActiveForHotel($hotel),
         ]);
     }
 

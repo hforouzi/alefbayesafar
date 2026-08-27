@@ -15,6 +15,7 @@ final readonly class HotelDuplicateResolver
         private HotelRepository $hotelRepository,
         private HotelSourceReferenceRepository $sourceReferenceRepository,
         private HotelCandidateNormalizer $normalizer,
+        private HotelSourceIdentityMatcher $identityMatcher,
     ) {
     }
 
@@ -25,14 +26,14 @@ final readonly class HotelDuplicateResolver
     {
         if ($candidate->externalId !== null) {
             $reference = $this->sourceReferenceRepository->findOneBySourceAndExternalId($candidate->sourceIdentifier, $candidate->externalId);
-            if ($reference instanceof HotelSourceReference && $reference->getHotel() instanceof Hotel) {
+            if ($reference instanceof HotelSourceReference && $reference->getHotel() instanceof Hotel && $this->candidateMatchesHotel($candidate, $reference->getHotel())) {
                 return [$reference->getHotel(), 'source_external_id'];
             }
         }
 
         if ($candidate->externalId === null && $candidate->sourceUrl !== null) {
             $reference = $this->sourceReferenceRepository->findOneBySourceAndSourceUrl($candidate->sourceIdentifier, $candidate->sourceUrl);
-            if ($reference instanceof HotelSourceReference && $reference->getHotel() instanceof Hotel) {
+            if ($reference instanceof HotelSourceReference && $reference->getHotel() instanceof Hotel && $this->candidateMatchesHotel($candidate, $reference->getHotel())) {
                 return [$reference->getHotel(), 'source_url'];
             }
         }
@@ -56,5 +57,10 @@ final readonly class HotelDuplicateResolver
         }
 
         return [null, null];
+    }
+
+    private function candidateMatchesHotel(HotelCandidate $candidate, Hotel $hotel): bool
+    {
+        return $this->identityMatcher->matches($hotel, $candidate->sourceTitle ?? $candidate->name, $candidate->sourceUrl, $candidate->rawData);
     }
 }

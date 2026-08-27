@@ -9,6 +9,7 @@ final readonly class HotelCandidate
     /**
      * @param array<int, array{url: string, alt?: string|null}> $images
      * @param array<string, mixed> $rawData
+     * @param HotelRoomTypeCandidate[] $roomTypes
      */
     public function __construct(
         public string $sourceIdentifier,
@@ -32,6 +33,7 @@ final readonly class HotelCandidate
         public ?string $descriptionFa,
         public array $images = [],
         public array $rawData = [],
+        public array $roomTypes = [],
     ) {
     }
 
@@ -81,6 +83,7 @@ final readonly class HotelCandidate
             'descriptionFa' => $this->descriptionFa,
             'images' => $this->images,
             'rawData' => $this->rawData,
+            'roomTypes' => array_map(static fn (HotelRoomTypeCandidate $roomType): array => $roomType->toArray(), $this->roomTypes),
         ];
     }
 
@@ -111,6 +114,7 @@ final readonly class HotelCandidate
             descriptionFa: self::nullableString($payload, 'descriptionFa'),
             images: \is_array($payload['images'] ?? null) ? $payload['images'] : [],
             rawData: \is_array($payload['rawData'] ?? null) ? $payload['rawData'] : [],
+            roomTypes: self::roomTypes($payload),
         );
     }
 
@@ -145,5 +149,28 @@ final readonly class HotelCandidate
         $value = $value !== null ? trim((string) $value) : '';
 
         return $value !== '' ? $value : null;
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @return HotelRoomTypeCandidate[]
+     */
+    private static function roomTypes(array $payload): array
+    {
+        $roomTypes = [];
+        $rawRoomTypes = \is_array($payload['roomTypes'] ?? null) ? $payload['roomTypes'] : [];
+        foreach ($rawRoomTypes as $rawRoomType) {
+            if (!\is_array($rawRoomType)) {
+                continue;
+            }
+
+            $roomType = HotelRoomTypeCandidate::fromArray($rawRoomType);
+            if ($roomType instanceof HotelRoomTypeCandidate) {
+                $roomTypes[] = $roomType;
+            }
+        }
+
+        return $roomTypes;
     }
 }

@@ -1,0 +1,38 @@
+{% if offers is not empty %}
+    <div class="table-responsive">
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    <th>{{ 'hotel.offer.source'|trans }}</th>
+                    <th>{{ 'hotel.offer.room'|trans }}</th>
+                    <th>{{ 'hotel.offer.board'|trans }}</th>
+                    <th>{{ 'hotel.offer.price'|trans }}</th>
+                    <th>{{ 'hotel.offer.availability'|trans }}</th>
+                    <th>{{ 'hotel.offer.fetched_at'|trans }}</th>
+                    <th>{{ 'common.actions'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for offer in offers %}
+                    <tr>
+                        <td>{{ offer.searchSource ? offer.searchSource.name : '-' }}</td>
+                        <td>{{ offer.roomName ?: '-' }}</td>
+                        <td>{{ offer.boardType ?: '-' }}</td>
+                        <td class="font-semibold">{{ offer.totalPrice }} {{ offer.currency }}</td>
+                        <td>{{ offer.availabilityStatus ? ('hotel.offer.availability_status.' ~ offer.availabilityStatus)|trans : 'hotel.offer.availability_status.unknown'|trans }}</td>
+                        <td>{{ offer.fetchedAt ? offer.fetchedAt|locale_datetime : '-' }}</td>
+                        <td>
+                            {% if offer.bookingUrl %}
+                                <a href="{{ offer.bookingUrl }}" class="text-primary hover:underline" rel="noopener" target="_blank">{{ 'hotel.offer.open_offer'|trans }}</a>
+                            {% else %}
+                                <span class="text-white-dark">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div class="text-white-dark">{{ 'hotel.offer.no_stored_offers'|trans }}</div>
+{% endif %}

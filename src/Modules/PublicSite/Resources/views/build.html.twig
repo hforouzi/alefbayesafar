@@ -55,40 +55,32 @@
                         </div>
 
                         <div class="mt-6 grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="flexibleFields">
-                            <div data-controller="jalali-date">
+                            <div data-controller="locale-date" data-locale-date-locale-value="fa" data-locale-date-today-text-value="امروز" data-locale-date-clear-text-value="پاک کردن" data-locale-date-select-date-text-value="انتخاب تاریخ" data-locale-date-previous-month-text-value="ماه قبل" data-locale-date-next-month-text-value="ماه بعد" data-locale-date-invalid-date-text-value="تاریخ معتبر وارد کنید.">
                                 <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="window-start">شروع بازه</label>
-                                <input id="window-start" type="text" name="windowStart" class="form-input form-input-lg" placeholder="مثلاً ۱ مرداد" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="شروع بازه">
-                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
-                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
-                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
-                                </div>
+                                <input id="window-start" type="text" name="windowStartDisplay" class="form-input form-input-lg" placeholder="1405/05/01" autocomplete="off" data-locale-date-target="display" data-trip-wizard-target="field" data-summary-label="شروع بازه" data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown">
+                                <input type="hidden" name="windowStart" data-locale-date-target="value">
+                                <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-locale-date-target="status"></div>
                             </div>
-                            <div data-controller="jalali-date" data-jalali-date-min-source-value="input[name='windowStart']">
+                            <div data-controller="locale-date" data-locale-date-locale-value="fa" data-locale-date-today-text-value="امروز" data-locale-date-clear-text-value="پاک کردن" data-locale-date-select-date-text-value="انتخاب تاریخ" data-locale-date-previous-month-text-value="ماه قبل" data-locale-date-next-month-text-value="ماه بعد" data-locale-date-invalid-date-text-value="تاریخ معتبر وارد کنید.">
                                 <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="window-end">پایان بازه</label>
-                                <input id="window-end" type="text" name="windowEnd" class="form-input form-input-lg" placeholder="مثلاً ۳۱ مرداد" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="پایان بازه">
-                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
-                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
-                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
-                                </div>
+                                <input id="window-end" type="text" name="windowEndDisplay" class="form-input form-input-lg" placeholder="1405/05/31" autocomplete="off" data-locale-date-target="display" data-trip-wizard-target="field" data-summary-label="پایان بازه" data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown">
+                                <input type="hidden" name="windowEnd" data-locale-date-target="value">
+                                <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-locale-date-target="status"></div>
                             </div>
                         </div>
 
                         <div class="mt-6 hidden grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="exactFields">
-                            <div data-controller="jalali-date">
+                            <div data-controller="locale-date" data-locale-date-locale-value="fa" data-locale-date-today-text-value="امروز" data-locale-date-clear-text-value="پاک کردن" data-locale-date-select-date-text-value="انتخاب تاریخ" data-locale-date-previous-month-text-value="ماه قبل" data-locale-date-next-month-text-value="ماه بعد" data-locale-date-invalid-date-text-value="تاریخ معتبر وارد کنید.">
                                 <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="departure-date">تاریخ رفت</label>
-                                <input id="departure-date" type="text" name="departureDate" class="form-input form-input-lg" placeholder="مثلاً ۱۵ شهریور" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="تاریخ رفت">
-                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
-                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
-                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
-                                </div>
+                                <input id="departure-date" type="text" name="departureDateDisplay" class="form-input form-input-lg" placeholder="1405/06/15" autocomplete="off" data-locale-date-target="display" data-trip-wizard-target="field" data-summary-label="تاریخ رفت" data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown">
+                                <input type="hidden" name="departureDate" data-locale-date-target="value">
+                                <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-locale-date-target="status"></div>
                             </div>
-                            <div data-controller="jalali-date" data-jalali-date-min-source-value="input[name='departureDate']">
+                            <div data-controller="locale-date" data-locale-date-locale-value="fa" data-locale-date-today-text-value="امروز" data-locale-date-clear-text-value="پاک کردن" data-locale-date-select-date-text-value="انتخاب تاریخ" data-locale-date-previous-month-text-value="ماه قبل" data-locale-date-next-month-text-value="ماه بعد" data-locale-date-invalid-date-text-value="تاریخ معتبر وارد کنید.">
                                 <label class="mb-2 block text-sm font-extrabold text-[#18312f]" for="return-date">تاریخ برگشت</label>
-                                <input id="return-date" type="text" name="returnDate" class="form-input form-input-lg" placeholder="مثلاً ۲۰ شهریور" autocomplete="off" data-jalali-date-target="input" data-trip-wizard-target="field" data-summary-label="تاریخ برگشت">
-                                <div class="mt-2 hidden rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-3" data-jalali-date-target="picker">
-                                    <div class="grid grid-cols-3 gap-2 text-xs font-bold" data-jalali-date-target="months"></div>
-                                    <div class="mt-3 grid grid-cols-7 gap-1 text-xs" data-jalali-date-target="days"></div>
-                                </div>
+                                <input id="return-date" type="text" name="returnDateDisplay" class="form-input form-input-lg" placeholder="1405/06/20" autocomplete="off" data-locale-date-target="display" data-trip-wizard-target="field" data-summary-label="تاریخ برگشت" data-action="focus->locale-date#open input->locale-date#typed keydown->locale-date#keydown">
+                                <input type="hidden" name="returnDate" data-locale-date-target="value">
+                                <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-locale-date-target="status"></div>
                             </div>
                         </div>
 

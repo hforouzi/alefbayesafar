@@ -52,16 +52,19 @@ export default class extends Controller {
         this.selected = this.parseCanonical(this.valueTarget.value);
         this.viewDate = this.selected || new Date();
         this.boundOutsideClick = (event) => this.closeFromOutside(event);
+        this.boundSubmit = (event) => this.beforeSubmit(event);
 
         this.displayTarget.setAttribute('dir', this.isFa ? 'rtl' : 'ltr');
         this.displayTarget.setAttribute('aria-label', this.selectDateTextValue);
         this.syncDisplay();
         this.build();
         document.addEventListener('click', this.boundOutsideClick);
+        this.element.closest('form')?.addEventListener('submit', this.boundSubmit);
     }
 
     disconnect() {
         document.removeEventListener('click', this.boundOutsideClick);
+        this.element.closest('form')?.removeEventListener('submit', this.boundSubmit);
         this.panel?.remove();
     }
 
@@ -97,6 +100,7 @@ export default class extends Controller {
         this.selected = parsed;
         this.viewDate = parsed;
         this.valueTarget.value = this.formatGregorian(parsed);
+        this.refreshDiagnostics();
         this.statusTarget.textContent = '';
         this.displayTarget.setCustomValidity('');
         this.render();
@@ -133,6 +137,7 @@ export default class extends Controller {
         this.selected = null;
         this.valueTarget.value = '';
         this.displayTarget.value = '';
+        this.refreshDiagnostics();
         this.statusTarget.textContent = '';
         this.displayTarget.setCustomValidity('');
         if (close) {
@@ -238,19 +243,79 @@ export default class extends Controller {
         this.viewDate = date;
         this.valueTarget.value = this.formatGregorian(date);
         this.syncDisplay();
+        this.refreshDiagnostics();
         this.statusTarget.textContent = '';
         this.displayTarget.setCustomValidity('');
         this.valueTarget.dispatchEvent(new Event('change', { bubbles: true }));
         this.close();
     }
 
+    beforeSubmit(event) {
+        if (!this.syncSubmittedValue()) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.statusTarget.textContent = this.invalidDateTextValue;
+            this.displayTarget.setCustomValidity(this.invalidDateTextValue);
+            this.displayTarget.reportValidity();
+            return;
+        }
+
+        this.statusTarget.textContent = '';
+        this.displayTarget.setCustomValidity('');
+    }
+
+    syncSubmittedValue() {
+        const displayValue = this.displayTarget.value.trim();
+        if (!displayValue) {
+            this.valueTarget.value = '';
+            this.refreshDiagnostics();
+            return false;
+        }
+
+        const parsed = this.isFa ? this.parseJalali(displayValue) : this.parseGregorian(displayValue);
+        if (!parsed) {
+            this.refreshDiagnostics();
+            return false;
+        }
+
+        const gregorian = this.formatGregorian(parsed);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(gregorian)) {
+            this.refreshDiagnostics();
+            return false;
+        }
+
+        this.selected = parsed;
+        this.viewDate = parsed;
+        this.valueTarget.value = gregorian;
+        this.refreshDiagnostics();
+        return true;
+    }
+
     syncDisplay() {
         if (!this.selected) {
             this.displayTarget.value = '';
+            this.refreshDiagnostics();
             return;
         }
 
         this.displayTarget.value = this.isFa ? this.formatJalali(this.selected) : this.formatGregorian(this.selected);
+        this.refreshDiagnostics();
+    }
+
+    refreshDiagnostics() {
+        if (this.displayTarget.id) {
+            const displayDiagnostic = document.querySelector(`[data-date-diagnostic-display-for="${this.displayTarget.id}"]`);
+            if (displayDiagnostic) {
+                displayDiagnostic.value = this.displayTarget.value;
+            }
+        }
+
+        if (this.valueTarget.id) {
+            const valueDiagnostic = document.querySelector(`[data-date-diagnostic-value-for="${this.valueTarget.id}"]`);
+            if (valueDiagnostic) {
+                valueDiagnostic.value = this.valueTarget.value;
+            }
+        }
     }
 
     addMonths(date, count) {
