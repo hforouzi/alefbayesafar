@@ -123,11 +123,35 @@ class Hotel
     #[ORM\OrderBy(['source' => 'ASC', 'externalId' => 'ASC'])]
     private Collection $sourceReferences;
 
+    /**
+     * @var Collection<int, HotelOffer>
+     */
+    #[ORM\OneToMany(mappedBy: 'hotel', targetEntity: HotelOffer::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['fetchedAt' => 'DESC', 'id' => 'DESC'])]
+    private Collection $offers;
+
+    /**
+     * @var Collection<int, HotelRoomType>
+     */
+    #[ORM\OneToMany(mappedBy: 'hotel', targetEntity: HotelRoomType::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['active' => 'DESC', 'name' => 'ASC'])]
+    private Collection $roomTypes;
+
+    /**
+     * @var Collection<int, HotelRate>
+     */
+    #[ORM\OneToMany(mappedBy: 'hotel', targetEntity: HotelRate::class, cascade: ['persist', 'remove'], orphanRemoval: true)]
+    #[ORM\OrderBy(['active' => 'DESC', 'validFrom' => 'ASC', 'priority' => 'DESC'])]
+    private Collection $rates;
+
     public function __construct()
     {
         $this->amenities = new ArrayCollection();
         $this->images = new ArrayCollection();
         $this->sourceReferences = new ArrayCollection();
+        $this->offers = new ArrayCollection();
+        $this->roomTypes = new ArrayCollection();
+        $this->rates = new ArrayCollection();
     }
 
     public function __toString(): string
@@ -474,6 +498,87 @@ class Hotel
     {
         if ($this->sourceReferences->removeElement($sourceReference) && $sourceReference->getHotel() === $this) {
             $sourceReference->setHotel(null);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, HotelOffer>
+     */
+    public function getOffers(): Collection
+    {
+        return $this->offers;
+    }
+
+    public function addOffer(HotelOffer $offer): self
+    {
+        if (!$this->offers->contains($offer)) {
+            $this->offers->add($offer);
+            $offer->setHotel($this);
+        }
+
+        return $this;
+    }
+
+    public function removeOffer(HotelOffer $offer): self
+    {
+        if ($this->offers->removeElement($offer) && $offer->getHotel() === $this) {
+            $offer->setHotel(null);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, HotelRoomType>
+     */
+    public function getRoomTypes(): Collection
+    {
+        return $this->roomTypes;
+    }
+
+    public function addRoomType(HotelRoomType $roomType): self
+    {
+        if (!$this->roomTypes->contains($roomType)) {
+            $this->roomTypes->add($roomType);
+            $roomType->setHotel($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRoomType(HotelRoomType $roomType): self
+    {
+        if ($this->roomTypes->removeElement($roomType) && $roomType->getHotel() === $this) {
+            $roomType->setHotel(null);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, HotelRate>
+     */
+    public function getRates(): Collection
+    {
+        return $this->rates;
+    }
+
+    public function addRate(HotelRate $rate): self
+    {
+        if (!$this->rates->contains($rate)) {
+            $this->rates->add($rate);
+            $rate->setHotel($this);
+        }
+
+        return $this;
+    }
+
+    public function removeRate(HotelRate $rate): self
+    {
+        if ($this->rates->removeElement($rate) && $rate->getHotel() === $this) {
+            $rate->setHotel(null);
         }
 
         return $this;

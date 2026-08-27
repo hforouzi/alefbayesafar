@@ -9,10 +9,12 @@ use App\Modules\Destination\Entity\State;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\Hotel\Entity\HotelAmenity;
 use App\Modules\Hotel\Entity\HotelImage;
+use App\Modules\Hotel\Entity\HotelRoomType;
 use App\Modules\Hotel\Entity\HotelSourceReference;
 use App\Modules\Hotel\Service\HotelAmenityCatalog;
 use App\Modules\Hotel\Service\HotelImportService;
 use App\Modules\Hotel\ValueObject\HotelCandidate;
+use App\Modules\Hotel\ValueObject\HotelRoomTypeCandidate;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
@@ -145,6 +147,125 @@ class HotelImportServiceTest extends KernelTestCase
         self::assertArrayNotHasKey('markdown', $reference->getMetadata()['rawData'] ?? []);
     }
 
+    public function testImportCreatesAndDeduplicatesRoomTypesFromProviderData(): void
+    {
+        self::bootKernel();
+        $this->ensureCommerceSchema();
+        $em = $this->entityManager();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography('ROOM' . $suffix);
+        $service = self::getContainer()->get(HotelImportService::class);
+        $candidate = $this->candidate('rooms-' . $suffix, $suffix, [
+            'roomTypes' => [
+                new HotelRoomTypeCandidate(
+                    name: 'Deluxe Double Room',
+                    externalId: 'deluxe-' . $suffix,
+                    maxAdults: 2,
+                    maxChildren: 1,
+                    maxOccupancy: 3,
+                    bedConfiguration: '1 large double bed',
+                    sizeSqm: '32.00',
+                    descriptionOriginal: 'Room description from source.',
+                    sourceUrl: 'https://booking.com/room/deluxe-' . strtolower($suffix),
+                ),
+                new HotelRoomTypeCandidate(
+                    name: 'Family Room',
+                    externalId: 'family-' . $suffix,
+                    maxAdults: 2,
+                    maxChildren: 2,
+                    maxOccupancy: 4,
+                ),
+            ],
+        ]);
+
+        $first = $service->import($candidate, $city);
+        $second = $service->import($candidate, $city);
+
+        self::assertSame(2, $first['roomTypesCreated']);
+        self::assertSame(0, $second['roomTypesCreated']);
+        self::assertSame(2, $second['roomTypesSkipped']);
+        $hotelId = $first['hotel']->getId();
+        $em->clear();
+
+        $hotel = $em->getRepository(Hotel::class)->find($hotelId);
+        self::assertInstanceOf(Hotel::class, $hotel);
+        $rooms = $em->getRepository(HotelRoomType::class)->findBy(['hotel' => $hotel], ['name' => 'ASC']);
+        self::assertCount(2, $rooms);
+        self::assertSame('Deluxe Double Room', $rooms[0]->getName());
+        self::assertSame('booking', $rooms[0]->getSource());
+        self::assertSame('deluxe-' . $suffix, $rooms[0]->getExternalId());
+        self::assertSame(2, $rooms[0]->getMaxAdults());
+        self::assertSame(1, $rooms[0]->getMaxChildren());
+        self::assertSame(3, $rooms[0]->getMaxOccupancy());
+        self::assertSame('1 large double bed', $rooms[0]->getBedConfiguration());
+        self::assertSame('32.00', $rooms[0]->getSizeSqm());
+    }
+
+    public function testRoomTypeImportMatchesByNameOnlyWithinSameHotelAndDoesNotInventOccupancy(): void
+    {
+        self::bootKernel();
+        $this->ensureCommerceSchema();
+        $em = $this->entityManager();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography('NAMEROOM' . $suffix);
+        $service = self::getContainer()->get(HotelImportService::class);
+
+        $hotelA = $service->import($this->candidate('hotel-a-room-' . $suffix, 'A' . $suffix, [
+            'name' => 'Room Match Alpha ' . $suffix,
+            'sourceTitle' => 'Room Match Alpha ' . $suffix,
+            'sourceUrl' => 'https://booking.com/hotel/alpha-' . strtolower($suffix) . '.html',
+            'website' => 'https://booking.com/hotel/alpha-' . strtolower($suffix) . '.html',
+            'latitude' => '41.0100000',
+            'longitude' => '28.9800000',
+            'roomTypes' => [new HotelRoomTypeCandidate(name: 'Standard Room')],
+        ]), $city)['hotel'];
+        $hotelB = $service->import($this->candidate('hotel-b-room-' . $suffix, 'B' . $suffix, [
+            'name' => 'Room Match Beta ' . $suffix,
+            'sourceTitle' => 'Room Match Beta ' . $suffix,
+            'sourceUrl' => 'https://booking.com/hotel/beta-' . strtolower($suffix) . '.html',
+            'website' => 'https://booking.com/hotel/beta-' . strtolower($suffix) . '.html',
+            'latitude' => '41.1100000',
+            'longitude' => '29.0800000',
+            'roomTypes' => [new HotelRoomTypeCandidate(name: 'Standard Room')],
+        ]), $city)['hotel'];
+
+        self::assertCount(1, $hotelA->getRoomTypes());
+        self::assertCount(1, $hotelB->getRoomTypes());
+        self::assertNotSame($hotelA->getRoomTypes()->first()->getId(), $hotelB->getRoomTypes()->first()->getId());
+        self::assertNull($hotelA->getRoomTypes()->first()->getMaxAdults());
+        self::assertNull($hotelA->getRoomTypes()->first()->getMaxOccupancy());
+    }
+
+    public function testRoomTypeImportFillsMissingValuesWithoutOverwritingManualCorrections(): void
+    {
+        self::bootKernel();
+        $this->ensureCommerceSchema();
+        $em = $this->entityManager();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography('CURROOM' . $suffix);
+        $hotel = self::getContainer()->get(HotelImportService::class)->import($this->candidate('cur-room-' . $suffix, $suffix), $city)['hotel'];
+        $room = (new HotelRoomType())
+            ->setHotel($hotel)
+            ->setName('Curated Deluxe')
+            ->setSourceName('Deluxe Double Room')
+            ->setMaxAdults(3);
+        $hotel->addRoomType($room);
+        $em->persist($room);
+        $em->flush();
+
+        $result = self::getContainer()->get(HotelImportService::class)->import($this->candidate('cur-room-' . $suffix, $suffix, [
+            'roomTypes' => [new HotelRoomTypeCandidate(name: 'Deluxe Double Room', maxAdults: 2, maxChildren: 1, maxOccupancy: 4, bedConfiguration: '1 double bed')],
+        ]), $city);
+
+        self::assertSame(0, $result['roomTypesCreated']);
+        $em->refresh($room);
+        self::assertSame('Curated Deluxe', $room->getName());
+        self::assertSame(3, $room->getMaxAdults());
+        self::assertSame(1, $room->getMaxChildren());
+        self::assertSame(4, $room->getMaxOccupancy());
+        self::assertSame('1 double bed', $room->getBedConfiguration());
+    }
+
     public function testExistingCuratedHotelDataIsProtectedWhileMissingValuesImagesAndAmenitiesAreAdded(): void
     {
         self::bootKernel();
@@ -229,6 +350,58 @@ class HotelImportServiceTest extends KernelTestCase
         self::assertCount(8, $result['hotel']->getImages());
     }
 
+    public function testImportDoesNotAttachSourceReferenceWhenSourceIdentityContradictsHotel(): void
+    {
+        self::bootKernel();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography('IDSAFE' . $suffix);
+        $candidate = $this->candidate('unsafe-ref-' . $suffix, $suffix, [
+            'name' => 'Arts Hotel Taksim ' . $suffix,
+            'sourceTitle' => 'Grand Oztanik Hotel',
+            'sourceUrl' => 'https://booking.com/hotel/tr/grand-oztanik.html',
+        ]);
+
+        $result = self::getContainer()->get(HotelImportService::class)->import($candidate, $city);
+
+        self::assertTrue($result['created']);
+        self::assertCount(0, $result['hotel']->getSourceReferences());
+        self::assertNull($this->entityManager()->getRepository(HotelSourceReference::class)->findOneBy(['externalId' => 'unsafe-ref-' . $suffix]));
+    }
+
+    public function testSeparateHotelImportsKeepTheirOwnSourceReferenceUrls(): void
+    {
+        self::bootKernel();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography('OWNREF' . $suffix);
+        $service = self::getContainer()->get(HotelImportService::class);
+
+        $hotelA = $service->import($this->candidate('hotel-a-' . $suffix, 'A' . $suffix, [
+            'name' => 'Provenance Alpha ' . $suffix,
+            'sourceTitle' => 'Provenance Alpha ' . $suffix,
+            'sourceUrl' => 'https://booking.com/hotel/tr/provenance-alpha-' . strtolower($suffix) . '.html',
+            'website' => 'https://booking.com/hotel/tr/provenance-alpha-' . strtolower($suffix) . '.html',
+            'latitude' => '41.0100000',
+            'longitude' => '28.9800000',
+        ]), $city)['hotel'];
+        $hotelB = $service->import($this->candidate('hotel-b-' . $suffix, 'B' . $suffix, [
+            'name' => 'Provenance Beta ' . $suffix,
+            'sourceTitle' => 'Provenance Beta ' . $suffix,
+            'sourceUrl' => 'https://booking.com/hotel/tr/provenance-beta-' . strtolower($suffix) . '.html',
+            'website' => 'https://booking.com/hotel/tr/provenance-beta-' . strtolower($suffix) . '.html',
+            'latitude' => '41.1100000',
+            'longitude' => '29.0800000',
+        ]), $city)['hotel'];
+
+        self::assertSame(
+            'https://booking.com/hotel/tr/provenance-alpha-' . strtolower($suffix) . '.html',
+            $hotelA->getSourceReferences()->first()->getSourceUrl(),
+        );
+        self::assertSame(
+            'https://booking.com/hotel/tr/provenance-beta-' . strtolower($suffix) . '.html',
+            $hotelB->getSourceReferences()->first()->getSourceUrl(),
+        );
+    }
+
     /**
      * @return array{0: City, 1: District}
      */
@@ -274,7 +447,25 @@ class HotelImportServiceTest extends KernelTestCase
             descriptionFa: \array_key_exists('descriptionFa', $overrides) ? $overrides['descriptionFa'] : null,
             images: $overrides['images'] ?? [],
             rawData: $overrides['rawData'] ?? ['source' => 'test'],
+            roomTypes: $overrides['roomTypes'] ?? [],
         );
+    }
+
+    private function ensureCommerceSchema(): void
+    {
+        $connection = $this->entityManager()->getConnection();
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['hotel_room_type'])) {
+            $connection->executeStatement('CREATE TABLE hotel_room_type (id INT AUTO_INCREMENT NOT NULL, hotel_id INT NOT NULL, name VARCHAR(180) NOT NULL, name_fa VARCHAR(180) DEFAULT NULL, code VARCHAR(64) DEFAULT NULL, max_adults SMALLINT DEFAULT NULL, max_children SMALLINT DEFAULT NULL, max_occupancy SMALLINT DEFAULT NULL, description_original LONGTEXT DEFAULT NULL, description_fa LONGTEXT DEFAULT NULL, bed_configuration VARCHAR(255) DEFAULT NULL, size_sqm NUMERIC(7, 2) DEFAULT NULL, source VARCHAR(64) DEFAULT NULL, external_id VARCHAR(190) DEFAULT NULL, source_url VARCHAR(2048) DEFAULT NULL, source_name VARCHAR(180) DEFAULT NULL, metadata JSON NOT NULL COMMENT \'(DC2Type:json)\', active TINYINT(1) DEFAULT 1 NOT NULL, created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', updated_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', INDEX idx_hotel_room_type_hotel_active (hotel_id, active), INDEX idx_hotel_room_type_source_external (hotel_id, source, external_id), UNIQUE INDEX uniq_hotel_room_type_hotel_code (hotel_id, code), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+            $connection->executeStatement('ALTER TABLE hotel_room_type ADD CONSTRAINT FK_6BC2782C3243BB18 FOREIGN KEY (hotel_id) REFERENCES hotel (id) ON DELETE CASCADE');
+        } else {
+            $columns = array_change_key_case($schemaManager->listTableColumns('hotel_room_type'), CASE_LOWER);
+            if (!isset($columns['description_original'])) {
+                $connection->executeStatement('ALTER TABLE hotel_room_type ADD description_original LONGTEXT DEFAULT NULL, ADD description_fa LONGTEXT DEFAULT NULL, ADD bed_configuration VARCHAR(255) DEFAULT NULL, ADD size_sqm NUMERIC(7, 2) DEFAULT NULL, ADD source VARCHAR(64) DEFAULT NULL, ADD external_id VARCHAR(190) DEFAULT NULL, ADD source_url VARCHAR(2048) DEFAULT NULL, ADD source_name VARCHAR(180) DEFAULT NULL, ADD metadata JSON DEFAULT NULL COMMENT \'(DC2Type:json)\', CHANGE max_adults max_adults SMALLINT DEFAULT NULL, CHANGE max_children max_children SMALLINT DEFAULT NULL');
+                $connection->executeStatement('UPDATE hotel_room_type SET metadata = JSON_OBJECT() WHERE metadata IS NULL');
+                $connection->executeStatement('ALTER TABLE hotel_room_type CHANGE metadata metadata JSON NOT NULL COMMENT \'(DC2Type:json)\'');
+            }
+        }
     }
 
     private function sourcePersianHotelName(): string

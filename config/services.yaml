@@ -24,6 +24,8 @@ services:
       tags: [ 'travel_data.provider' ]
     App\Modules\Hotel\Provider\HotelSearchProviderInterface:
       tags: [ 'hotel_search.provider' ]
+    App\Modules\Hotel\Provider\HotelOfferProviderInterface:
+      tags: [ 'hotel_offer.provider' ]
 
   # makes classes in src/ available to be used as services
   # this creates a service per class whose id is the fully-qualified class name

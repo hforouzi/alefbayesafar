@@ -96,6 +96,18 @@
                         {% if sourceReference.sourceUrl %}
                             <a href="{{ sourceReference.sourceUrl }}" class="text-xs text-primary hover:underline" rel="noopener" target="_blank">{{ sourceReference.sourceTitle ?: sourceReference.sourceUrl }}</a>
                         {% endif %}
+                        {% if app.environment == 'dev' and sourceReference.metadata.enrichment is defined %}
+                            {% set enrichment = sourceReference.metadata.enrichment %}
+                            <div class="mt-3 border-t border-white-light/60 pt-3 text-xs dark:border-dark-light/20">
+                                <div class="font-semibold">{{ 'hotel.enrichment.diagnostics'|trans }}</div>
+                                <div>{{ 'hotel.enrichment.request_status'|trans }}: {{ enrichment.status|default('-') }}</div>
+                                <div>{{ 'hotel.enrichment.raw_room_count'|trans }}: {{ enrichment.rawRoomCount|default(0) }}</div>
+                                <div>{{ 'hotel.enrichment.room_count'|trans }}: {{ enrichment.roomCount|default(0) }}</div>
+                                <div>{{ 'hotel.enrichment.created'|trans }}: {{ enrichment.created|default(0) }}</div>
+                                <div>{{ 'hotel.enrichment.updated'|trans }}: {{ enrichment.updated|default(0) }}</div>
+                                {% if enrichment.lastError|default(null) %}<div class="text-danger">{{ 'hotel.enrichment.last_error'|trans }}: {{ enrichment.lastError }}</div>{% endif %}
+                            </div>
+                        {% endif %}
                     </div>
                 {% else %}
                     <div class="text-white-dark">{{ 'hotel.source.empty'|trans }}</div>
@@ -103,5 +115,46 @@
             </div>
         {% endset %}
         {% include 'components/_card.html.twig' with { title: 'hotel.sections.sources'|trans, body: sources } %}
+    </div>
+
+    <div class="mt-6">
+        {% set commerce %}
+            <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div class="rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+                    <div class="text-xs font-semibold uppercase text-white-dark">{{ 'hotel.commerce.room_types'|trans }}</div>
+                    <div class="mt-2 text-2xl font-bold">{{ activeRoomTypeCount|default(0) }}</div>
+                    <div class="text-xs text-white-dark">{{ 'hotel.commerce.room_type_count_help'|trans({ '%imported%': importedRoomTypeCount|default(0) }) }}</div>
+                    <a href="{{ path('hotel_room_type_index', { hotel: hotel.id }) }}" class="btn btn-sm btn-outline-primary mt-4">{{ 'hotel.commerce.view_manage_room_types'|trans }}</a>
+                </div>
+                <div class="rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+                    <div class="text-xs font-semibold uppercase text-white-dark">{{ 'hotel.commerce.own_rates'|trans }}</div>
+                    <div class="mt-2 text-2xl font-bold">{{ activeRateCount|default(0) }}</div>
+                    <div class="text-xs text-white-dark">{{ 'hotel.commerce.own_rates_help'|trans }}</div>
+                    <a href="{{ path('hotel_rate_index', { hotel: hotel.id }) }}" class="btn btn-sm btn-outline-primary mt-4">{{ 'hotel.commerce.manage_own_rates'|trans }}</a>
+                </div>
+                <div class="rounded border border-white-light/60 p-4 dark:border-dark-light/20">
+                    <div class="text-xs font-semibold uppercase text-white-dark">{{ 'hotel.commerce.external_sources'|trans }}</div>
+                    <div class="mt-2 text-lg font-bold">
+                        {% for sourceReference in hotel.sourceReferences %}
+                            {{ sourceReference.source }}{% if not loop.last %}, {% endif %}
+                        {% else %}
+                            -
+                        {% endfor %}
+                    </div>
+                    <div class="text-xs text-white-dark">{{ 'hotel.commerce.external_sources_help'|trans }}</div>
+                </div>
+                <div class="rounded border border-warning/40 bg-warning-light p-4 dark:bg-warning-dark-light">
+                    <div class="text-xs font-semibold uppercase text-warning">{{ 'hotel.commerce.external_pricing_test'|trans }}</div>
+                    <div class="mt-2 text-sm text-white-dark">{{ 'hotel.commerce.external_pricing_test_help'|trans }}</div>
+                    <a href="{{ path('hotel_offer_search', { id: hotel.id }) }}" class="btn btn-sm btn-outline-warning mt-4">{{ 'hotel.commerce.test_external_pricing'|trans }}</a>
+                </div>
+            </div>
+        {% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.commerce.title'|trans, body: commerce } %}
+    </div>
+
+    <div class="mt-6">
+        {% set offers %}{% include '@Hotel/hotel_offer/_offers.html.twig' with { offers: recentOffers|default([]) } %}{% endset %}
+        {% include 'components/_card.html.twig' with { title: 'hotel.offer.recent_external_offers'|trans, body: offers } %}
     </div>
 {% endblock %}

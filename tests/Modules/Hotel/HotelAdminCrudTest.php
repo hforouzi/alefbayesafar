@@ -8,6 +8,8 @@ use App\Modules\Destination\Entity\District;
 use App\Modules\Destination\Entity\State;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\Hotel\Entity\HotelAmenity;
+use App\Modules\Hotel\Entity\HotelRate;
+use App\Modules\Hotel\Entity\HotelRoomType;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\SearchSource\Enum\SearchSourceProviderType;
 use App\Modules\SearchSource\Provider\FirecrawlClient;
@@ -44,6 +46,14 @@ class HotelAdminCrudTest extends WebTestCase
             'hotel_image_new',
             'hotel_image_edit',
             'hotel_image_delete',
+            'hotel_room_type_index',
+            'hotel_room_type_new',
+            'hotel_room_type_edit',
+            'hotel_room_type_toggle',
+            'hotel_rate_index',
+            'hotel_rate_new',
+            'hotel_rate_edit',
+            'hotel_rate_toggle',
         ] as $routeName) {
             self::assertNotNull($router->getRouteCollection()->get($routeName), $routeName);
         }
@@ -396,6 +406,79 @@ class HotelAdminCrudTest extends WebTestCase
         self::assertSelectorExists('select[name="active"]');
     }
 
+    public function testHotelRoomTypeAndOwnRateCrud(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $client->loginUser($this->createSuperAdminUser());
+        $this->ensureCommerceSchema();
+        $suffix = self::uniqueSuffix();
+        [$city] = $this->persistGeography($suffix);
+        $em = $this->entityManager();
+        $hotel = (new Hotel())
+            ->setCity($city)
+            ->setName('Commerce Admin Hotel ' . $suffix)
+            ->setSlug('commerce-admin-hotel-' . strtolower($suffix));
+        $em->persist($hotel);
+        $em->flush();
+
+        $crawler = $client->request('GET', sprintf('/admin/catalog/hotels/%d', $hotel->getId()));
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Room Types');
+        self::assertSelectorTextContains('body', 'View / Manage Room Types');
+        self::assertSelectorTextContains('body', 'Manage Own Rates');
+        self::assertSelectorTextContains('body', 'External Pricing Test');
+
+        $crawler = $client->request('GET', sprintf('/admin/catalog/hotels/%d/room-types/new', $hotel->getId()));
+        self::assertResponseIsSuccessful();
+        $client->submit($crawler->filter('form')->form([
+            'hotel_room_type[name]' => 'Standard Double ' . $suffix,
+            'hotel_room_type[nameFa]' => '',
+            'hotel_room_type[code]' => 'standard ' . $suffix,
+            'hotel_room_type[maxAdults]' => '2',
+            'hotel_room_type[maxChildren]' => '1',
+            'hotel_room_type[maxOccupancy]' => '3',
+            'hotel_room_type[active]' => '1',
+        ]));
+        self::assertResponseRedirects(sprintf('/admin/catalog/hotels/%d/room-types', $hotel->getId()));
+
+        $roomType = $em->getRepository(HotelRoomType::class)->findOneBy(['hotel' => $hotel, 'name' => 'Standard Double ' . $suffix]);
+        self::assertInstanceOf(HotelRoomType::class, $roomType);
+        self::assertSame('standard_' . strtolower($suffix), $roomType->getCode());
+
+        $crawler = $client->request('GET', sprintf('/admin/catalog/hotels/%d/rates/new', $hotel->getId()));
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-controller="locale-date"]');
+        self::assertSelectorExists('[data-controller="child-ages"]');
+        $client->submit($crawler->filter('form')->form([
+            'hotel_rate[roomType]' => (string) $roomType->getId(),
+            'hotel_rate[validFrom]' => '2026-09-01',
+            'hotel_rate[validTo]' => '2026-09-30',
+            'hotel_rate[adults]' => '2',
+            'hotel_rate[children]' => '1',
+            'hotel_rate[childrenAges]' => '4',
+            'hotel_rate[boardType]' => 'breakfast',
+            'hotel_rate[currency]' => 'eur',
+            'hotel_rate[pricePerNight]' => '120',
+            'hotel_rate[priority]' => '100',
+            'hotel_rate[active]' => '1',
+        ]));
+        self::assertResponseRedirects(sprintf('/admin/catalog/hotels/%d/rates', $hotel->getId()));
+
+        $rate = $em->getRepository(HotelRate::class)->findOneBy(['hotel' => $hotel, 'roomType' => $roomType]);
+        self::assertInstanceOf(HotelRate::class, $rate);
+        self::assertSame('2026-09-01', $rate->getValidFrom()?->format('Y-m-d'));
+        self::assertSame([4], $rate->getChildrenAges());
+        self::assertSame('120.00', $rate->getPricePerNight());
+        self::assertSame(100, $rate->getPriority());
+
+        $crawler = $client->request('GET', sprintf('/admin/catalog/hotels/%d/rates', $hotel->getId()));
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'Standard Double ' . $suffix);
+        self::assertSelectorTextContains('body', '120.00 EUR');
+        self::assertSelectorExists(sprintf('a[href="/admin/catalog/hotels/%d/rates/%d/edit"]', $hotel->getId(), $rate->getId()));
+    }
+
     private function createSuperAdminUser(): UserEntity
     {
         $em = $this->entityManager();
@@ -419,6 +502,22 @@ class HotelAdminCrudTest extends WebTestCase
     private function entityManager(): EntityManagerInterface
     {
         return self::getContainer()->get(EntityManagerInterface::class);
+    }
+
+    private function ensureCommerceSchema(): void
+    {
+        $connection = $this->entityManager()->getConnection();
+        $schemaManager = $connection->createSchemaManager();
+        if (!$schemaManager->tablesExist(['hotel_room_type'])) {
+            $connection->executeStatement('CREATE TABLE hotel_room_type (id INT AUTO_INCREMENT NOT NULL, hotel_id INT NOT NULL, name VARCHAR(180) NOT NULL, name_fa VARCHAR(180) DEFAULT NULL, code VARCHAR(64) DEFAULT NULL, max_adults SMALLINT DEFAULT NULL, max_children SMALLINT DEFAULT NULL, max_occupancy SMALLINT DEFAULT NULL, description_original LONGTEXT DEFAULT NULL, description_fa LONGTEXT DEFAULT NULL, bed_configuration VARCHAR(255) DEFAULT NULL, size_sqm NUMERIC(7, 2) DEFAULT NULL, source VARCHAR(64) DEFAULT NULL, external_id VARCHAR(190) DEFAULT NULL, source_url VARCHAR(2048) DEFAULT NULL, source_name VARCHAR(180) DEFAULT NULL, metadata JSON NOT NULL COMMENT \'(DC2Type:json)\', active TINYINT(1) DEFAULT 1 NOT NULL, created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', updated_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', INDEX idx_hotel_room_type_hotel_active (hotel_id, active), INDEX idx_hotel_room_type_source_external (hotel_id, source, external_id), UNIQUE INDEX uniq_hotel_room_type_hotel_code (hotel_id, code), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+            $connection->executeStatement('ALTER TABLE hotel_room_type ADD CONSTRAINT FK_6BC2782C3243BB18 FOREIGN KEY (hotel_id) REFERENCES hotel (id) ON DELETE CASCADE');
+        }
+
+        if (!$schemaManager->tablesExist(['hotel_rate'])) {
+            $connection->executeStatement('CREATE TABLE hotel_rate (id INT AUTO_INCREMENT NOT NULL, hotel_id INT NOT NULL, room_type_id INT NOT NULL, valid_from DATE NOT NULL COMMENT \'(DC2Type:date_immutable)\', valid_to DATE NOT NULL COMMENT \'(DC2Type:date_immutable)\', adults SMALLINT NOT NULL, children SMALLINT NOT NULL, children_ages JSON NOT NULL COMMENT \'(DC2Type:json)\', board_type VARCHAR(120) DEFAULT NULL, currency VARCHAR(3) NOT NULL, price_per_night NUMERIC(12, 2) NOT NULL, priority INT DEFAULT 100 NOT NULL, active TINYINT(1) DEFAULT 1 NOT NULL, created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', updated_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', INDEX idx_hotel_rate_hotel_active (hotel_id, active), INDEX idx_hotel_rate_room_type_active (room_type_id, active), INDEX idx_hotel_rate_validity (hotel_id, valid_from, valid_to), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
+            $connection->executeStatement('ALTER TABLE hotel_rate ADD CONSTRAINT FK_3E3E41E93243BB18 FOREIGN KEY (hotel_id) REFERENCES hotel (id) ON DELETE CASCADE');
+            $connection->executeStatement('ALTER TABLE hotel_rate ADD CONSTRAINT FK_3E3E41E954177093 FOREIGN KEY (room_type_id) REFERENCES hotel_room_type (id) ON DELETE RESTRICT');
+        }
     }
 
     /**

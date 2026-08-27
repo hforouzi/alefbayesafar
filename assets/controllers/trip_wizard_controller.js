@@ -151,20 +151,19 @@ export default class extends Controller {
     }
 
     dateSerial(name) {
-        return Number(this.element.querySelector(`[name="${name}"]`)?.dataset.jalaliSerial || 0);
+        const value = this.element.querySelector(`[name="${name}"]`)?.value || '';
+        const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+        return match ? Number(`${match[1]}${match[2]}${match[3]}`) : 0;
     }
 
     todaySerial() {
-        const parts = new Intl.DateTimeFormat('en-US-u-ca-persian', {
-            year: 'numeric',
-            month: 'numeric',
-            day: 'numeric',
-        }).formatToParts(new Date());
-        const year = Number(parts.find((part) => part.type === 'year')?.value);
-        const month = Number(parts.find((part) => part.type === 'month')?.value);
-        const day = Number(parts.find((part) => part.type === 'day')?.value);
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
 
-        return (year * 10000) + (month * 100) + day;
+        return Number(`${year}${month}${day}`);
     }
 
     showValidationMessage(message) {

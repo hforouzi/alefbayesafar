@@ -48,6 +48,7 @@ class FirecrawlClientTest extends TestCase
         } catch (ProviderRequestException $exception) {
             self::assertSame($expectedType, $exception->getType());
             self::assertSame($statusCode, $exception->getCode());
+            self::assertStringContainsString('Firecrawl HTTP ' . $statusCode, $exception->getMessage());
         }
     }
 

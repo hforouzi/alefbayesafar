@@ -1,0 +1,55 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'hotel.rate.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ hotel.name }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('hotel_show', { id: hotel.id }) }}" class="btn btn-outline-secondary">{{ 'hotel.offer.back_to_hotel'|trans }}</a>
+        <a href="{{ path('hotel_rate_new', { hotel: hotel.id }) }}" class="btn btn-primary">{{ 'hotel.rate.new'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    <div class="panel">
+        <div class="table-responsive">
+            <table class="table-hover">
+                <thead>
+                    <tr>
+                        <th>{{ 'hotel.rate.room_type'|trans }}</th>
+                        <th>{{ 'hotel.rate.validity'|trans }}</th>
+                        <th>{{ 'hotel.rate.occupancy'|trans }}</th>
+                        <th>{{ 'hotel.rate.board'|trans }}</th>
+                        <th>{{ 'hotel.rate.price_per_night'|trans }}</th>
+                        <th>{{ 'hotel.rate.priority'|trans }}</th>
+                        <th>{{ 'hotel.common.active'|trans }}</th>
+                        <th>{{ 'common.actions'|trans }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rate in rates %}
+                        <tr>
+                            <td>{{ rate.roomType ? rate.roomType.name : '-' }}</td>
+                            <td>{{ rate.validFrom ? rate.validFrom|date('Y-m-d') : '-' }} -> {{ rate.validTo ? rate.validTo|date('Y-m-d') : '-' }}</td>
+                            <td>{{ rate.adults }} {{ 'hotel.rate.adults'|trans }}, {{ rate.children }} {{ 'hotel.rate.children'|trans }}{% if rate.childrenAges is not empty %} ({{ rate.childrenAges|join(', ') }}){% endif %}</td>
+                            <td>{{ rate.boardType ? ('hotel.board.' ~ rate.boardType)|trans : '-' }}</td>
+                            <td class="font-semibold">{{ rate.pricePerNight }} {{ rate.currency }}</td>
+                            <td>{{ rate.priority }}</td>
+                            <td>{{ rate.active ? 'hotel.common.active'|trans : 'hotel.common.inactive'|trans }}</td>
+                            <td>
+                                <div class="flex flex-wrap gap-2">
+                                    <a href="{{ path('hotel_rate_edit', { hotel: hotel.id, rate: rate.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'common.edit'|trans }}</a>
+                                    <form method="post" action="{{ path('hotel_rate_toggle', { hotel: hotel.id, rate: rate.id }) }}">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('toggle_hotel_rate_' ~ rate.id) }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">{{ rate.active ? 'hotel.common.inactive'|trans : 'hotel.common.active'|trans }}</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr><td colspan="8" class="text-center text-white-dark">{{ 'hotel.rate.empty'|trans }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

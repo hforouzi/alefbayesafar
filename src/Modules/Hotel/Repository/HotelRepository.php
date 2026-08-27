@@ -60,10 +60,12 @@ class HotelRepository extends ServiceEntityRepository
     public function findWithDetails(int $id): ?Hotel
     {
         $result = $this->createAdminListBuilder()
-            ->addSelect('amenity', 'image', 'sourceReference')
+            ->addSelect('amenity', 'image', 'sourceReference', 'roomType', 'rate')
             ->leftJoin('hotel.amenities', 'amenity')
             ->leftJoin('hotel.images', 'image')
             ->leftJoin('hotel.sourceReferences', 'sourceReference')
+            ->leftJoin('hotel.roomTypes', 'roomType')
+            ->leftJoin('hotel.rates', 'rate')
             ->andWhere('hotel.id = :id')
             ->setParameter('id', $id)
             ->getQuery()
@@ -105,6 +107,28 @@ class HotelRepository extends ServiceEntityRepository
         $result = $this->findOneBy(['city' => $city, 'slug' => $slug]);
 
         return $result instanceof Hotel ? $result : null;
+    }
+
+    /**
+     * @return Hotel[]
+     */
+    public function findActiveWithSourceReferences(?int $hotelId = null): array
+    {
+        $builder = $this->createQueryBuilder('hotel')
+            ->addSelect('city', 'country', 'sourceReference')
+            ->innerJoin('hotel.city', 'city')
+            ->innerJoin('city.country', 'country')
+            ->innerJoin('hotel.sourceReferences', 'sourceReference')
+            ->andWhere('hotel.active = true')
+            ->orderBy('hotel.name', 'ASC');
+
+        if ($hotelId !== null) {
+            $builder
+                ->andWhere('hotel.id = :hotelId')
+                ->setParameter('hotelId', $hotelId);
+        }
+
+        return $builder->getQuery()->getResult();
     }
 
     public function findOneNearCoordinates(City $city, null|float|string $latitude, null|float|string $longitude, float $tolerance = 0.0005): ?Hotel

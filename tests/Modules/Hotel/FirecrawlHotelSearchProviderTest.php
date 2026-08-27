@@ -34,6 +34,18 @@ class FirecrawlHotelSearchProviderTest extends KernelTestCase
                         'latitude' => 41.1,
                         'longitude' => 29.1,
                         'markdown' => 'Gallery https://img.example.test/arts-a.jpg and https://img.example.test/arts-b.webp',
+                        'json' => [
+                            'rooms' => [[
+                                'externalId' => 'room-1',
+                                'name' => 'Deluxe Double Room',
+                                'maxAdults' => 2,
+                                'maxChildren' => 1,
+                                'maxOccupancy' => 3,
+                                'beds' => '1 large double bed',
+                                'sizeSqm' => '32',
+                                'description' => 'Factual room text.',
+                            ]],
+                        ],
                         'images' => [
                             ['url' => 'https://img.example.test/arts-a.jpg', 'alt' => 'Duplicate image'],
                         ],
@@ -59,12 +71,18 @@ class FirecrawlHotelSearchProviderTest extends KernelTestCase
         self::assertStringEndsWith('/v2/search', $captured['url']);
         $body = json_decode((string) ($captured['options']['body'] ?? ''), true, 512, JSON_THROW_ON_ERROR);
         self::assertSame(['booking.com'], $body['includeDomains']);
+        self::assertSame(['markdown', 'links'], $body['scrapeOptions']['formats']);
+        self::assertArrayNotHasKey('jsonOptions', $body['scrapeOptions']);
         self::assertCount(1, $result->candidates);
         self::assertSame('booking', $result->candidates[0]->sourceIdentifier);
         self::assertSame('firecrawl', $result->candidates[0]->providerCode);
         self::assertSame('hotel-123', $result->candidates[0]->externalId);
         self::assertSame('Arts Hotel Istanbul', $result->candidates[0]->name);
         self::assertSame(5, $result->candidates[0]->stars);
+        self::assertCount(1, $result->candidates[0]->roomTypes);
+        self::assertSame('Deluxe Double Room', $result->candidates[0]->roomTypes[0]->name);
+        self::assertSame('room-1', $result->candidates[0]->roomTypes[0]->externalId);
+        self::assertSame(2, $result->candidates[0]->roomTypes[0]->maxAdults);
         self::assertCount(3, $result->candidates[0]->images);
         self::assertSame('https://img.example.test/arts-a.jpg', $result->candidates[0]->images[0]['url']);
         self::assertArrayNotHasKey('markdown', $result->candidates[0]->rawData);
