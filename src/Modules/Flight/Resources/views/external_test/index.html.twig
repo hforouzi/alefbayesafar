@@ -1,0 +1,140 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% macro airport_field(formField, label, value, selectedLabel) %}
+    <div
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ path('destination_lookup_airports') }}"
+        data-loading-text="{{ 'flight.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'flight.lookup.no_results'|trans }}"
+        data-error-text="{{ 'flight.lookup.error'|trans }}"
+        class="relative"
+    >
+        <label for="{{ formField.vars.id }}_search" class="form-label">{{ label|trans }}</label>
+        <div class="flex gap-2">
+            <input id="{{ formField.vars.id }}_search" type="search" value="{{ selectedLabel|default('') }}" placeholder="{{ 'flight.leg.airport_placeholder'|trans }}" autocomplete="off" class="form-input" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+            <button type="button" class="btn btn-outline-secondary px-3" data-action="geo-select#clear">{{ 'flight.lookup.clear'|trans }}</button>
+        </div>
+        {{ form_widget(formField, { value: value|default(''), attr: { 'data-geo-select-target': 'hidden' } }) }}
+        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        <div class="mt-1 min-h-4 text-xs text-danger">{{ form_errors(formField) }}</div>
+        <div class="mt-1 min-h-4 text-xs text-white-dark" data-geo-select-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{% block page_title %}{{ 'flight.external_test.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'flight.external_test.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('flight_offer_index') }}" class="btn btn-outline-secondary">{{ 'flight.offer.title'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% if not hasSources %}
+        <div class="mb-5 rounded border border-warning/30 bg-warning/10 px-4 py-3 text-warning">
+            {{ 'flight.external_test.no_sources'|trans }}
+        </div>
+    {% endif %}
+
+    {% include 'components/_card.html.twig' with { body: block('external_test_form') } %}
+
+    {% if summary %}
+        <div class="mt-6">
+            <h2 class="mb-3 text-lg font-semibold">{{ 'flight.external_test.results'|trans }}</h2>
+            <div class="space-y-4">
+                {% for result in summary.results %}
+                    <div class="rounded border border-white-light bg-white p-4 dark:border-dark-light/20 dark:bg-[#0e1726]">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <div class="font-semibold">{{ result.source.name }}</div>
+                                <div class="text-xs text-white-dark">{{ result.source.domain }}</div>
+                            </div>
+                            <span class="badge {{ result.success ? 'bg-info' : 'bg-danger' }} text-white">
+                                {{ ('flight.external_test.status.' ~ result.status.value)|trans }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 grid gap-3 md:grid-cols-4">
+                            <div>{{ 'flight.external_test.raw'|trans }}: {{ result.metadata.rawResultCount|default(0) }}</div>
+                            <div>{{ 'flight.external_test.accepted'|trans }}: {{ result.metadata.acceptedCandidateCount|default(result.candidates|length) }}</div>
+                            <div>{{ 'flight.external_test.rejected'|trans }}: {{ result.metadata.rejectedCandidateCount|default(0) }}</div>
+                            <div>{{ 'flight.external_test.stored'|trans }}: {{ stored }}</div>
+                        </div>
+
+                        {% if result.errors %}
+                            <div class="mt-3 text-danger">
+                                <div class="font-semibold">{{ 'flight.external_test.errors'|trans }}</div>
+                                <ul class="list-disc ps-5">
+                                    {% for error in result.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        {% if result.candidates %}
+                            <div class="table-responsive mt-4">
+                                <table class="table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>{{ 'flight.offer.route'|trans }}</th>
+                                            <th>{{ 'flight.offer.cabin_class'|trans }}</th>
+                                            <th>{{ 'flight.offer.price'|trans }}</th>
+                                            <th>{{ 'flight.offer.baggage'|trans }}</th>
+                                            <th>{{ 'flight.offer.availability'|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for candidate in result.candidates %}
+                                            <tr>
+                                                <td>{{ candidate.firstOutbound.originIata }} -> {{ candidate.lastOutbound.destinationIata }}</td>
+                                                <td>{{ ('flight.cabin_class.' ~ candidate.cabinClass.value)|trans }}</td>
+                                                <td>{{ candidate.totalPrice }} {{ candidate.currency }}</td>
+                                                <td>{{ candidate.baggage ?: '-' }}</td>
+                                                <td>{{ ('flight.availability.' ~ candidate.availabilityStatus.value)|trans }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+
+                        {% if app.environment == 'dev' %}
+                            <details class="mt-4">
+                                <summary class="cursor-pointer font-semibold">{{ 'flight.external_test.diagnostics'|trans }}</summary>
+                                <pre class="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs ltr text-left dark:bg-black">{{ result.metadata|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                            </details>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="rounded border border-white-light bg-white p-4 text-white-dark dark:border-dark-light/20 dark:bg-[#0e1726]">
+                        {{ 'flight.external_test.no_sources'|trans }}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block external_test_form %}
+    {{ form_start(form) }}
+        {{ form_errors(form) }}
+        <div class="grid gap-4 md:grid-cols-2">
+            {{ controls.airport_field(form.originAirportId, 'flight.external_test.origin_airport', searchRequest ? searchRequest.originAirport.id : '', searchRequest ? searchRequest.originAirport : '') }}
+            {{ controls.airport_field(form.destinationAirportId, 'flight.external_test.destination_airport', searchRequest ? searchRequest.destinationAirport.id : '', searchRequest ? searchRequest.destinationAirport : '') }}
+            {{ form_row(form.departureDate) }}
+            {{ form_row(form.returnDate) }}
+            {{ form_row(form.adults) }}
+            {{ form_row(form.children) }}
+            {{ form_row(form.infants) }}
+            {{ form_row(form.cabinClass) }}
+            <div class="flex items-center gap-2 pt-7">
+                {{ form_widget(form.directOnly) }}
+                {{ form_label(form.directOnly) }}
+            </div>
+        </div>
+        <div class="mt-5 flex justify-end">
+            <button type="submit" class="btn btn-primary">{{ 'flight.external_test.run'|trans }}</button>
+        </div>
+    {{ form_end(form) }}
+{% endblock %}

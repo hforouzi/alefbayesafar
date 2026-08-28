@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'flight.offer.new'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'flight.offer.subtitle'|trans }}{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with { body: include('@Flight/flight_offer/_form.html.twig', { form: form }) } %}
+{% endblock %}

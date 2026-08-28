@@ -1,0 +1,179 @@
+flight:
+  navigation:
+    commerce: 'Flight Commerce'
+    own_deals: 'Our Flight Deals'
+    airlines: Airlines
+    external_test: 'External Flight Test'
+  common:
+    active: Active
+    inactive: Inactive
+    actions: Actions
+    edit: Edit
+    delete: Delete
+    cancel: Cancel
+    save: Save
+    add: Add
+    manage_legs: 'Manage Legs'
+    back: Back
+  airline:
+    title: Airlines
+    subtitle: 'Manage canonical airline catalog records.'
+    new: 'New Airline'
+    edit: 'Edit Airline'
+    name: Name
+    name_fa: 'Persian Name'
+    iata: IATA
+    icao: ICAO
+    country: Country
+    empty: 'No airlines found.'
+    flash:
+      created: 'Airline created successfully.'
+      updated: 'Airline updated successfully.'
+      deleted: 'Airline deleted successfully.'
+      deactivated_in_use: 'Airline is referenced and was deactivated instead of deleted.'
+  offer:
+    title: 'Our Flight Deals'
+    subtitle: 'Manage own commercial flight pricing and itineraries.'
+    new: 'New Flight Deal'
+    edit: 'Edit Flight Deal'
+    trip_type: 'Trip Type'
+    pricing_mode: 'Pricing Mode'
+    adults: Adults
+    children: Children
+    infants: Infants
+    passengers: Passengers
+    cabin_class: Cabin
+    currency: Currency
+    adult_price: 'Adult Price'
+    child_price: 'Child Price'
+    infant_price: 'Infant Price'
+    total_price: 'Total Price'
+    baggage: Baggage
+    availability: Availability
+    priority: Priority
+    valid_from: 'Valid From'
+    valid_to: 'Valid To'
+    route: Route
+    departure: Departure
+    airline: Airline
+    price: Price
+    empty: 'No flight deals found.'
+    flash:
+      created: 'Flight deal created successfully. Add itinerary legs next.'
+      updated: 'Flight deal updated successfully.'
+    validation:
+      own_search_source_empty: 'Own flight deals cannot reference a search source.'
+      own_fetched_at_empty: 'Own flight deals cannot have fetched-at timestamps.'
+      own_expires_at_empty: 'Own flight deals cannot expire as external snapshots.'
+      external_search_source_required: 'External flight offers require a search source.'
+      external_fetched_at_required: 'External flight offers require a fetched-at timestamp.'
+      valid_to_after_valid_from: 'Valid-to date must be after or equal to valid-from date.'
+      adults_min: 'Flight offer must include at least one adult.'
+      children_min: 'Children cannot be negative.'
+      infants_min: 'Infants cannot be negative.'
+      currency_format: 'Currency must be a three-letter uppercase code.'
+      total_price_required: 'Total-party pricing requires a positive total price.'
+      adult_price_required: 'Adult price is required when adults are included.'
+      child_price_required: 'Child price is required when children are included.'
+      infant_price_required: 'Infant price is required when infants are included.'
+      one_way_inbound_forbidden: 'One-way flight deals cannot contain inbound legs.'
+  leg:
+    title: 'Flight Deal Legs'
+    subtitle: 'Manage ordered outbound and inbound itinerary segments.'
+    new: 'New Segment'
+    edit: 'Edit Segment'
+    outbound: Outbound
+    inbound: Inbound
+    direction: Direction
+    segment_index: 'Segment Index'
+    airline: Airline
+    airline_placeholder: 'Search airline'
+    origin_airport: 'Origin Airport'
+    destination_airport: 'Destination Airport'
+    airport_placeholder: 'Search airport'
+    flight_number: 'Flight Number'
+    departure_at: Departure
+    arrival_at: Arrival
+    duration_minutes: 'Duration Minutes'
+    aircraft: Aircraft
+    empty: 'No itinerary legs have been added yet.'
+    flash:
+      created: 'Flight segment created successfully.'
+      updated: 'Flight segment updated successfully.'
+      deleted: 'Flight segment deleted successfully.'
+    validation:
+      airline_required: 'Selected airline was not found.'
+      origin_required: 'Origin airport is required.'
+      destination_required: 'Destination airport is required.'
+      segment_index_min: 'Segment index cannot be negative.'
+      duration_positive: 'Duration must be greater than zero.'
+      arrival_after_departure: 'Arrival must be after departure.'
+      destination_differs_from_origin: 'Destination airport must differ from origin airport.'
+  trip_type:
+    one_way: 'One Way'
+    round_trip: 'Round Trip'
+  direction:
+    outbound: Outbound
+    inbound: Inbound
+  cabin_class:
+    economy: Economy
+    premium_economy: 'Premium Economy'
+    business: Business
+    first: First
+  pricing_mode:
+    per_passenger_type: 'Per Passenger Type'
+    total_party: 'Total Party'
+  price_source:
+    own: Own
+    external: External
+  availability:
+    available: Available
+    unavailable: Unavailable
+    unknown: Unknown
+  datatable:
+    search: Search
+    filter: Filter
+    reset_filters: 'Reset Filters'
+    all: All
+    no_results: 'No results found.'
+    rows_per_page: 'Rows per page'
+    showing: 'Showing %from%-%to% of %total%'
+    page_x_of_y: 'Page %page% of %pages%'
+    pagination: Pagination
+    first: First
+    previous: Previous
+    next: Next
+    last: Last
+    page: Page
+    go: Go
+  lookup:
+    loading: Loading...
+    no_results: 'No results found.'
+    error: 'Lookup failed.'
+    clear: Clear
+  external_test:
+    title: 'External Flight Test'
+    subtitle: 'Debug configured external flight sources and normalized provider results.'
+    origin_airport: 'Origin Airport'
+    destination_airport: 'Destination Airport'
+    departure_date: 'Departure Date'
+    return_date: 'Return Date'
+    direct_only: 'Direct Only'
+    run: 'Run Test'
+    no_sources: 'No enabled external flight sources are configured.'
+    results: Results
+    stored: 'Stored external snapshots'
+    raw: Raw
+    accepted: Accepted
+    rejected: Rejected
+    diagnostics: Diagnostics
+    errors: Errors
+    view: 'View external flight test'
+    validation:
+      origin_required: 'Origin airport is required.'
+      destination_required: 'Destination airport is required.'
+    status:
+      offers_found: 'OFFERS_FOUND'
+      no_results: 'NO_RESULTS'
+      no_data: 'NO_DATA'
+      provider_error: 'PROVIDER_ERROR'

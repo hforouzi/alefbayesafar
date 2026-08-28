@@ -1,0 +1,11 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'flight.offer.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ offer.routeLabel }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('flight_offer_leg_index', { offer: offer.id }) }}" class="btn btn-outline-secondary">{{ 'flight.common.manage_legs'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with { body: include('@Flight/flight_offer/_form.html.twig', { form: form }) } %}
+{% endblock %}

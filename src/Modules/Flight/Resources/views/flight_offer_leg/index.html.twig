@@ -1,0 +1,64 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'flight.leg.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ offer.routeLabel }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('flight_offer_index') }}" class="btn btn-outline-secondary">{{ 'flight.common.back'|trans }}</a>
+        <a href="{{ path('flight_offer_edit', { id: offer.id }) }}" class="btn btn-outline-primary">{{ 'flight.common.edit'|trans }}</a>
+        <a href="{{ path('flight_offer_leg_new', { offer: offer.id }) }}" class="btn btn-primary">{{ 'flight.leg.new'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    {% for direction in ['outbound', 'inbound'] %}
+        <div class="mb-6">
+            <h2 class="mb-3 text-lg font-bold">{{ ('flight.leg.' ~ direction)|trans }}</h2>
+            <div class="table-responsive">
+                <table class="table-hover">
+                    <thead>
+                        <tr>
+                            <th>{{ 'flight.leg.segment_index'|trans }}</th>
+                            <th>{{ 'flight.leg.airline'|trans }}</th>
+                            <th>{{ 'flight.leg.origin_airport'|trans }}</th>
+                            <th>{{ 'flight.leg.destination_airport'|trans }}</th>
+                            <th>{{ 'flight.leg.flight_number'|trans }}</th>
+                            <th>{{ 'flight.leg.departure_at'|trans }}</th>
+                            <th>{{ 'flight.leg.arrival_at'|trans }}</th>
+                            <th>{{ 'flight.common.actions'|trans }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set visible = false %}
+                        {% for leg in legs %}
+                            {% if leg.direction.value == direction %}
+                                {% set visible = true %}
+                                <tr>
+                                    <td>{{ leg.segmentIndex }}</td>
+                                    <td>{{ leg.airline ?: '-' }}</td>
+                                    <td>{{ leg.originAirport }}</td>
+                                    <td>{{ leg.destinationAirport }}</td>
+                                    <td>{{ leg.flightNumber ?: '-' }}</td>
+                                    <td>{{ leg.departureAt ? leg.departureAt|date('Y-m-d H:i') : '-' }}</td>
+                                    <td>{{ leg.arrivalAt ? leg.arrivalAt|date('Y-m-d H:i') : '-' }}</td>
+                                    <td>
+                                        <div class="flex flex-wrap gap-2">
+                                            <a href="{{ path('flight_offer_leg_edit', { offer: offer.id, leg: leg.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'flight.common.edit'|trans }}</a>
+                                            <form method="post" action="{{ path('flight_offer_leg_delete', { offer: offer.id, leg: leg.id }) }}">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('delete_flight_offer_leg_' ~ leg.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'flight.common.delete'|trans }}</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% endfor %}
+                        {% if not visible %}
+                            <tr><td colspan="8" class="py-8 text-center text-white-dark">{{ 'flight.leg.empty'|trans }}</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endfor %}
+{% endblock %}

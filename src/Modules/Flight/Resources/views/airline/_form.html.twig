@@ -1,0 +1,13 @@
+{{ form_start(form) }}
+    <div class="grid gap-4 md:grid-cols-2">
+        {{ form_row(form.name) }}
+        {{ form_row(form.nameFa) }}
+        {{ form_row(form.iataCode) }}
+        {{ form_row(form.icaoCode) }}
+    </div>
+    <div class="mt-4">{{ form_row(form.active) }}</div>
+    <div class="mt-5 flex justify-end gap-2">
+        <a href="{{ path('flight_airline_index') }}" class="btn btn-light">{{ 'flight.common.cancel'|trans }}</a>
+        <button type="submit" class="btn btn-primary">{{ 'flight.common.save'|trans }}</button>
+    </div>
+{{ form_end(form) }}
