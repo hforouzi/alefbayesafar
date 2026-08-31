@@ -80,6 +80,14 @@ php bin/console app:destination:import --target=airport --provider=ourairports -
 
 Search Sources are admin-configured environment/provider records. Create them through Admin or the Search Source CRUD; do not put API keys, tokens, cookies, or private URLs in fixtures or bootstrap data.
 
+## Flight External Provider Notes
+
+Flight external search is provider-neutral behind `FlightOfferProviderInterface`. The current Firecrawl provider can query admin-configured SearchSource URL templates and normalize only explicit flight offer facts into external `FlightOffer` snapshots.
+
+Real verification was performed against Booking Flights and Kiwi public pages. Firecrawl could fetch both sources, but both returned `NO_DATA` because critical structured facts such as price, airline, flight number, times, or the requested route could not be reliably verified against the fetched source content. The system intentionally rejects unsupported or hallucinated structured extraction instead of persisting unsafe prices.
+
+This does not block Own Flight Deals or `FlightPricingResolver`. A future source, scraper, affiliate integration, or proper API can be added behind the same provider contract without changing the Flight domain model.
+
 ## Assets
 
 This template uses Symfony AssetMapper/importmap by default.
