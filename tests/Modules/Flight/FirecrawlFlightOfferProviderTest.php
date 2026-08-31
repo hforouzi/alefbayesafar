@@ -31,6 +31,7 @@ class FirecrawlFlightOfferProviderTest extends KernelTestCase
         $provider = $this->provider([new MockResponse(json_encode([
             'success' => true,
             'data' => [
+                'markdown' => 'Lufthansa LH CGN FRA 08:00 09:00. Turkish Airlines TK FRA IST 10:00 14:00. Turkish Airlines TK IST CGN 15:00 18:00. EUR 690.00.',
                 'json' => [
                     'offers' => [[
                         'externalOfferId' => 'ext-1',
@@ -60,7 +61,8 @@ class FirecrawlFlightOfferProviderTest extends KernelTestCase
         self::assertCount(1, $result->candidates);
         self::assertCount(2, $result->candidates[0]->outboundLegs);
         self::assertSame('/v2/scrape', parse_url($captured[0]['url'], PHP_URL_PATH));
-        self::assertSame('json', $captured[0]['body']['formats'][0]['type']);
+        self::assertSame('markdown', $captured[0]['body']['formats'][0]);
+        self::assertSame('json', $captured[0]['body']['formats'][1]['type']);
     }
 
     public function testRejectsUnknownAirportAmbiguousPriceAndMissingInbound(): void
@@ -85,6 +87,50 @@ class FirecrawlFlightOfferProviderTest extends KernelTestCase
 
         self::assertSame(FlightOfferSearchStatus::NO_DATA, $result->status);
         self::assertSame(3, $result->metadata['rejectedCandidateCount']);
+    }
+
+    public function testRejectsStructuredFactsThatAreNotPresentInSourceEvidence(): void
+    {
+        self::bootKernel();
+        $this->airport('CGN');
+        $this->airport('IST');
+        $provider = $this->provider([new MockResponse(json_encode([
+            'success' => true,
+            'data' => [
+                'markdown' => 'Search flights from CGN to IST. Economy. Travelers 2 adults.',
+                'json' => [
+                    'offers' => [[
+                        'externalOfferId' => 'fake-1',
+                        'tripType' => 'one_way',
+                        'cabinClass' => 'economy',
+                        'totalPrice' => '150.00',
+                        'currency' => 'EUR',
+                        'adults' => 2,
+                        'children' => 0,
+                        'infants' => 0,
+                        'outbound' => [[
+                            'airlineName' => 'Airline A',
+                            'flightNumber' => 'A123',
+                            'originIata' => 'CGN',
+                            'destinationIata' => 'IST',
+                            'departureAt' => '2026-09-10T08:00:00',
+                            'arrivalAt' => '2026-09-10T11:00:00',
+                        ]],
+                    ]],
+                ],
+            ],
+        ], JSON_THROW_ON_ERROR))]);
+
+        $result = $provider->search($this->source(), new FlightOfferSearchRequest($this->airport('CGN'), $this->airport('IST'), new \DateTimeImmutable('2026-09-10'), null, 2, 0, 0, FlightCabinClass::ECONOMY));
+
+        self::assertSame(FlightOfferSearchStatus::NO_DATA, $result->status);
+        self::assertSame([
+            'UNVERIFIED_PRICE',
+            'UNVERIFIED_AIRLINE',
+            'UNVERIFIED_FLIGHT_NUMBER',
+            'UNVERIFIED_DEPARTURE_TIME',
+            'UNVERIFIED_ARRIVAL_TIME',
+        ], $result->metadata['offerDiagnostics'][0]['reasons']);
     }
 
     public function testProviderErrorAndNoTemplateStatuses(): void

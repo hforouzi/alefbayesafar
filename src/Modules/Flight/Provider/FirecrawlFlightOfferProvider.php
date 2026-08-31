@@ -55,7 +55,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         $metadata['firecrawlRequest'] = [
             'endpoint' => '/v2/scrape',
             'url' => $url,
-            'formatType' => 'json',
+            'formatTypes' => ['markdown', 'json'],
         ];
 
         try {
@@ -69,6 +69,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         }
 
         $offers = $this->offers($response);
+        $markdownEvidence = $this->string($response['data']['markdown'] ?? null);
         if ($offers === null) {
             return FlightOfferSearchResult::noData($source, $metadata + [
                 'topLevelKeys' => array_keys($response),
@@ -89,7 +90,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         $candidates = [];
         $offerDiagnostics = [];
         foreach ($offers as $index => $offer) {
-            [$candidate, $reasons] = $this->candidateFromOffer($source, $request, $offer);
+            [$candidate, $reasons] = $this->candidateFromOffer($source, $request, $offer, $markdownEvidence);
             if ($candidate instanceof FlightOfferCandidate) {
                 $candidates[$this->dedupeKey($candidate)] = $candidate;
                 $offerDiagnostics[] = [
@@ -110,14 +111,15 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
             $offerDiagnostics[] = [
                 'index' => $index,
                 'accepted' => false,
-                'reasons' => $reasons !== [] ? $reasons : ['malformed extraction'],
-            ];
+                    'reasons' => $reasons !== [] ? $reasons : ['MALFORMED_EXTRACTION'],
+                ];
         }
 
         $rejectedCount = \count(array_filter($offerDiagnostics, static fn (array $diagnostic): bool => $diagnostic['accepted'] === false));
         $metadata += [
             'topLevelKeys' => array_keys($response),
             'dataKeys' => \is_array($response['data'] ?? null) ? array_keys($response['data']) : [],
+            'markdownEvidenceLength' => $markdownEvidence !== null ? mb_strlen($markdownEvidence) : 0,
             'structuredExtraction' => ['offers' => $offers],
             'rawResultCount' => \count($offers),
             'acceptedCandidateCount' => \count($candidates),
@@ -137,7 +139,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
     {
         return [
             'url' => $url,
-            'formats' => [[
+            'formats' => ['markdown', [
                 'type' => 'json',
                 'schema' => [
                     'type' => 'object',
@@ -147,19 +149,19 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
                             'items' => [
                                 'type' => 'object',
                                 'properties' => [
-                                    'externalOfferId' => ['type' => ['string', 'null']],
-                                    'tripType' => ['type' => ['string', 'null']],
-                                    'cabinClass' => ['type' => ['string', 'null']],
-                                    'totalPrice' => ['type' => ['string', 'number', 'null']],
-                                    'currency' => ['type' => ['string', 'null']],
-                                    'baggage' => ['type' => ['string', 'null']],
-                                    'bookingUrl' => ['type' => ['string', 'null']],
-                                    'availabilityStatus' => ['type' => ['string', 'null']],
-                                    'adults' => ['type' => ['integer', 'string', 'null']],
-                                    'children' => ['type' => ['integer', 'string', 'null']],
-                                    'infants' => ['type' => ['integer', 'string', 'null']],
+                                    'externalOfferId' => ['type' => 'string'],
+                                    'tripType' => ['type' => 'string'],
+                                    'cabinClass' => ['type' => 'string'],
+                                    'totalPrice' => ['type' => 'string'],
+                                    'currency' => ['type' => 'string'],
+                                    'baggage' => ['type' => 'string'],
+                                    'bookingUrl' => ['type' => 'string'],
+                                    'availabilityStatus' => ['type' => 'string'],
+                                    'adults' => ['type' => 'integer'],
+                                    'children' => ['type' => 'integer'],
+                                    'infants' => ['type' => 'integer'],
                                     'outbound' => ['type' => 'array', 'items' => $this->legSchema()],
-                                    'inbound' => ['type' => ['array', 'null'], 'items' => $this->legSchema()],
+                                    'inbound' => ['type' => 'array', 'items' => $this->legSchema()],
                                 ],
                                 'required' => ['totalPrice', 'currency', 'outbound'],
                             ],
@@ -180,16 +182,16 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         return [
             'type' => 'object',
             'properties' => [
-                'airlineName' => ['type' => ['string', 'null']],
-                'airlineIata' => ['type' => ['string', 'null']],
-                'airlineIcao' => ['type' => ['string', 'null']],
-                'flightNumber' => ['type' => ['string', 'null']],
-                'originIata' => ['type' => ['string', 'null']],
-                'destinationIata' => ['type' => ['string', 'null']],
-                'departureAt' => ['type' => ['string', 'null']],
-                'arrivalAt' => ['type' => ['string', 'null']],
-                'durationMinutes' => ['type' => ['integer', 'string', 'null']],
-                'aircraft' => ['type' => ['string', 'null']],
+                'airlineName' => ['type' => 'string'],
+                'airlineIata' => ['type' => 'string'],
+                'airlineIcao' => ['type' => 'string'],
+                'flightNumber' => ['type' => 'string'],
+                'originIata' => ['type' => 'string'],
+                'destinationIata' => ['type' => 'string'],
+                'departureAt' => ['type' => 'string'],
+                'arrivalAt' => ['type' => 'string'],
+                'durationMinutes' => ['type' => 'integer'],
+                'aircraft' => ['type' => 'string'],
             ],
             'required' => ['originIata', 'destinationIata', 'departureAt', 'arrivalAt'],
         ];
@@ -265,7 +267,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
      *
      * @return array{0: ?FlightOfferCandidate, 1: string[]}
      */
-    private function candidateFromOffer(SearchSource $source, FlightOfferSearchRequest $request, array $offer): array
+    private function candidateFromOffer(SearchSource $source, FlightOfferSearchRequest $request, array $offer, ?string $markdownEvidence): array
     {
         $reasons = [];
         $currency = $this->currency($offer['currency'] ?? null);
@@ -277,20 +279,21 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         $infants = $this->integer($offer['infants'] ?? null) ?? $request->infants;
 
         if ($currency === null) {
-            $reasons[] = 'missing currency';
+            $reasons[] = 'INVALID_CURRENCY';
         }
         if ($totalPrice === null) {
-            $reasons[] = $this->ambiguousPrice($offer['totalPrice'] ?? $offer['price'] ?? null) ? 'ambiguous price' : 'missing or invalid totalPrice';
+            $reasons[] = $this->ambiguousPrice($offer['totalPrice'] ?? $offer['price'] ?? null) ? 'AMBIGUOUS_PRICE' : 'MISSING_PRICE';
         }
         if ($tripType !== $request->tripType) {
-            $reasons[] = 'trip type mismatch';
+            $reasons[] = 'TRIP_TYPE_MISMATCH';
         }
         if ($cabinClass !== $request->cabinClass) {
-            $reasons[] = 'cabin class mismatch';
+            $reasons[] = 'CABIN_MISMATCH';
         }
         if ($adults !== $request->adults || $children !== $request->children || $infants !== $request->infants) {
-            $reasons[] = 'passenger context mismatch';
+            $reasons[] = 'PASSENGER_CONTEXT_MISMATCH';
         }
+        $reasons = array_merge($reasons, $this->sourceEvidenceReasons($offer, $markdownEvidence));
 
         [$outboundLegs, $outboundReasons] = $this->legs($offer['outbound'] ?? null, FlightDirection::OUTBOUND, $request);
         [$inboundLegs, $inboundReasons] = $this->legs($offer['inbound'] ?? null, FlightDirection::INBOUND, $request);
@@ -298,25 +301,25 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         if ($request->tripType === FlightTripType::ROUND_TRIP) {
             $reasons = array_merge($reasons, $inboundReasons);
             if ($inboundLegs === []) {
-                $reasons[] = 'round trip missing usable inbound legs';
+                $reasons[] = 'ROUND_TRIP_WITHOUT_INBOUND';
             }
         }
 
         if ($outboundLegs === []) {
-            $reasons[] = 'missing usable outbound legs';
+            $reasons[] = 'MISSING_OUTBOUND';
         }
 
         if ($outboundLegs !== []) {
             $first = $outboundLegs[0];
             $last = $outboundLegs[array_key_last($outboundLegs)];
             if ($first->originIata !== $request->originAirport->getIataCode() || $last->destinationIata !== $request->destinationAirport->getIataCode()) {
-                $reasons[] = 'outbound route mismatch';
+                $reasons[] = 'ROUTE_MISMATCH';
             }
             if ($first->departureAt->format('Y-m-d') !== $request->departureDate->format('Y-m-d')) {
-                $reasons[] = 'departure date mismatch';
+                $reasons[] = 'DATE_MISMATCH';
             }
             if ($request->directOnly === true && \count($outboundLegs) > 1) {
-                $reasons[] = 'direct only rejected connection';
+                $reasons[] = 'DIRECT_ONLY_REJECTED_CONNECTION';
             }
         }
 
@@ -324,13 +327,13 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
             $first = $inboundLegs[0];
             $last = $inboundLegs[array_key_last($inboundLegs)];
             if ($first->originIata !== $request->destinationAirport->getIataCode() || $last->destinationIata !== $request->originAirport->getIataCode()) {
-                $reasons[] = 'inbound route mismatch';
+                $reasons[] = 'ROUTE_MISMATCH';
             }
             if ($request->returnDate instanceof \DateTimeImmutable && $first->departureAt->format('Y-m-d') !== $request->returnDate->format('Y-m-d')) {
-                $reasons[] = 'return date mismatch';
+                $reasons[] = 'DATE_MISMATCH';
             }
             if ($request->directOnly === true && \count($inboundLegs) > 1) {
-                $reasons[] = 'direct only rejected inbound connection';
+                $reasons[] = 'DIRECT_ONLY_REJECTED_CONNECTION';
             }
         }
 
@@ -367,14 +370,14 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
     private function legs(mixed $items, FlightDirection $direction, FlightOfferSearchRequest $request): array
     {
         if (!\is_array($items) || !array_is_list($items)) {
-            return [[], [$direction->value . ' legs missing']];
+            return [[], [$direction->value . ': MISSING_LEGS']];
         }
 
         $legs = [];
         $reasons = [];
         foreach ($items as $index => $item) {
             if (!\is_array($item)) {
-                $reasons[] = $direction->value . ' leg ' . $index . ' malformed';
+                $reasons[] = $direction->value . ' leg ' . $index . ': MALFORMED_LEG';
                 continue;
             }
 
@@ -390,7 +393,7 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         }
 
         if ($request->directOnly === true && \count($legs) > 1) {
-            $reasons[] = $direction->value . ' contains connection';
+            $reasons[] = $direction->value . ': DIRECT_ONLY_REJECTED_CONNECTION';
         }
 
         return [$legs, $reasons];
@@ -410,16 +413,16 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
         $arrivalAt = $this->dateTime($item['arrivalAt'] ?? null);
 
         if ($originIata === null || $this->airportRepository->findOneBy(['iataCode' => $originIata]) === null) {
-            $reasons[] = 'origin airport IATA missing or unknown';
+            $reasons[] = 'UNKNOWN_AIRPORT';
         }
         if ($destinationIata === null || $this->airportRepository->findOneBy(['iataCode' => $destinationIata]) === null) {
-            $reasons[] = 'destination airport IATA missing or unknown';
+            $reasons[] = 'UNKNOWN_AIRPORT';
         }
         if (!$departureAt instanceof \DateTimeImmutable) {
-            $reasons[] = 'departureAt missing or invalid';
+            $reasons[] = 'MISSING_DEPARTURE';
         }
         if (!$arrivalAt instanceof \DateTimeImmutable) {
-            $reasons[] = 'arrivalAt missing or invalid';
+            $reasons[] = 'MISSING_ARRIVAL';
         }
         if ($reasons !== []) {
             return [null, $reasons];
@@ -527,6 +530,96 @@ final readonly class FirecrawlFlightOfferProvider implements FlightOfferProvider
     private function ambiguousPrice(mixed $value): bool
     {
         return \is_string($value) && str_contains($value, ',');
+    }
+
+    /**
+     * @param array<string, mixed> $offer
+     *
+     * @return string[]
+     */
+    private function sourceEvidenceReasons(array $offer, ?string $markdownEvidence): array
+    {
+        if ($markdownEvidence === null || trim($markdownEvidence) === '') {
+            return ['MISSING_SOURCE_EVIDENCE'];
+        }
+
+        $reasons = [];
+        $price = $this->string($offer['totalPrice'] ?? $offer['price'] ?? null);
+        if ($price !== null && !$this->evidenceContainsPrice($markdownEvidence, $price)) {
+            $reasons[] = 'UNVERIFIED_PRICE';
+        }
+
+        foreach (['outbound', 'inbound'] as $direction) {
+            $legs = $offer[$direction] ?? null;
+            if (!\is_array($legs)) {
+                continue;
+            }
+
+            foreach ($legs as $leg) {
+                if (!\is_array($leg)) {
+                    continue;
+                }
+
+                foreach (['airlineName' => 'UNVERIFIED_AIRLINE', 'flightNumber' => 'UNVERIFIED_FLIGHT_NUMBER'] as $key => $reason) {
+                    $value = $this->string($leg[$key] ?? null);
+                    if ($value !== null && !$this->evidenceContains($markdownEvidence, $value)) {
+                        $reasons[] = $reason;
+                    }
+                }
+
+                foreach (['departureAt' => 'UNVERIFIED_DEPARTURE_TIME', 'arrivalAt' => 'UNVERIFIED_ARRIVAL_TIME'] as $key => $reason) {
+                    $time = $this->timeEvidence($leg[$key] ?? null);
+                    if ($time !== null && !$this->evidenceContains($markdownEvidence, $time)) {
+                        $reasons[] = $reason;
+                    }
+                }
+            }
+        }
+
+        return array_values(array_unique($reasons));
+    }
+
+    private function evidenceContains(string $evidence, string $needle): bool
+    {
+        return mb_stripos($evidence, $needle) !== false;
+    }
+
+    private function evidenceContainsPrice(string $evidence, string $price): bool
+    {
+        $price = trim($price);
+        if ($price === '') {
+            return false;
+        }
+
+        if ($this->evidenceContains($evidence, $price)) {
+            return true;
+        }
+
+        $normalized = FlightMoney::normalize($price);
+        if ($normalized === null) {
+            return false;
+        }
+
+        $major = (string) ((int) explode('.', $normalized, 2)[0]);
+
+        return preg_match('/(?:€|\\$|£)\\s*' . preg_quote($major, '/') . '(?:\\.\\d{1,2})?\\b/u', $evidence) === 1;
+    }
+
+    private function timeEvidence(mixed $value): ?string
+    {
+        if (!\is_string($value)) {
+            return null;
+        }
+
+        if (preg_match('/T(\\d{2}:\\d{2})/', $value, $matches) === 1) {
+            return $matches[1];
+        }
+
+        if (preg_match('/\\b(\\d{1,2}:\\d{2})\\b/', $value, $matches) === 1) {
+            return $matches[1];
+        }
+
+        return null;
     }
 
     private function domainMatches(string $hostOrDomain, string $domain): bool

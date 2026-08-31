@@ -16,6 +16,7 @@ final readonly class FlightMoney
         }
 
         $value = preg_replace('/\s+/u', '', $value) ?? $value;
+        $value = preg_replace('/^[€$£]\s*/u', '', $value) ?? $value;
         if (preg_match('/^[1-9]\d{0,9}(?:\.\d{1,2})?$/', $value) !== 1) {
             return null;
         }
