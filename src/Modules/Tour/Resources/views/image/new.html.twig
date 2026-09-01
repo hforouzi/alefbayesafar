@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'tour.image.new'|trans }}{% endblock %}
+{% block page_subtitle %}{{ package.name }}{% endblock %}
+
+{% block body %}
+    {% include 'components/_card.html.twig' with { body: include('@Tour/image/_form.html.twig', { form: form, package: package, image: image }) } %}
+{% endblock %}

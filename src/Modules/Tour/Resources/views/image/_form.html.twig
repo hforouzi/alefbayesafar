@@ -1,0 +1,44 @@
+{{ form_start(form, { attr: { class: 'space-y-6' } }) }}
+    {{ form_errors(form) }}
+    {% if image.path %}
+        {% set isRemote = image.path starts with 'http://' or image.path starts with 'https://' %}
+        {% set imageSrc = isRemote ? image.path : asset(image.path starts with '/' ? image.path|slice(1) : image.path) %}
+        <div class="overflow-hidden rounded border border-white-light/60 dark:border-dark-light/20">
+            <img src="{{ imageSrc }}" alt="{{ image.altFa ?: image.alt ?: package.name }}" class="h-64 w-full object-cover">
+        </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <div class="lg:col-span-2">
+            {{ form_label(form.file, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+            {{ form_widget(form.file) }}
+            <p class="mt-1 text-xs text-white-dark">{{ 'tour.image.file_help'|trans }}</p>
+            {{ form_errors(form.file) }}
+        </div>
+        <div class="lg:col-span-2">
+            {{ form_label(form.path, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+            {{ form_widget(form.path) }}
+            <p class="mt-1 text-xs text-white-dark">{{ 'tour.image.path_help'|trans }}</p>
+            {{ form_errors(form.path) }}
+        </div>
+        {% for field in [form.alt, form.altFa, form.position] %}
+            <div>
+                {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(field) }}
+                {{ form_errors(field) }}
+            </div>
+        {% endfor %}
+        <div class="flex items-end">
+            <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                {{ form_widget(form.primary) }}
+                <span>{{ form.primary.vars.label|trans }}</span>
+            </label>
+            {{ form_errors(form.primary) }}
+        </div>
+    </div>
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'tour.common.save'|trans }}</button>
+        <a href="{{ path('tour_package_edit', { id: package.id }) }}" class="btn btn-light">{{ 'tour.common.cancel'|trans }}</a>
+    </div>
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}

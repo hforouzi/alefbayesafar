@@ -1,0 +1,53 @@
+<div class="space-y-4">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h3 class="text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.images'|trans }}</h3>
+            <p class="mt-1 text-sm text-white-dark">{{ 'tour.image.help'|trans }}</p>
+        </div>
+        <a href="{{ path('tour_package_image_new', { package: package.id }) }}" class="btn btn-primary">{{ 'tour.image.add'|trans }}</a>
+    </div>
+
+    {% if package.images|length > 0 %}
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {% for image in package.images %}
+                {% set isRemote = image.path starts with 'http://' or image.path starts with 'https://' %}
+                {% set imageSrc = isRemote ? image.path : asset(image.path starts with '/' ? image.path|slice(1) : image.path) %}
+                <article class="overflow-hidden rounded border border-white-light/60 bg-white shadow-sm dark:border-dark-light/20 dark:bg-[#0e1726]">
+                    <a href="{{ imageSrc }}" target="_blank" rel="noopener" class="block bg-white-light/40 dark:bg-black/20">
+                        <img src="{{ imageSrc }}" alt="{{ image.altFa ?: image.alt ?: package.name }}" class="h-44 w-full object-cover">
+                    </a>
+                    <div class="space-y-3 p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <span class="text-xs font-semibold text-white-dark">{{ 'tour.image.position'|trans }}: {{ image.position }}</span>
+                            {% if image.primary %}
+                                <span class="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">{{ 'tour.image.primary'|trans }}</span>
+                            {% endif %}
+                        </div>
+                        <dl class="space-y-2 text-sm">
+                            <div>
+                                <dt class="text-xs text-white-dark">{{ 'tour.image.alt'|trans }}</dt>
+                                <dd class="truncate text-black dark:text-white-light">{{ image.alt ?: '-' }}</dd>
+                            </div>
+                            <div>
+                                <dt class="text-xs text-white-dark">{{ 'tour.image.path'|trans }}</dt>
+                                <dd class="truncate text-white-dark" title="{{ image.path }}">{{ image.path }}</dd>
+                            </div>
+                        </dl>
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ path('tour_package_image_edit', { package: package.id, image: image.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'tour.common.edit'|trans }}</a>
+                            <form method="post" action="{{ path('tour_package_image_delete', { package: package.id, image: image.id }) }}" onsubmit="return confirm('{{ 'tour.common.delete_confirmation'|trans }}');">
+                                <input type="hidden" name="_token" value="{{ csrf_token('delete_tour_package_image_' ~ image.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">{{ 'tour.common.delete'|trans }}</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="rounded border border-dashed border-white-light/70 p-8 text-center text-white-dark dark:border-dark-light/30">
+            <div>{{ 'tour.image.empty'|trans }}</div>
+            <a href="{{ path('tour_package_image_new', { package: package.id }) }}" class="btn btn-primary mt-4">{{ 'tour.image.add'|trans }}</a>
+        </div>
+    {% endif %}
+</div>

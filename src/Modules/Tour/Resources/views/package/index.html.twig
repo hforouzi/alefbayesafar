@@ -1,0 +1,64 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'tour.package.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'tour.package.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('tour_package_new') }}" class="btn btn-primary">{{ 'tour.package.new'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% include '@Tour/admin/_table_filters.html.twig' %}
+    <div class="table-responsive">
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    <th>{{ 'tour.package.name'|trans }}</th>
+                    <th>{{ 'tour.package.destination'|trans }}</th>
+                    <th>{{ 'tour.package.date_context'|trans }}</th>
+                    <th>{{ 'tour.package.nights'|trans }}</th>
+                    <th>{{ 'tour.package.passengers'|trans }}</th>
+                    <th>{{ 'tour.package.hotel'|trans }}</th>
+                    <th>{{ 'tour.package.flight_offer'|trans }}</th>
+                    <th>{{ 'tour.package.price'|trans }}</th>
+                    <th>{{ 'tour.package.priority'|trans }}</th>
+                    <th>{{ 'tour.package.flags'|trans }}</th>
+                    <th>{{ 'tour.common.actions'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for package in packages %}
+                    <tr>
+                        <td class="font-semibold">{{ package.name }}</td>
+                        <td>{{ package.destinationCity ?: '-' }}</td>
+                        <td>{{ package.dateLabel }}</td>
+                        <td>{{ package.nights }}</td>
+                        <td>{{ package.passengerLabel }}</td>
+                        <td>{{ package.hotel ?: '-' }}</td>
+                        <td>{{ package.flightOffer ? package.flightOffer.routeLabel ~ ' / ' ~ package.flightOffer.departureLabel : '-' }}</td>
+                        <td>{{ package.priceLabel }}</td>
+                        <td>{{ package.priority }}</td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="badge {{ package.active ? 'bg-success' : 'bg-danger' }} text-white">{{ package.active ? 'tour.package.active'|trans : 'tour.package.inactive'|trans }}</span>
+                                {% if package.featured %}<span class="badge bg-primary text-white">{{ 'tour.package.featured'|trans }}</span>{% endif %}
+                                {% if package.publicVisible %}<span class="badge bg-info text-white">{{ 'tour.package.public_visible'|trans }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ path('tour_package_edit', { id: package.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'tour.common.edit'|trans }}</a>
+                                <form method="post" action="{{ path('tour_package_toggle', { id: package.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_tour_package_' ~ package.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ package.active ? 'btn-outline-danger' : 'btn-outline-success' }}">{{ package.active ? 'tour.package.deactivate'|trans : 'tour.package.activate'|trans }}</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="11" class="py-10 text-center text-white-dark">{{ 'tour.package.empty'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include '@Tour/admin/_pagination.html.twig' %}
+{% endblock %}

@@ -8,6 +8,7 @@ use App\Modules\Default\Entity\MenuCategory;
 use App\Modules\Flight\Entity\FlightOffer;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\SearchSource\Entity\SearchSource;
+use App\Modules\Tour\Entity\TourPackage;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
 use Doctrine\DBAL\Connection;
@@ -43,6 +44,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight_offer_index',
             'flight_airline_index',
             'flight_external_test',
+            'tour_package_index',
         ] as $route) {
             self::assertNotNull($em->getRepository(Menu::class)->findOneBy(['route' => $route]), $route);
         }
@@ -55,17 +57,21 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'hotel.room_type.view',
             'flight.offer.view',
             'flight.external_test.view',
+            'tour.package.view',
+            'tour.image.create',
         ] as $permissionName) {
             self::assertNotNull($em->getRepository(Permission::class)->findOneBy(['name' => $permissionName]), $permissionName);
         }
 
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'catalog']));
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'flight_commerce']));
+        self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'tour_commerce']));
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'data_sources']));
         self::assertSame('AlefBayeSafar', $em->getRepository(AppSetting::class)->findOneBy(['name' => 'site_name'])?->getValue());
         self::assertSame(0, $em->getRepository(SearchSource::class)->count([]));
         self::assertSame(0, $em->getRepository(Hotel::class)->count([]));
         self::assertSame(0, $em->getRepository(FlightOffer::class)->count([]));
+        self::assertSame(0, $em->getRepository(TourPackage::class)->count([]));
 
         $counts = $this->baselineCounts();
         $secondRun = $this->runBootstrap();
@@ -128,6 +134,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'searchSources' => $em->getRepository(SearchSource::class)->count([]),
             'hotels' => $em->getRepository(Hotel::class)->count([]),
             'flightOffers' => $em->getRepository(FlightOffer::class)->count([]),
+            'tourPackages' => $em->getRepository(TourPackage::class)->count([]),
         ];
     }
 
@@ -155,6 +162,8 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight_offer_leg',
             'flight_offer',
             'airline',
+            'tour_package_image',
+            'tour_package',
         ] as $table) {
             $this->truncateIfExists($connection, $table);
         }
