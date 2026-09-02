@@ -2,6 +2,9 @@
 
 namespace App\Modules\Default\Bootstrap;
 
+use App\Modules\Activity\Controller\ActivityController;
+use App\Modules\Activity\Controller\ActivityImageController;
+use App\Modules\Activity\Controller\ActivityOfferController;
 use App\Modules\Default\Controller\DefaultController;
 use App\Modules\Default\Controller\MenuCategoryController;
 use App\Modules\Default\Controller\MenuController;
@@ -30,6 +33,10 @@ use App\Modules\Tour\Controller\ExternalTourTestController;
 use App\Modules\Tour\Controller\TourLookupController;
 use App\Modules\Tour\Controller\TourPackageController;
 use App\Modules\Tour\Controller\TourPackageImageController;
+use App\Modules\Transfer\Controller\TransferLookupController;
+use App\Modules\Transfer\Controller\TransferOfferController;
+use App\Modules\Transfer\Controller\TransferProductController;
+use App\Modules\TripPlanner\Controller\TripPlannerTestController;
 use App\Modules\User\Controller\PermissionController;
 use App\Modules\User\Controller\RoleController;
 use App\Modules\User\Controller\UserController;
@@ -77,7 +84,10 @@ final readonly class ApplicationBootstrapData
             'administration' => ['name' => 'Administration', 'label' => 'navigation.administration', 'icon' => 'solar:settings-bold', 'position' => 20, 'active' => true],
             'flight_commerce' => ['name' => 'Flight Commerce', 'label' => 'flight.navigation.commerce', 'icon' => 'solar:plane-bold', 'position' => 22, 'active' => true],
             'tour_commerce' => ['name' => 'Tour Commerce', 'label' => 'tour.navigation.commerce', 'icon' => 'solar:map-bold', 'position' => 23, 'active' => true],
-            'data_sources' => ['name' => 'Data Sources', 'label' => 'search_source.navigation.data_sources', 'icon' => 'solar:database-bold', 'position' => 25, 'active' => true],
+            'activity_commerce' => ['name' => 'Activity Commerce', 'label' => 'activity.navigation.commerce', 'icon' => 'solar:ticket-bold', 'position' => 24, 'active' => true],
+            'transfer_commerce' => ['name' => 'Transfer Commerce', 'label' => 'transfer.navigation.commerce', 'icon' => 'solar:bus-bold', 'position' => 25, 'active' => true],
+            'trip_planner' => ['name' => 'Trip Planner', 'label' => 'trip_planner.navigation.commerce', 'icon' => 'solar:route-bold', 'position' => 26, 'active' => true],
+            'data_sources' => ['name' => 'Data Sources', 'label' => 'search_source.navigation.data_sources', 'icon' => 'solar:database-bold', 'position' => 27, 'active' => true],
             'settings' => ['name' => 'Settings', 'label' => 'navigation.settings', 'icon' => 'solar:tuning-bold', 'position' => 30, 'active' => true],
         ];
     }
@@ -195,6 +205,27 @@ final readonly class ApplicationBootstrapData
             'tour.lookup.room_types' => ['label' => 'tour.lookup.view', 'route' => 'tour_lookup_room_types', 'controller' => TourLookupController::class, 'action' => 'roomTypes'],
             'tour.lookup.flight_offers' => ['label' => 'tour.lookup.view', 'route' => 'tour_lookup_own_flight_offers', 'controller' => TourLookupController::class, 'action' => 'ownFlightOffers'],
             'tour.external_test.view' => ['label' => 'tour.external_test.view', 'route' => 'tour_external_test', 'controller' => ExternalTourTestController::class, 'action' => '__invoke'],
+            'activity.activity.view' => ['label' => 'activity.activity.view', 'route' => 'activity_index', 'controller' => ActivityController::class, 'action' => 'index'],
+            'activity.activity.create' => ['label' => 'activity.activity.create', 'route' => 'activity_new', 'controller' => ActivityController::class, 'action' => 'new'],
+            'activity.activity.update' => ['label' => 'activity.activity.update', 'route' => 'activity_edit', 'controller' => ActivityController::class, 'action' => 'edit'],
+            'activity.activity.toggle' => ['label' => 'activity.activity.toggle', 'route' => 'activity_toggle', 'controller' => ActivityController::class, 'action' => 'toggle'],
+            'activity.image.create' => ['label' => 'activity.image.create', 'route' => 'activity_image_new', 'controller' => ActivityImageController::class, 'action' => 'new'],
+            'activity.image.update' => ['label' => 'activity.image.update', 'route' => 'activity_image_edit', 'controller' => ActivityImageController::class, 'action' => 'edit'],
+            'activity.image.delete' => ['label' => 'activity.image.delete', 'route' => 'activity_image_delete', 'controller' => ActivityImageController::class, 'action' => 'delete'],
+            'activity.offer.view' => ['label' => 'activity.offer.view', 'route' => 'activity_offer_index', 'controller' => ActivityOfferController::class, 'action' => 'index'],
+            'activity.offer.create' => ['label' => 'activity.offer.create', 'route' => 'activity_offer_new', 'controller' => ActivityOfferController::class, 'action' => 'new'],
+            'activity.offer.update' => ['label' => 'activity.offer.update', 'route' => 'activity_offer_edit', 'controller' => ActivityOfferController::class, 'action' => 'edit'],
+            'activity.offer.toggle' => ['label' => 'activity.offer.toggle', 'route' => 'activity_offer_toggle', 'controller' => ActivityOfferController::class, 'action' => 'toggle'],
+            'transfer.product.view' => ['label' => 'transfer.product.view', 'route' => 'transfer_product_index', 'controller' => TransferProductController::class, 'action' => 'index'],
+            'transfer.product.create' => ['label' => 'transfer.product.create', 'route' => 'transfer_product_new', 'controller' => TransferProductController::class, 'action' => 'new'],
+            'transfer.product.update' => ['label' => 'transfer.product.update', 'route' => 'transfer_product_edit', 'controller' => TransferProductController::class, 'action' => 'edit'],
+            'transfer.product.toggle' => ['label' => 'transfer.product.toggle', 'route' => 'transfer_product_toggle', 'controller' => TransferProductController::class, 'action' => 'toggle'],
+            'transfer.offer.view' => ['label' => 'transfer.offer.view', 'route' => 'transfer_offer_index', 'controller' => TransferOfferController::class, 'action' => 'index'],
+            'transfer.offer.create' => ['label' => 'transfer.offer.create', 'route' => 'transfer_offer_new', 'controller' => TransferOfferController::class, 'action' => 'new'],
+            'transfer.offer.update' => ['label' => 'transfer.offer.update', 'route' => 'transfer_offer_edit', 'controller' => TransferOfferController::class, 'action' => 'edit'],
+            'transfer.offer.toggle' => ['label' => 'transfer.offer.toggle', 'route' => 'transfer_offer_toggle', 'controller' => TransferOfferController::class, 'action' => 'toggle'],
+            'transfer.lookup.hotels' => ['label' => 'transfer.lookup.view', 'route' => 'transfer_lookup_hotels', 'controller' => TransferLookupController::class, 'action' => 'hotels'],
+            'trip_planner.test.view' => ['label' => 'trip_planner.test.view', 'route' => 'trip_planner_test', 'controller' => TripPlannerTestController::class, 'action' => '__invoke'],
         ];
     }
 
@@ -221,6 +252,9 @@ final readonly class ApplicationBootstrapData
             ['route' => 'flight_external_test', 'name' => 'flight.navigation.external_test', 'category' => 'flight_commerce', 'position' => 30, 'icon' => 'solar:magnifer-bold', 'permission' => 'flight.external_test.view'],
             ['route' => 'tour_package_index', 'name' => 'tour.navigation.packages', 'category' => 'tour_commerce', 'position' => 10, 'icon' => 'solar:map-bold', 'permission' => 'tour.package.view'],
             ['route' => 'tour_external_test', 'name' => 'tour.navigation.external_test', 'category' => 'tour_commerce', 'position' => 20, 'icon' => 'solar:magnifer-bold', 'permission' => 'tour.external_test.view'],
+            ['route' => 'activity_index', 'name' => 'activity.navigation.activities', 'category' => 'activity_commerce', 'position' => 10, 'icon' => 'solar:ticket-bold', 'permission' => 'activity.activity.view'],
+            ['route' => 'transfer_product_index', 'name' => 'transfer.navigation.products', 'category' => 'transfer_commerce', 'position' => 10, 'icon' => 'solar:bus-bold', 'permission' => 'transfer.product.view'],
+            ['route' => 'trip_planner_test', 'name' => 'trip_planner.navigation.test', 'category' => 'trip_planner', 'position' => 10, 'icon' => 'solar:route-bold', 'permission' => 'trip_planner.test.view'],
             ['route' => 'search_source_index', 'name' => 'search_source.navigation.sources', 'category' => 'data_sources', 'position' => 10, 'icon' => 'solar:database-bold', 'permission' => 'search_source.view'],
             ['route' => 'settings_list', 'name' => 'navigation.settings', 'category' => 'settings', 'position' => 10, 'icon' => 'solar:tuning-bold', 'permission' => 'settings.view'],
             ['route' => 'menu_index', 'name' => 'navigation.menu', 'category' => 'settings', 'position' => 20, 'icon' => 'solar:list-bold', 'permission' => 'menu.view'],

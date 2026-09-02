@@ -2,6 +2,8 @@
 
 namespace App\Tests\Modules\Default;
 
+use App\Modules\Activity\Entity\Activity;
+use App\Modules\Activity\Entity\ActivityOffer;
 use App\Modules\Default\Entity\AppSetting;
 use App\Modules\Default\Entity\Menu;
 use App\Modules\Default\Entity\MenuCategory;
@@ -10,6 +12,8 @@ use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\Tour\Entity\ExternalTourOffer;
 use App\Modules\Tour\Entity\TourPackage;
+use App\Modules\Transfer\Entity\TransferOffer;
+use App\Modules\Transfer\Entity\TransferProduct;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
 use Doctrine\DBAL\Connection;
@@ -47,6 +51,9 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight_external_test',
             'tour_package_index',
             'tour_external_test',
+            'activity_index',
+            'transfer_product_index',
+            'trip_planner_test',
         ] as $route) {
             self::assertNotNull($em->getRepository(Menu::class)->findOneBy(['route' => $route]), $route);
         }
@@ -62,6 +69,11 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'tour.package.view',
             'tour.image.create',
             'tour.external_test.view',
+            'activity.activity.view',
+            'activity.offer.view',
+            'transfer.product.view',
+            'transfer.offer.view',
+            'trip_planner.test.view',
         ] as $permissionName) {
             self::assertNotNull($em->getRepository(Permission::class)->findOneBy(['name' => $permissionName]), $permissionName);
         }
@@ -69,6 +81,9 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'catalog']));
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'flight_commerce']));
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'tour_commerce']));
+        self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'activity_commerce']));
+        self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'transfer_commerce']));
+        self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'trip_planner']));
         self::assertNotNull($em->getRepository(MenuCategory::class)->findOneBy(['code' => 'data_sources']));
         self::assertSame('AlefBayeSafar', $em->getRepository(AppSetting::class)->findOneBy(['name' => 'site_name'])?->getValue());
         self::assertSame(0, $em->getRepository(SearchSource::class)->count([]));
@@ -76,6 +91,10 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
         self::assertSame(0, $em->getRepository(FlightOffer::class)->count([]));
         self::assertSame(0, $em->getRepository(TourPackage::class)->count([]));
         self::assertSame(0, $em->getRepository(ExternalTourOffer::class)->count([]));
+        self::assertSame(0, $em->getRepository(Activity::class)->count([]));
+        self::assertSame(0, $em->getRepository(ActivityOffer::class)->count([]));
+        self::assertSame(0, $em->getRepository(TransferProduct::class)->count([]));
+        self::assertSame(0, $em->getRepository(TransferOffer::class)->count([]));
 
         $counts = $this->baselineCounts();
         $secondRun = $this->runBootstrap();
@@ -140,6 +159,10 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flightOffers' => $em->getRepository(FlightOffer::class)->count([]),
             'tourPackages' => $em->getRepository(TourPackage::class)->count([]),
             'externalTourOffers' => $em->getRepository(ExternalTourOffer::class)->count([]),
+            'activities' => $em->getRepository(Activity::class)->count([]),
+            'activityOffers' => $em->getRepository(ActivityOffer::class)->count([]),
+            'transferProducts' => $em->getRepository(TransferProduct::class)->count([]),
+            'transferOffers' => $em->getRepository(TransferOffer::class)->count([]),
         ];
     }
 
@@ -170,6 +193,11 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'external_tour_offer',
             'tour_package_image',
             'tour_package',
+            'activity_offer',
+            'activity_image',
+            'activity',
+            'transfer_offer',
+            'transfer_product',
         ] as $table) {
             $this->truncateIfExists($connection, $table);
         }

@@ -32,6 +32,8 @@ services:
       tags: [ 'flight_offer.provider' ]
     App\Modules\Tour\Provider\ExternalTourOfferProviderInterface:
       tags: [ 'external_tour_offer.provider' ]
+    App\Modules\Activity\Provider\ActivityOfferProviderInterface:
+      tags: [ 'activity_offer.provider' ]
 
   # makes classes in src/ available to be used as services
   # this creates a service per class whose id is the fully-qualified class name

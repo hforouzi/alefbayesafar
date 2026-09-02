@@ -1,0 +1,114 @@
+{% macro relation_field(field, label, value, url, placeholder) %}
+    <div
+        class="relative"
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ url }}"
+        data-geo-select-min-length-value="2"
+        data-loading-text="{{ 'activity.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'activity.lookup.no_results'|trans }}"
+        data-error-text="{{ 'activity.lookup.error'|trans }}"
+    >
+        <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ field.vars.id }}_search">{{ label|trans }}</label>
+        <div class="flex gap-2">
+            <input id="{{ field.vars.id }}_search" type="search" class="form-input" value="{{ value }}" placeholder="{{ placeholder|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+            <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'activity.lookup.clear'|trans }}</button>
+        </div>
+        {{ form_widget(field, { attr: { 'data-geo-select-target': 'hidden' } }) }}
+        <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+        <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        {{ form_errors(field) }}
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{{ form_start(form, { attr: { class: 'space-y-8' } }) }}
+    {{ form_errors(form) }}
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.basic'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.name, form.nameFa, form.slug] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.location'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {{ controls.relation_field(form.cityId, 'activity.activity.city', activity.city ? activity.city : '', path('destination_lookup_cities'), 'activity.lookup.city_placeholder') }}
+            <div>
+                {{ form_label(form.category, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(form.category) }}
+                {{ form_errors(form.category) }}
+            </div>
+            {% for field in [form.meetingPointText, form.durationMinutes, form.latitude, form.longitude] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.descriptions'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for field in [form.shortDescription, form.description] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.visibility'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-4">
+            {% for field in [form.active, form.featured, form.publicVisible] %}
+                <div class="flex items-end">
+                    <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                        {{ form_widget(field) }}
+                        <span>{{ field.vars.label|trans }}</span>
+                    </label>
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% if activity.id %}
+        <section>
+            <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.images'|trans }}</h3>
+            <p class="mb-3 text-sm text-white-dark">{{ 'activity.image.help'|trans }}</p>
+            <div class="flex flex-wrap gap-3">
+                {% for image in activity.images %}
+                    <div class="w-40 rounded border border-white-light/60 p-2 text-center dark:border-dark-light/20">
+                        {% set isRemote = image.path starts with 'http://' or image.path starts with 'https://' %}
+                        {% set imageSrc = isRemote ? image.path : asset(image.path starts with '/' ? image.path|slice(1) : image.path) %}
+                        <img src="{{ imageSrc }}" alt="{{ image.altFa ?: image.alt ?: activity.name }}" class="mb-2 h-24 w-full rounded object-cover">
+                        {% if image.primary %}<span class="badge bg-primary text-white">{{ 'activity.image.primary'|trans }}</span>{% endif %}
+                        <a href="{{ path('activity_image_edit', { activity: activity.id, image: image.id }) }}" class="btn btn-sm btn-outline-primary mt-2 w-full">{{ 'activity.common.edit'|trans }}</a>
+                    </div>
+                {% else %}
+                    <p class="text-sm text-white-dark">{{ 'activity.image.empty'|trans }}</p>
+                {% endfor %}
+            </div>
+            <a href="{{ path('activity_image_new', { activity: activity.id }) }}" class="btn btn-outline-primary mt-3">{{ 'activity.image.add'|trans }}</a>
+        </section>
+    {% endif %}
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'activity.common.save'|trans }}</button>
+        <a href="{{ path('activity_index') }}" class="btn btn-light">{{ 'activity.common.cancel'|trans }}</a>
+    </div>
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}

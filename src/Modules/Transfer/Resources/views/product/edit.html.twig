@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'transfer.product.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'transfer.product.subtitle'|trans }}{% endblock %}
+
+{% block body %}
+    {% include '@Transfer/product/_form.html.twig' %}
+{% endblock %}

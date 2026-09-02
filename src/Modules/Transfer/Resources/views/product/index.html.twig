@@ -1,0 +1,55 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'transfer.product.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'transfer.product.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('transfer_product_new') }}" class="btn btn-primary">{{ 'transfer.product.new'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% include '@Transfer/admin/_table_filters.html.twig' %}
+    <div class="table-responsive">
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    <th>{{ 'transfer.product.name'|trans }}</th>
+                    <th>{{ 'transfer.product.route'|trans }}</th>
+                    <th>{{ 'transfer.product.transfer_type'|trans }}</th>
+                    <th>{{ 'transfer.product.vehicle_type'|trans }}</th>
+                    <th>{{ 'transfer.product.flags'|trans }}</th>
+                    <th>{{ 'transfer.common.actions'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                    <tr>
+                        <td class="font-semibold">{{ product.name }}</td>
+                        <td>{{ product.originLabel }} &rarr; {{ product.destinationLabel }}</td>
+                        <td>{{ ('transfer.type.' ~ product.transferType.value)|trans }}</td>
+                        <td>{{ ('transfer.vehicle_type.' ~ product.vehicleType.value)|trans }}</td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="badge {{ product.active ? 'bg-success' : 'bg-danger' }} text-white">{{ product.active ? 'transfer.product.active'|trans : 'transfer.product.inactive'|trans }}</span>
+                                {% if product.featured %}<span class="badge bg-primary text-white">{{ 'transfer.product.featured'|trans }}</span>{% endif %}
+                                {% if product.publicVisible %}<span class="badge bg-info text-white">{{ 'transfer.product.public_visible'|trans }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ path('transfer_product_edit', { id: product.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'transfer.common.edit'|trans }}</a>
+                                <a href="{{ path('transfer_offer_index', { product: product.id }) }}" class="btn btn-sm btn-outline-info">{{ 'transfer.offer.title'|trans }}</a>
+                                <form method="post" action="{{ path('transfer_product_toggle', { id: product.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_transfer_product_' ~ product.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ product.active ? 'btn-outline-danger' : 'btn-outline-success' }}">{{ product.active ? 'transfer.product.deactivate'|trans : 'transfer.product.activate'|trans }}</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="py-10 text-center text-white-dark">{{ 'transfer.product.empty'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include '@Transfer/admin/_pagination.html.twig' %}
+{% endblock %}
