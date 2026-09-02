@@ -88,9 +88,18 @@ class ExternalTourOfferFlowTest extends KernelTestCase
         $summary = $service->search(new ExternalTourOfferSearchRequest($data['cgn'], $data['istanbul'], new \DateTimeImmutable('2026-09-10'), null, null, null, 5, 2, 0, 0));
 
         self::assertSame(0, $called);
-        self::assertSame(ExternalTourOfferSearchStatus::SKIPPED, $summary->getResults()[0]->status);
-        self::assertSame('ineligible', $summary->getResults()[0]->metadata['eligibility']);
-        self::assertSame(['ORIGIN_NOT_SUPPORTED'], $summary->getResults()[0]->metadata['eligibilityReasons']);
+        $sourceResult = null;
+        foreach ($summary->getResults() as $result) {
+            if ($result->source->getId() === $source->getId()) {
+                $sourceResult = $result;
+                break;
+            }
+        }
+
+        self::assertNotNull($sourceResult);
+        self::assertSame(ExternalTourOfferSearchStatus::SKIPPED->value, $sourceResult->status->value);
+        self::assertSame('ineligible', $sourceResult->metadata['eligibility']);
+        self::assertSame(['ORIGIN_NOT_SUPPORTED'], $sourceResult->metadata['eligibilityReasons']);
     }
 
     public function testFirecrawlProviderAcceptsVerifiedOfferAndRejectsUnsupportedFacts(): void

@@ -131,6 +131,27 @@ class HotelRepository extends ServiceEntityRepository
         return $builder->getQuery()->getResult();
     }
 
+    /**
+     * @return Hotel[]
+     */
+    public function findActiveForTripPlanner(City $city, ?int $stars = null, int $limit = 10): array
+    {
+        $builder = $this->createQueryBuilder('hotel')
+            ->andWhere('hotel.city = :city')
+            ->andWhere('hotel.active = true')
+            ->setParameter('city', $city)
+            ->orderBy('hotel.verified', 'DESC')
+            ->addOrderBy('hotel.stars', 'DESC')
+            ->addOrderBy('hotel.name', 'ASC')
+            ->setMaxResults(max(1, $limit));
+
+        if ($stars !== null) {
+            $builder->andWhere('hotel.stars = :stars')->setParameter('stars', $stars);
+        }
+
+        return $builder->getQuery()->getResult();
+    }
+
     public function findOneNearCoordinates(City $city, null|float|string $latitude, null|float|string $longitude, float $tolerance = 0.0005): ?Hotel
     {
         if (!is_numeric($latitude) || !is_numeric($longitude)) {

@@ -42,7 +42,7 @@ final readonly class TourOfferResolver
             }
         }
 
-        foreach ($this->externalOfferRepository->findFreshPotentialMatches($request, new \DateTimeImmutable()) as $offer) {
+        foreach ($this->externalOfferRepository->findFreshResolvableMatches($request, new \DateTimeImmutable()) as $offer) {
             if ($this->externalMatches($offer, $request)) {
                 $candidates[] = $this->externalCandidate($offer);
             }

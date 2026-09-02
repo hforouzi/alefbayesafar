@@ -80,4 +80,46 @@ class ExternalTourOfferRepository extends ServiceEntityRepository
             static fn (ExternalTourOffer $offer): bool => ($offer->getMetadata()['searchContextHash'] ?? null) === $request->contextHash(),
         ));
     }
+
+    /**
+     * Resolver lookup for current external offers. Snapshot identity remains
+     * exact-context in store/delete methods; trip resolution must match the
+     * actual persisted offer facts because some tour sources return available
+     * departures from a route/duration search rather than one exact date query.
+     *
+     * @return ExternalTourOffer[]
+     */
+    public function findFreshResolvableMatches(ExternalTourOfferSearchRequest $request, \DateTimeImmutable $now): array
+    {
+        $builder = $this->createQueryBuilder('offer')
+            ->leftJoin('offer.originAirport', 'origin')
+            ->leftJoin('offer.destinationCity', 'destination')
+            ->leftJoin('offer.hotel', 'hotel')
+            ->leftJoin('offer.hotelRoomType', 'roomType')
+            ->addSelect('origin', 'destination', 'hotel', 'roomType')
+            ->andWhere('offer.expiresAt > :now')
+            ->andWhere('offer.availabilityStatus != :unavailable')
+            ->andWhere('offer.destinationCity = :destination')
+            ->andWhere('offer.adults = :adults')
+            ->andWhere('offer.children = :children')
+            ->andWhere('offer.infants = :infants')
+            ->setParameter('now', $now)
+            ->setParameter('unavailable', TourAvailabilityStatus::UNAVAILABLE)
+            ->setParameter('destination', $request->destinationCity)
+            ->setParameter('adults', $request->adults)
+            ->setParameter('children', $request->children)
+            ->setParameter('infants', $request->infants)
+            ->orderBy('offer.totalPrice', 'ASC')
+            ->addOrderBy('offer.id', 'DESC');
+
+        if ($request->originAirport !== null) {
+            $builder->andWhere('offer.originAirport = :origin')->setParameter('origin', $request->originAirport);
+        }
+
+        if ($request->nights !== null) {
+            $builder->andWhere('offer.nights = :nights')->setParameter('nights', $request->nights);
+        }
+
+        return $builder->getQuery()->getResult();
+    }
 }
