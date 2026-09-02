@@ -9,6 +9,7 @@ parameters:
   destination.geonames_cache_directory: '%kernel.project_dir%/var/import/destination/geonames'
   firecrawl.base_url: 'https://api.firecrawl.dev'
   flight.external_offer_ttl_minutes: '20'
+  tour.external_offer_ttl_minutes: '360'
 
 
 services:
@@ -29,6 +30,8 @@ services:
       tags: [ 'hotel_offer.provider' ]
     App\Modules\Flight\Provider\FlightOfferProviderInterface:
       tags: [ 'flight_offer.provider' ]
+    App\Modules\Tour\Provider\ExternalTourOfferProviderInterface:
+      tags: [ 'external_tour_offer.provider' ]
 
   # makes classes in src/ available to be used as services
   # this creates a service per class whose id is the fully-qualified class name

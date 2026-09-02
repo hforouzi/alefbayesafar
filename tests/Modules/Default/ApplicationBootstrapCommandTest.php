@@ -8,6 +8,7 @@ use App\Modules\Default\Entity\MenuCategory;
 use App\Modules\Flight\Entity\FlightOffer;
 use App\Modules\Hotel\Entity\Hotel;
 use App\Modules\SearchSource\Entity\SearchSource;
+use App\Modules\Tour\Entity\ExternalTourOffer;
 use App\Modules\Tour\Entity\TourPackage;
 use App\Modules\User\Entity\Permission;
 use App\Modules\User\Entity\Role;
@@ -45,6 +46,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight_airline_index',
             'flight_external_test',
             'tour_package_index',
+            'tour_external_test',
         ] as $route) {
             self::assertNotNull($em->getRepository(Menu::class)->findOneBy(['route' => $route]), $route);
         }
@@ -59,6 +61,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight.external_test.view',
             'tour.package.view',
             'tour.image.create',
+            'tour.external_test.view',
         ] as $permissionName) {
             self::assertNotNull($em->getRepository(Permission::class)->findOneBy(['name' => $permissionName]), $permissionName);
         }
@@ -72,6 +75,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
         self::assertSame(0, $em->getRepository(Hotel::class)->count([]));
         self::assertSame(0, $em->getRepository(FlightOffer::class)->count([]));
         self::assertSame(0, $em->getRepository(TourPackage::class)->count([]));
+        self::assertSame(0, $em->getRepository(ExternalTourOffer::class)->count([]));
 
         $counts = $this->baselineCounts();
         $secondRun = $this->runBootstrap();
@@ -135,6 +139,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'hotels' => $em->getRepository(Hotel::class)->count([]),
             'flightOffers' => $em->getRepository(FlightOffer::class)->count([]),
             'tourPackages' => $em->getRepository(TourPackage::class)->count([]),
+            'externalTourOffers' => $em->getRepository(ExternalTourOffer::class)->count([]),
         ];
     }
 
@@ -162,6 +167,7 @@ class ApplicationBootstrapCommandTest extends KernelTestCase
             'flight_offer_leg',
             'flight_offer',
             'airline',
+            'external_tour_offer',
             'tour_package_image',
             'tour_package',
         ] as $table) {

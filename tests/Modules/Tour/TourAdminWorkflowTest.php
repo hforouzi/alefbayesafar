@@ -49,6 +49,7 @@ class TourAdminWorkflowTest extends WebTestCase
             'tour_lookup_hotels',
             'tour_lookup_room_types',
             'tour_lookup_own_flight_offers',
+            'tour_external_test',
         ] as $routeName) {
             self::assertNotNull($router->getRouteCollection()->get($routeName), $routeName);
         }
@@ -238,8 +239,56 @@ class TourAdminWorkflowTest extends WebTestCase
         self::assertSame(0, $first->getStatusCode());
         self::assertSame(0, $second->getStatusCode());
         self::assertSame(1, $this->em()->getRepository(Menu::class)->count(['route' => 'tour_package_index']));
+        self::assertSame(1, $this->em()->getRepository(Menu::class)->count(['route' => 'tour_external_test']));
         self::assertSame(1, $this->em()->getRepository(Permission::class)->count(['name' => 'tour.package.view']));
+        self::assertSame(1, $this->em()->getRepository(Permission::class)->count(['name' => 'tour.external_test.view']));
         self::assertSame($beforeTourPackages, $this->em()->getRepository(TourPackage::class)->count([]));
+    }
+
+    public function testExternalTourTestAdminShowsNoSourceState(): void
+    {
+        $client = self::createClient();
+        $client->disableReboot();
+        $client->loginUser($this->createSuperAdminUser());
+
+        $this->runBootstrap();
+        foreach ($this->em()->getRepository(SearchSource::class)->findAll() as $source) {
+            if ($source instanceof SearchSource && $source->supports(SearchSource::CAPABILITY_TOUR)) {
+                $source->setEnabled(false);
+            }
+        }
+        $this->em()->flush();
+        $data = $this->catalogData();
+
+        $crawler = $client->request('GET', '/admin/tour-commerce/external-test/');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'هیچ منبع تور خارجی فعالی تنظیم نشده است.');
+
+        $client->request('POST', '/admin/tour-commerce/external-test/', [
+            'external_tour_test' => [
+                '_token' => $this->formToken($crawler, 'external_tour_test'),
+                'originAirportId' => (string) $data['cgn']->getId(),
+                'destinationCityId' => (string) $data['istanbul']->getId(),
+                'departureDate' => '',
+                'returnDate' => '',
+                'validFrom' => '',
+                'validTo' => '',
+                'nights' => '5',
+                'rooms' => '1',
+                'adults' => '2',
+                'children' => '0',
+                'childrenAgesText' => '',
+                'infants' => '0',
+                'budget' => '',
+                'currency' => '',
+            ],
+        ]);
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'No sources configured');
+        self::assertSelectorTextContains('body', 'No enabled external tour sources are configured.');
+        self::assertSelectorTextContains('body', 'Stored matching offers');
     }
 
     public function testRepositoryReturnsOnlyActivePublicVisiblePackagesByFeaturedAndPriority(): void

@@ -80,6 +80,12 @@ php bin/console app:destination:import --target=airport --provider=ourairports -
 
 Search Sources are admin-configured environment/provider records. Create them through Admin or the Search Source CRUD; do not put API keys, tokens, cookies, or private URLs in fixtures or bootstrap data.
 
+## Search UX Guardrail
+
+Interactive searches and admin test actions must not render a silent empty state after submission. Every search-style action should show what was attempted, which sources or services were considered, whether the action succeeded, how many records were found or rejected, any provider/request failure, and the next useful state such as no results, no eligible sources, or invalid request.
+
+This rule applies to provider/debug tooling first and should guide later Hotel, Flight, Tour, and Trip Planner search surfaces.
+
 ## Flight External Provider Notes
 
 Flight external search is provider-neutral behind `FlightOfferProviderInterface`. The current Firecrawl provider can query admin-configured SearchSource URL templates and normalize only explicit flight offer facts into external `FlightOffer` snapshots.

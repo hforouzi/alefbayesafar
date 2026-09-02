@@ -26,6 +26,7 @@ use App\Modules\Hotel\Controller\HotelRateController;
 use App\Modules\Hotel\Controller\HotelRoomTypeController;
 use App\Modules\Hotel\Controller\HotelSearchController;
 use App\Modules\SearchSource\Controller\SearchSourceController;
+use App\Modules\Tour\Controller\ExternalTourTestController;
 use App\Modules\Tour\Controller\TourLookupController;
 use App\Modules\Tour\Controller\TourPackageController;
 use App\Modules\Tour\Controller\TourPackageImageController;
@@ -193,6 +194,7 @@ final readonly class ApplicationBootstrapData
             'tour.lookup.hotels' => ['label' => 'tour.lookup.view', 'route' => 'tour_lookup_hotels', 'controller' => TourLookupController::class, 'action' => 'hotels'],
             'tour.lookup.room_types' => ['label' => 'tour.lookup.view', 'route' => 'tour_lookup_room_types', 'controller' => TourLookupController::class, 'action' => 'roomTypes'],
             'tour.lookup.flight_offers' => ['label' => 'tour.lookup.view', 'route' => 'tour_lookup_own_flight_offers', 'controller' => TourLookupController::class, 'action' => 'ownFlightOffers'],
+            'tour.external_test.view' => ['label' => 'tour.external_test.view', 'route' => 'tour_external_test', 'controller' => ExternalTourTestController::class, 'action' => '__invoke'],
         ];
     }
 
@@ -218,6 +220,7 @@ final readonly class ApplicationBootstrapData
             ['route' => 'flight_airline_index', 'name' => 'flight.navigation.airlines', 'category' => 'flight_commerce', 'position' => 20, 'icon' => 'solar:compass-bold', 'permission' => 'flight.airline.view'],
             ['route' => 'flight_external_test', 'name' => 'flight.navigation.external_test', 'category' => 'flight_commerce', 'position' => 30, 'icon' => 'solar:magnifer-bold', 'permission' => 'flight.external_test.view'],
             ['route' => 'tour_package_index', 'name' => 'tour.navigation.packages', 'category' => 'tour_commerce', 'position' => 10, 'icon' => 'solar:map-bold', 'permission' => 'tour.package.view'],
+            ['route' => 'tour_external_test', 'name' => 'tour.navigation.external_test', 'category' => 'tour_commerce', 'position' => 20, 'icon' => 'solar:magnifer-bold', 'permission' => 'tour.external_test.view'],
             ['route' => 'search_source_index', 'name' => 'search_source.navigation.sources', 'category' => 'data_sources', 'position' => 10, 'icon' => 'solar:database-bold', 'permission' => 'search_source.view'],
             ['route' => 'settings_list', 'name' => 'navigation.settings', 'category' => 'settings', 'position' => 10, 'icon' => 'solar:tuning-bold', 'permission' => 'settings.view'],
             ['route' => 'menu_index', 'name' => 'navigation.menu', 'category' => 'settings', 'position' => 20, 'icon' => 'solar:list-bold', 'permission' => 'menu.view'],
