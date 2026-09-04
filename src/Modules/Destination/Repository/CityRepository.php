@@ -99,6 +99,25 @@ class CityRepository extends ServiceEntityRepository
         return $builder->getQuery()->getResult();
     }
 
+    /**
+     * @return City[]
+     */
+    public function findActiveByCountry(Country $country, int $limit = 25): array
+    {
+        return $this->createQueryBuilder('city')
+            ->addSelect('country', 'state')
+            ->innerJoin('city.country', 'country')
+            ->leftJoin('city.state', 'state')
+            ->andWhere('city.country = :country')
+            ->andWhere('city.active = :active')
+            ->setParameter('country', $country)
+            ->setParameter('active', true)
+            ->orderBy('city.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findOneByCountryStateAndName(Country $country, ?State $state, string $name): ?City
     {
         $builder = $this->createQueryBuilder('city')

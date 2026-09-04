@@ -2,9 +2,10 @@
 
 namespace App\Modules\TripPlanner\Controller;
 
-use App\Modules\Destination\Entity\City;
 use App\Modules\TripPlanner\Form\TripPlannerTestType;
-use App\Modules\TripPlanner\Service\TripPlanner;
+use App\Modules\TripPlanner\Enum\TripDateMode;
+use App\Modules\TripPlanner\Enum\TripPlanningGoal;
+use App\Modules\TripPlanner\Service\TravelPlanningService;
 use App\Modules\TripPlanner\ValueObject\TripPlanResult;
 use App\Modules\TripPlanner\ValueObject\TripSearchRequest;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,11 +19,14 @@ use Symfony\Component\Routing\Attribute\Route;
 class TripPlannerTestController extends AbstractController
 {
     #[Route('/', name: 'trip_planner_test', methods: ['GET', 'POST'])]
-    public function __invoke(Request $request, TripPlanner $planner): Response
+    public function __invoke(Request $request, TravelPlanningService $planningService): Response
     {
         $form = $this->createForm(TripPlannerTestType::class, [
             'departureDate' => new \DateTimeImmutable('+30 days'),
+            'dateMode' => TripDateMode::EXACT,
+            'goal' => TripPlanningGoal::SPECIFIC_DESTINATION,
             'nights' => 5,
+            'rooms' => 1,
             'adults' => 2,
             'children' => 0,
             'infants' => 0,
@@ -43,7 +47,7 @@ class TripPlannerTestController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $tripRequest = $this->tripRequestFromForm($form);
             if ($tripRequest instanceof TripSearchRequest) {
-                $result = $planner->plan($tripRequest);
+                $result = $planningService->plan($tripRequest);
                 $state = $result->status->value;
             } else {
                 $state = 'invalid_request';
@@ -62,15 +66,19 @@ class TripPlannerTestController extends AbstractController
     private function tripRequestFromForm(FormInterface $form): ?TripSearchRequest
     {
         $data = $form->getData();
-        if (!\is_array($data) || !$data['destinationCity'] instanceof City || !$data['departureDate'] instanceof \DateTimeImmutable) {
+        if (!\is_array($data)) {
             return null;
         }
 
         try {
+            $dateMode = $data['dateMode'] instanceof TripDateMode ? $data['dateMode'] : TripDateMode::EXACT;
+            $goal = $data['goal'] instanceof TripPlanningGoal ? $data['goal'] : TripPlanningGoal::SPECIFIC_DESTINATION;
+
             return new TripSearchRequest(
                 originAirport: $data['originAirport'] ?? null,
                 originCity: $data['originCity'] ?? null,
                 destinationCity: $data['destinationCity'],
+                destinationCountry: $data['destinationCountry'] ?? null,
                 departureDate: $data['departureDate'],
                 returnDate: $data['returnDate'] ?? null,
                 nights: $data['nights'] !== null ? (int) $data['nights'] : null,
@@ -86,6 +94,11 @@ class TripPlannerTestController extends AbstractController
                 directFlightPreferred: (bool) ($data['directFlightPreferred'] ?? false),
                 activityCategories: array_map(static fn ($category): string => $category instanceof \BackedEnum ? (string) $category->value : (string) $category, $data['activityCategories'] ?? []),
                 transferRequired: (bool) ($data['transferRequired'] ?? false),
+                dateMode: $dateMode,
+                windowStart: $data['windowStart'] ?? null,
+                windowEnd: $data['windowEnd'] ?? null,
+                goal: $goal,
+                rooms: $data['rooms'] !== null ? (int) $data['rooms'] : 1,
             );
         } catch (\InvalidArgumentException $exception) {
             $form->addError(new FormError($exception->getMessage()));

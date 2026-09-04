@@ -179,7 +179,8 @@ class HotelOfferStoreServiceTest extends KernelTestCase
             ->setDomain($domain)
             ->setProvider('firecrawl')
             ->setProviderType(SearchSourceProviderType::FIRECRAWL)
-            ->setCapabilities([SearchSource::CAPABILITY_HOTEL]);
+            ->setCapabilities([SearchSource::CAPABILITY_HOTEL])
+            ->setEnabled(false);
 
         $em = $this->entityManager();
         $em->persist($source);

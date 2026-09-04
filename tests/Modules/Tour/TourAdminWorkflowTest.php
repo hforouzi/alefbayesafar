@@ -208,7 +208,7 @@ class TourAdminWorkflowTest extends WebTestCase
         self::assertResponseRedirects('/admin/tour-commerce/packages/' . $updated->getId() . '/edit');
         self::assertSame(1, $this->em()->getRepository(TourPackageImage::class)->count(['tourPackage' => $updated]));
 
-        $crawler = $client->request('GET', '/admin/tour-commerce/packages/');
+        $crawler = $client->request('GET', '/admin/tour-commerce/packages/', ['q' => $slug]);
         self::assertResponseIsSuccessful();
         self::assertSelectorTextContains('body', 'Istanbul 5 Nights');
         self::assertSelectorTextContains('body', 'Arts Hotel Istanbul Harbiye');

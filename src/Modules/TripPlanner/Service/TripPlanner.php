@@ -30,7 +30,9 @@ use App\Modules\TripPlanner\ValueObject\TripSearchRequest;
 
 final readonly class TripPlanner
 {
-    private const MAX_TOUR_OPTIONS = 8;
+    private const MAX_NORMALIZED_OPTIONS = 10;
+    private const MAX_RECOMMENDATIONS = 5;
+    private const MAX_TOUR_OPTIONS = 10;
     private const MAX_FLIGHT_CANDIDATES = 3;
     private const MAX_HOTELS_TO_PRICE = 8;
     private const MAX_HOTEL_CANDIDATES = 3;
@@ -44,6 +46,7 @@ final readonly class TripPlanner
         private HotelPricingResolver $hotelPricingResolver,
         private ActivityOfferResolver $activityOfferResolver,
         private TransferOfferResolver $transferOfferResolver,
+        private HotelRecommendationContextBuilder $hotelContextBuilder,
     ) {
     }
 
@@ -56,11 +59,13 @@ final readonly class TripPlanner
         $tourOptions = $this->tourOptions($request, $messages, $diagnostics);
         $flightCandidates = $this->flightCandidates($request, $messages, $diagnostics);
         $hotelCandidates = $this->hotelCandidates($request, $messages, $diagnostics);
-        $activityCandidates = $this->activityCandidates($request, $messages, $diagnostics);
-        $customOptions = $this->customOptions($request, $flightCandidates, $hotelCandidates, $activityCandidates, $messages, $warnings, $diagnostics);
+        $customOptions = $this->customOptions($request, $flightCandidates, $hotelCandidates, $messages, $warnings, $diagnostics);
 
-        $options = array_merge($tourOptions, $customOptions);
+        $options = $this->deduplicate(array_merge($tourOptions, $customOptions));
         usort($options, $this->compareOptions(...));
+        $options = array_slice($options, 0, self::MAX_RECOMMENDATIONS);
+        $options = $this->hotelContextBuilder->enrichShortlist($options, $diagnostics);
+        $options = array_map(static fn (TripOption $option, int $index): TripOption => $option->withRank($index + 1), $options, array_keys($options));
 
         $completeOptions = array_values(array_filter($options, static fn (TripOption $option): bool => $option->isComplete()));
         $counts = [
@@ -70,20 +75,27 @@ final readonly class TripPlanner
             'partialOptions' => \count($options) - \count($completeOptions),
             'flightCandidates' => \count($flightCandidates),
             'hotelCandidates' => \count($hotelCandidates),
-            'activityCandidates' => \count($activityCandidates),
+            'activityCandidates' => (int) ($diagnostics['activityCandidates'] ?? 0),
             'transferCandidates' => (int) ($diagnostics['transferCandidates'] ?? 0),
+            'deduplicatedOptions' => \count($options),
+            'shortlistedRecommendations' => \count($options),
         ];
 
         if ($options === []) {
             $messages[] = 'No trip options could be built from the currently stored commercial data.';
             if ($counts['tourOptions'] === 0) {
-                $messages[] = 'No matching tour package was found.';
+                $messages[] = $request->isFlexible()
+                    ? 'No ' . $request->nightsOrDerived() . '-night option was found inside the selected date window.'
+                    : 'No matching tour package was found.';
             }
             if ($request->originAirport !== null && $counts['flightCandidates'] === 0) {
                 $messages[] = 'No suitable flight was available for the requested dates.';
             }
             if ($counts['hotelCandidates'] === 0) {
                 $messages[] = 'No priced hotel option was available for the destination and dates.';
+            }
+            if (!$request->hasDestinationScope()) {
+                $messages[] = 'No destination was selected. Broad discovery can use configured sources only when they support destination-free search.';
             }
 
             return new TripPlanResult(TripPlanStatus::NO_OPTIONS, [], array_values(array_unique($messages)), $counts, $diagnostics);
@@ -109,19 +121,27 @@ final readonly class TripPlanner
      */
     private function tourOptions(TripSearchRequest $request, array &$messages, array &$diagnostics): array
     {
+        if (!$request->hasDestinationScope()) {
+            $messages[] = 'Tour search was skipped because no destination city or country was selected.';
+
+            return [];
+        }
+
         try {
-            $candidates = $this->tourOfferResolver->resolve(
+            $candidates = $this->tourOfferResolver->resolveForDestination(
                 $request->originAirport,
+                $request->destinationCountry(),
                 $request->destinationCity,
-                $request->departureDate,
-                $request->returnDate,
-                null,
-                null,
+                $request->isFlexible() ? null : $request->departureDate,
+                $request->isFlexible() ? null : $request->returnDate,
+                $request->isFlexible() ? $request->windowStart : null,
+                $request->isFlexible() ? $request->windowEnd : null,
                 $request->nights,
                 $request->adults,
                 $request->children,
                 $request->infants,
                 $request->childAges,
+                $request->rooms,
             );
         } catch (\Throwable $exception) {
             $messages[] = 'Tour resolver failed; tour options are unavailable for this search.';
@@ -136,7 +156,9 @@ final readonly class TripPlanner
         }
 
         if ($options === []) {
-            $messages[] = 'No matching tour package was found.';
+            $messages[] = $request->isFlexible()
+                ? 'No ' . $request->nightsOrDerived() . '-night option was found inside the selected destination/date window.'
+                : 'No matching tour package was found.';
         }
 
         return $options;
@@ -148,6 +170,12 @@ final readonly class TripPlanner
         $budgetStatus = $this->budgetStatus($request, $candidate->currency, $candidate->totalPrice);
         $reasons = [$isOwn ? 'Own tour package' : 'External tour offer'];
         $warnings = [];
+        if ($request->isFlexible()) {
+            $reasons[] = $candidate->nights !== null
+                ? $candidate->nights . '-night option within your requested date window'
+                : 'Option within your requested date window';
+            $reasons[] = 'Lower-priced matching departure in the selected period';
+        }
         if ($budgetStatus === 'within_budget') {
             $reasons[] = 'Within your budget';
         } elseif ($budgetStatus === 'above_budget') {
@@ -156,10 +184,24 @@ final readonly class TripPlanner
 
         $score = $this->score(true, $isOwn, $budgetStatus, false, false, \count($candidate->inclusions));
         $sourceName = $isOwn ? 'OUR Tour Package' : ($candidate->externalTourOffer?->getSearchSource()?->getName() ?? 'External Tour');
+        $hotelContext = $this->hotelContextBuilder->fromTourCandidate($candidate);
+        $externalMetadata = $candidate->externalTourOffer?->getMetadata() ?? [];
+        $destinationCity = $candidate->tourPackage?->getDestinationCity() ?? $candidate->externalTourOffer?->getDestinationCity();
+        $destinationCountry = $destinationCity?->getCountry();
+        $sourceType = 'own';
+        if (!$isOwn) {
+            $sourceType = $this->isLiveExternalTour($candidate) ? 'live_external' : 'cached_external';
+            $reasons[] = $sourceType === 'live_external'
+                ? 'Fresh live external result'
+                : 'Cached external fallback';
+            if ($sourceType === 'cached_external' && $candidate->externalTourOffer?->getFetchedAt() instanceof \DateTimeImmutable) {
+                $warnings[] = 'External offer is cached from ' . $candidate->externalTourOffer->getFetchedAt()->format('Y-m-d H:i') . '.';
+            }
+        }
 
         return new TripOption(
             optionType: $isOwn ? TripOptionType::OUR_TOUR : TripOptionType::EXTERNAL_TOUR,
-            sourceType: $isOwn ? 'own' : 'external',
+            sourceType: $sourceType,
             sourceName: $sourceName,
             title: $candidate->title,
             currency: $candidate->currency,
@@ -167,8 +209,8 @@ final readonly class TripPlanner
             components: [
                 new TripComponentSummary('tour', $candidate->title, $candidate->sourceType->value, $sourceName, $candidate->currency, $candidate->totalPrice, $candidate->hotelSummary ?: $candidate->destination, $candidate->bookingUrl),
             ],
-            departureDate: $request->departureDate,
-            returnDate: $request->returnDate,
+            departureDate: $this->candidateDepartureDate($request, $candidate),
+            returnDate: $this->candidateReturnDate($request, $candidate),
             nights: $candidate->nights ?? $request->nightsOrDerived(),
             completenessStatus: 'complete',
             budgetStatus: $budgetStatus,
@@ -176,6 +218,14 @@ final readonly class TripPlanner
             reasons: $reasons,
             warnings: $warnings,
             bookingUrl: $candidate->bookingUrl,
+            destinationCountry: $destinationCountry?->getName(),
+            destinationCity: $destinationCity?->getName() ?? $candidate->destination,
+            hotelName: $hotelContext?->hotelName,
+            hotelGrade: $hotelContext?->stars !== null ? (string) $hotelContext->stars : null,
+            board: $candidate->externalTourOffer?->getBoardType() ?? $candidate->tourPackage?->getBoardType(),
+            airline: $candidate->flightSummary,
+            agency: \is_scalar($externalMetadata['agency'] ?? null) ? (string) $externalMetadata['agency'] : null,
+            hotelRecommendationContext: $hotelContext,
         );
     }
 
@@ -192,19 +242,41 @@ final readonly class TripPlanner
 
             return [];
         }
+        if ($request->destinationCity === null) {
+            $messages[] = 'No destination was selected, so flight pricing was skipped.';
+
+            return [];
+        }
 
         try {
-            return array_slice($this->flightPricingResolver->resolve(
-                $request->originAirport,
-                $this->destinationAirport($request),
-                $request->departureDate,
-                $request->returnDate,
-                $request->adults,
-                $request->children,
-                $request->infants,
-                $request->flightCabin ?? FlightCabinClass::ECONOMY,
-                $request->directFlightPreferred ? true : null,
-            ), 0, self::MAX_FLIGHT_CANDIDATES);
+            $dateWindows = $this->dateWindowsForCustomSearch($request);
+            if ($dateWindows === []) {
+                $messages[] = 'No concrete date windows were available for flexible flight pricing.';
+
+                return [];
+            }
+
+            $candidates = [];
+            foreach ($dateWindows as $window) {
+                foreach ($this->flightPricingResolver->resolve(
+                    $request->originAirport,
+                    $this->destinationAirport($request),
+                    $window['departureDate'],
+                    $window['returnDate'],
+                    $request->adults,
+                    $request->children,
+                    $request->infants,
+                    $request->flightCabin ?? FlightCabinClass::ECONOMY,
+                    $request->directFlightPreferred ? true : null,
+                ) as $candidate) {
+                    $candidates[] = $candidate;
+                    if (\count($candidates) >= self::MAX_FLIGHT_CANDIDATES) {
+                        return $candidates;
+                    }
+                }
+            }
+
+            return $candidates;
         } catch (\Throwable $exception) {
             $messages[] = 'No suitable flight was available for the requested dates.';
             $diagnostics['flightResolverError'] = $exception->getMessage();
@@ -215,6 +287,9 @@ final readonly class TripPlanner
 
     private function destinationAirport(TripSearchRequest $request): \App\Modules\Destination\Entity\Airport
     {
+        if ($request->destinationCity === null) {
+            throw new \LogicException('Destination city is required for flight pricing.');
+        }
         $airports = $request->destinationCity->getAirports();
         $airport = $airports->first();
         if (!$airport instanceof \App\Modules\Destination\Entity\Airport) {
@@ -228,20 +303,34 @@ final readonly class TripPlanner
      * @param string[] $messages
      * @param array<string, mixed> $diagnostics
      *
-     * @return array<int, array{hotel: Hotel, candidate: HotelPricingCandidate}>
+     * @return array<int, array{hotel: Hotel, candidate: HotelPricingCandidate, departureDate: \DateTimeImmutable, returnDate: \DateTimeImmutable}>
      */
     private function hotelCandidates(TripSearchRequest $request, array &$messages, array &$diagnostics): array
     {
+        if ($request->destinationCity === null) {
+            $messages[] = 'No destination was selected, so hotel pricing was skipped.';
+
+            return [];
+        }
+        $dateWindows = $this->dateWindowsForCustomSearch($request);
+        if ($dateWindows === []) {
+            $messages[] = 'No concrete date windows were available for hotel pricing.';
+
+            return [];
+        }
+
         $priced = [];
         $hotels = $this->hotelRepository->findActiveForTripPlanner($request->destinationCity, $request->hotelStarPreference, self::MAX_HOTELS_TO_PRICE);
         foreach ($hotels as $hotel) {
-            try {
-                foreach ($this->hotelPricingResolver->resolve($hotel, $request->departureDate, $request->checkOutDate(), $request->adults, $request->children, $request->childAges) as $candidate) {
-                    $priced[] = ['hotel' => $hotel, 'candidate' => $candidate];
-                    break;
+            foreach ($dateWindows as $window) {
+                try {
+                    foreach ($this->hotelPricingResolver->resolve($hotel, $window['departureDate'], $window['returnDate'], $request->adults, $request->children, $request->childAges) as $candidate) {
+                        $priced[] = ['hotel' => $hotel, 'candidate' => $candidate, 'departureDate' => $window['departureDate'], 'returnDate' => $window['returnDate']];
+                        break 2;
+                    }
+                } catch (\Throwable $exception) {
+                    $diagnostics['hotelResolverErrors'][] = $hotel->getName() . ': ' . $exception->getMessage();
                 }
-            } catch (\Throwable $exception) {
-                $diagnostics['hotelResolverErrors'][] = $hotel->getName() . ': ' . $exception->getMessage();
             }
 
             if (\count($priced) >= self::MAX_HOTEL_CANDIDATES) {
@@ -262,8 +351,12 @@ final readonly class TripPlanner
      *
      * @return ActivityPricingCandidate[]
      */
-    private function activityCandidates(TripSearchRequest $request, array &$messages, array &$diagnostics): array
+    private function activityCandidates(TripSearchRequest $request, \DateTimeImmutable $travelDate, array &$messages, array &$diagnostics): array
     {
+        if ($request->destinationCity === null) {
+            return [];
+        }
+
         $categories = $request->activityCategories === [] ? [null] : array_values(array_filter(array_map(
             static fn (string $value): ?ActivityCategory => ActivityCategory::tryFrom($value),
             $request->activityCategories,
@@ -272,7 +365,7 @@ final readonly class TripPlanner
         $candidates = [];
         foreach ($categories as $category) {
             try {
-                foreach ($this->activityOfferResolver->resolve($request->destinationCity, $request->departureDate, $request->adults, $request->children, $request->infants, $category) as $candidate) {
+                foreach ($this->activityOfferResolver->resolve($request->destinationCity, $travelDate, $request->adults, $request->children, $request->infants, $category) as $candidate) {
                     $key = (string) $candidate->activity->getId();
                     $candidates[$key] ??= $candidate;
                     if (\count($candidates) >= self::MAX_ACTIVITIES) {
@@ -293,15 +386,14 @@ final readonly class TripPlanner
 
     /**
      * @param FlightPricingCandidate[] $flights
-     * @param array<int, array{hotel: Hotel, candidate: HotelPricingCandidate}> $hotels
-     * @param ActivityPricingCandidate[] $activities
+     * @param array<int, array{hotel: Hotel, candidate: HotelPricingCandidate, departureDate: \DateTimeImmutable, returnDate: \DateTimeImmutable}> $hotels
      * @param string[] $messages
      * @param string[] $warnings
      * @param array<string, mixed> $diagnostics
      *
      * @return TripOption[]
      */
-    private function customOptions(TripSearchRequest $request, array $flights, array $hotels, array $activities, array &$messages, array &$warnings, array &$diagnostics): array
+    private function customOptions(TripSearchRequest $request, array $flights, array $hotels, array &$messages, array &$warnings, array &$diagnostics): array
     {
         if ($flights === [] || $hotels === []) {
             return [];
@@ -312,7 +404,13 @@ final readonly class TripPlanner
             foreach ($hotels as $hotelRow) {
                 $hotel = $hotelRow['hotel'];
                 $hotelCandidate = $hotelRow['candidate'];
-                $transfer = $this->transferCandidate($request, $hotel, $diagnostics);
+                $departureDate = $this->flightDepartureDate($flight) ?? $hotelRow['departureDate'];
+                $returnDate = $this->flightReturnDate($flight) ?? $hotelRow['returnDate'];
+                if ($departureDate->format('Y-m-d') !== $hotelRow['departureDate']->format('Y-m-d') || $returnDate->format('Y-m-d') !== $hotelRow['returnDate']->format('Y-m-d')) {
+                    continue;
+                }
+                $transfer = $this->transferCandidate($request, $hotel, $departureDate, $diagnostics);
+                $activities = $this->activityCandidates($request, $departureDate, $messages, $diagnostics);
                 $optionWarnings = [];
                 $components = [
                     new TripComponentSummary('flight', $flight->routeSummary, $flight->sourceType->value, null, $flight->currency, $flight->totalPrice, $flight->airlineSummary . ' / ' . $flight->departureSummary),
@@ -361,14 +459,18 @@ final readonly class TripPlanner
                     $currency,
                     $total,
                     $components,
-                    $request->departureDate,
-                    $request->returnDate,
-                    $request->nightsOrDerived(),
+                    $departureDate,
+                    $returnDate,
+                    max(1, (int) $departureDate->diff($returnDate)->format('%a')),
                     $complete ? 'complete' : 'partial',
                     $budgetStatus,
                     $this->score($complete, false, $budgetStatus, $request->transferRequired && $transfer instanceof TransferPricingCandidate, $activities !== [], \count($activities), $flight->sourceType === FlightPriceSourceType::OWN || $hotelCandidate->sourceType === HotelPriceSourceType::OWN),
                     $reasons,
                     array_values(array_unique($optionWarnings)),
+                    destinationCountry: $request->destinationCountry()?->getName(),
+                    destinationCity: $request->destinationCity?->getName(),
+                    hotelName: $hotel->getName(),
+                    hotelGrade: $hotel->getStars() !== null ? (string) $hotel->getStars() : null,
                 );
 
                 if (\count($options) >= self::MAX_CUSTOM_OPTIONS) {
@@ -383,9 +485,12 @@ final readonly class TripPlanner
     /**
      * @param array<string, mixed> $diagnostics
      */
-    private function transferCandidate(TripSearchRequest $request, Hotel $hotel, array &$diagnostics): ?TransferPricingCandidate
+    private function transferCandidate(TripSearchRequest $request, Hotel $hotel, \DateTimeImmutable $travelDate, array &$diagnostics): ?TransferPricingCandidate
     {
         if (!$request->transferRequired) {
+            return null;
+        }
+        if ($request->destinationCity === null) {
             return null;
         }
 
@@ -393,7 +498,7 @@ final readonly class TripPlanner
             $candidates = $this->transferOfferResolver->resolve(
                 TransferEndpointContext::forCity($request->destinationCity),
                 TransferEndpointContext::forHotel($hotel),
-                $request->departureDate,
+                $travelDate,
                 $request->passengerCount(),
             );
             $diagnostics['transferCandidates'] = max((int) ($diagnostics['transferCandidates'] ?? 0), \count($candidates));
@@ -478,5 +583,100 @@ final readonly class TripPlanner
         }
 
         return $left->title <=> $right->title;
+    }
+
+    /**
+     * @param TripOption[] $options
+     *
+     * @return TripOption[]
+     */
+    private function deduplicate(array $options): array
+    {
+        $unique = [];
+        foreach (array_slice($options, 0, self::MAX_NORMALIZED_OPTIONS * 2) as $option) {
+            $key = implode('|', [
+                $option->optionType->value,
+                $option->sourceName ?? $option->sourceType,
+                $this->normalize($option->title),
+                $option->departureDate->format('Y-m-d'),
+                $option->returnDate?->format('Y-m-d') ?? '',
+                $this->normalize($option->destinationCity ?? ''),
+                $this->normalize($option->hotelName ?? ''),
+                $this->normalize($option->airline ?? ''),
+                $this->normalize($option->agency ?? ''),
+                $option->currency ?? '',
+                $option->totalPrice ?? '',
+            ]);
+            $unique[$key] ??= $option;
+            if (\count($unique) >= self::MAX_NORMALIZED_OPTIONS) {
+                break;
+            }
+        }
+
+        return array_values($unique);
+    }
+
+    private function normalize(string $value): string
+    {
+        return trim((string) preg_replace('/\s+/', ' ', mb_strtolower($value)));
+    }
+
+    /**
+     * @return array<int, array{departureDate: \DateTimeImmutable, returnDate: \DateTimeImmutable}>
+     */
+    private function dateWindowsForCustomSearch(TripSearchRequest $request): array
+    {
+        if (!$request->isFlexible()) {
+            if (!$request->departureDate instanceof \DateTimeImmutable || !$request->returnDate instanceof \DateTimeImmutable) {
+                return [];
+            }
+
+            return [['departureDate' => $request->departureDate, 'returnDate' => $request->returnDate]];
+        }
+
+        return array_slice($request->candidateDateWindows, 0, 3);
+    }
+
+    private function flightDepartureDate(FlightPricingCandidate $candidate): ?\DateTimeImmutable
+    {
+        $outbound = $candidate->flightOffer?->getOrderedLegs(\App\Modules\Flight\Enum\FlightDirection::OUTBOUND);
+        $first = $outbound[0] ?? null;
+
+        return $first?->getDepartureAt();
+    }
+
+    private function flightReturnDate(FlightPricingCandidate $candidate): ?\DateTimeImmutable
+    {
+        $inbound = $candidate->flightOffer?->getOrderedLegs(\App\Modules\Flight\Enum\FlightDirection::INBOUND);
+        $first = $inbound[0] ?? null;
+
+        return $first?->getDepartureAt();
+    }
+
+    private function isLiveExternalTour(TourPricingCandidate $candidate): bool
+    {
+        $fetchedAt = $candidate->externalTourOffer?->getFetchedAt();
+        if (!$fetchedAt instanceof \DateTimeImmutable) {
+            return false;
+        }
+
+        return $fetchedAt >= new \DateTimeImmutable('-2 minutes');
+    }
+
+    private function candidateDepartureDate(TripSearchRequest $request, TourPricingCandidate $candidate): \DateTimeImmutable
+    {
+        return $candidate->tourPackage?->getDepartureDate()
+            ?? $candidate->externalTourOffer?->getDepartureDate()
+            ?? $request->travelStartDate();
+    }
+
+    private function candidateReturnDate(TripSearchRequest $request, TourPricingCandidate $candidate): \DateTimeImmutable
+    {
+        $departureDate = $this->candidateDepartureDate($request, $candidate);
+
+        return $candidate->tourPackage?->getReturnDate()
+            ?? $candidate->externalTourOffer?->getReturnDate()
+            ?? $request->returnDate
+            ?? $departureDate->modify('+' . $request->nightsOrDerived() . ' days');
     }
 }

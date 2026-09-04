@@ -4,6 +4,7 @@ namespace App\Modules\Tour\Service;
 
 use App\Modules\Destination\Entity\Airport;
 use App\Modules\Destination\Entity\City;
+use App\Modules\Destination\Entity\Country;
 use App\Modules\Tour\Entity\ExternalTourOffer;
 use App\Modules\Tour\Entity\TourPackage;
 use App\Modules\Tour\Enum\TourOfferSourceType;
@@ -53,6 +54,44 @@ final readonly class TourOfferResolver
         return $candidates;
     }
 
+    /**
+     * @param int[] $childrenAges
+     *
+     * @return TourPricingCandidate[]
+     */
+    public function resolveForDestination(?Airport $origin, ?Country $destinationCountry, ?City $destinationCity, ?\DateTimeImmutable $departureDate, ?\DateTimeImmutable $returnDate, ?\DateTimeImmutable $validFrom, ?\DateTimeImmutable $validTo, ?int $nights, int $adults, int $children, int $infants, array $childrenAges = [], int $rooms = 1, bool $publicOnly = true): array
+    {
+        if ($destinationCity instanceof City) {
+            return $this->resolve($origin, $destinationCity, $departureDate, $returnDate, $validFrom, $validTo, $nights, $adults, $children, $infants, $childrenAges, $rooms, $publicOnly);
+        }
+
+        if (!$destinationCountry instanceof Country) {
+            return [];
+        }
+
+        $candidates = [];
+
+        foreach ($this->packageRepository->findActivePublicVisibleByCountry($destinationCountry) as $package) {
+            if (!$this->ownMatchesCountry($package, $origin, $destinationCountry, $departureDate, $returnDate, $validFrom, $validTo, $nights, $adults, $children, $infants, $childrenAges, $publicOnly)) {
+                continue;
+            }
+            $price = $package->getPricingMode() === TourPricingMode::TOTAL_PARTY ? $package->getTotalPrice() : $package->calculatedPartyPrice();
+            if ($price !== null) {
+                $candidates[] = $this->ownCandidate($package, $price);
+            }
+        }
+
+        foreach ($this->externalOfferRepository->findFreshResolvableCountryMatches($destinationCountry, $origin, $nights, $adults, $children, $infants, $childrenAges, new \DateTimeImmutable()) as $offer) {
+            if ($this->externalMatchesCountry($offer, $validFrom, $validTo, $departureDate, $returnDate, $nights)) {
+                $candidates[] = $this->externalCandidate($offer);
+            }
+        }
+
+        usort($candidates, [$this, 'compare']);
+
+        return $candidates;
+    }
+
     private function ownMatches(TourPackage $package, ExternalTourOfferSearchRequest $request, bool $publicOnly): bool
     {
         if (!$package->isActive() || ($publicOnly && !$package->isPublicVisible())) {
@@ -87,23 +126,75 @@ final readonly class TourOfferResolver
             && $this->datesMatch($offer->getDepartureDate(), $offer->getReturnDate(), $offer->getValidFrom(), $offer->getValidTo(), $request);
     }
 
+    /**
+     * @param int[] $childrenAges
+     */
+    private function ownMatchesCountry(TourPackage $package, ?Airport $origin, Country $destinationCountry, ?\DateTimeImmutable $departureDate, ?\DateTimeImmutable $returnDate, ?\DateTimeImmutable $validFrom, ?\DateTimeImmutable $validTo, ?int $nights, int $adults, int $children, int $infants, array $childrenAges, bool $publicOnly): bool
+    {
+        if (!$package->isActive() || ($publicOnly && !$package->isPublicVisible())) {
+            return false;
+        }
+        if ($package->getDestinationCity()?->getCountry()?->getId() !== $destinationCountry->getId()) {
+            return false;
+        }
+        if ($package->getOriginAirport() instanceof Airport && $origin instanceof Airport && $package->getOriginAirport()->getId() !== $origin->getId()) {
+            return false;
+        }
+        if ($package->getOriginAirport() instanceof Airport && !$origin instanceof Airport) {
+            return false;
+        }
+        if ($nights !== null && $package->getNights() !== $nights) {
+            return false;
+        }
+        if ($package->getAdults() !== $adults || $package->getChildren() !== $children || $package->getInfants() !== $infants || $package->getChildrenAges() !== $childrenAges) {
+            return false;
+        }
+
+        return $this->datesMatchValues($package->getDepartureDate(), $package->getReturnDate(), $package->getValidFrom(), $package->getValidTo(), $departureDate, $returnDate, $validFrom, $validTo, $nights);
+    }
+
+    private function externalMatchesCountry(ExternalTourOffer $offer, ?\DateTimeImmutable $validFrom, ?\DateTimeImmutable $validTo, ?\DateTimeImmutable $departureDate, ?\DateTimeImmutable $returnDate, ?int $nights): bool
+    {
+        return $this->datesMatchValues($offer->getDepartureDate(), $offer->getReturnDate(), $offer->getValidFrom(), $offer->getValidTo(), $departureDate, $returnDate, $validFrom, $validTo, $nights);
+    }
+
     private function datesMatch(?\DateTimeImmutable $departureDate, ?\DateTimeImmutable $returnDate, ?\DateTimeImmutable $validFrom, ?\DateTimeImmutable $validTo, ExternalTourOfferSearchRequest $request): bool
     {
-        if ($request->departureDate instanceof \DateTimeImmutable) {
+        return $this->datesMatchValues($departureDate, $returnDate, $validFrom, $validTo, $request->departureDate, $request->returnDate, $request->validFrom, $request->validTo, $request->nights);
+    }
+
+    private function datesMatchValues(?\DateTimeImmutable $departureDate, ?\DateTimeImmutable $returnDate, ?\DateTimeImmutable $validFrom, ?\DateTimeImmutable $validTo, ?\DateTimeImmutable $requestedDepartureDate, ?\DateTimeImmutable $requestedReturnDate, ?\DateTimeImmutable $requestedValidFrom, ?\DateTimeImmutable $requestedValidTo, ?int $requestedNights): bool
+    {
+        if ($requestedDepartureDate instanceof \DateTimeImmutable) {
             if ($departureDate instanceof \DateTimeImmutable) {
-                return $departureDate->format('Y-m-d') === $request->departureDate->format('Y-m-d')
-                    && (!$request->returnDate instanceof \DateTimeImmutable || $returnDate?->format('Y-m-d') === $request->returnDate->format('Y-m-d'));
+                return $departureDate->format('Y-m-d') === $requestedDepartureDate->format('Y-m-d')
+                    && (!$requestedReturnDate instanceof \DateTimeImmutable || $returnDate?->format('Y-m-d') === $requestedReturnDate->format('Y-m-d'));
             }
 
             return $validFrom instanceof \DateTimeImmutable
-                && $request->departureDate >= $validFrom
-                && (!$validTo instanceof \DateTimeImmutable || $request->departureDate <= $validTo);
+                && $requestedDepartureDate >= $validFrom
+                && (!$validTo instanceof \DateTimeImmutable || $requestedDepartureDate <= $validTo);
         }
 
-        return $request->validFrom instanceof \DateTimeImmutable
-            && $validFrom instanceof \DateTimeImmutable
-            && $validFrom <= $request->validFrom
-            && (!$validTo instanceof \DateTimeImmutable || !$request->validTo instanceof \DateTimeImmutable || $validTo >= $request->validTo);
+        if (!$requestedValidFrom instanceof \DateTimeImmutable || !$requestedValidTo instanceof \DateTimeImmutable) {
+            return false;
+        }
+
+        if ($departureDate instanceof \DateTimeImmutable) {
+            $candidateReturn = $returnDate;
+            if (!$candidateReturn instanceof \DateTimeImmutable && $requestedNights !== null) {
+                $candidateReturn = $departureDate->modify('+' . $requestedNights . ' days');
+            }
+
+            return $candidateReturn instanceof \DateTimeImmutable
+                && $departureDate >= $requestedValidFrom
+                && $candidateReturn <= $requestedValidTo;
+        }
+
+        return $validFrom instanceof \DateTimeImmutable
+            && $validTo instanceof \DateTimeImmutable
+            && $validFrom >= $requestedValidFrom
+            && $validTo <= $requestedValidTo;
     }
 
     private function ownPrice(TourPackage $package, ExternalTourOfferSearchRequest $request): ?string

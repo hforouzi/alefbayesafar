@@ -152,6 +152,39 @@ class HotelRepository extends ServiceEntityRepository
         return $builder->getQuery()->getResult();
     }
 
+    /**
+     * @return Hotel[]
+     */
+    public function findActiveByNormalizedNameInCity(City $city, string $name, int $limit = 3): array
+    {
+        $needle = $this->normalizeName($name);
+        if ($needle === '') {
+            return [];
+        }
+
+        $candidates = $this->createQueryBuilder('hotel')
+            ->andWhere('hotel.city = :city')
+            ->andWhere('hotel.active = true')
+            ->setParameter('city', $city)
+            ->orderBy('hotel.verified', 'DESC')
+            ->addOrderBy('hotel.updatedAt', 'DESC')
+            ->setMaxResults(max(1, $limit * 4))
+            ->getQuery()
+            ->getResult();
+
+        $matches = [];
+        foreach ($candidates as $hotel) {
+            if ($hotel instanceof Hotel && $this->normalizeName($hotel->getName()) === $needle) {
+                $matches[] = $hotel;
+                if (\count($matches) >= $limit) {
+                    break;
+                }
+            }
+        }
+
+        return $matches;
+    }
+
     public function findOneNearCoordinates(City $city, null|float|string $latitude, null|float|string $longitude, float $tolerance = 0.0005): ?Hotel
     {
         if (!is_numeric($latitude) || !is_numeric($longitude)) {
@@ -184,6 +217,19 @@ class HotelRepository extends ServiceEntityRepository
         $website = trim($website, "/ \t\n\r\0\x0B");
 
         return $website !== '' ? $website : null;
+    }
+
+    private function normalizeName(string $name): string
+    {
+        $name = mb_strtolower(trim($name));
+        $converted = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if (\is_string($converted) && $converted !== '') {
+            $name = $converted;
+        }
+        $name = preg_replace('/\b(hotel|hotels|resort|apartments?|suites?|the|and)\b/u', ' ', $name) ?? $name;
+        $name = preg_replace('/[^a-z0-9]+/u', ' ', $name) ?? $name;
+
+        return trim((string) preg_replace('/\s+/', ' ', $name));
     }
 
     private function createAdminListBuilder(): QueryBuilder

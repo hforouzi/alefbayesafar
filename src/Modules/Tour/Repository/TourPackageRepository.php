@@ -3,6 +3,7 @@
 namespace App\Modules\Tour\Repository;
 
 use App\Modules\Destination\Entity\City;
+use App\Modules\Destination\Entity\Country;
 use App\Modules\Tour\Entity\TourPackage;
 use App\Shared\Admin\Pagination\PaginatedResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -68,6 +69,25 @@ class TourPackageRepository extends ServiceEntityRepository
         }
 
         return $builder->getQuery()->getResult();
+    }
+
+    /**
+     * @return TourPackage[]
+     */
+    public function findActivePublicVisibleByCountry(Country $country): array
+    {
+        return $this->baseListBuilder()
+            ->andWhere('package.active = :active')
+            ->andWhere('package.publicVisible = :publicVisible')
+            ->andWhere('destination.country = :country')
+            ->setParameter('active', true)
+            ->setParameter('publicVisible', true)
+            ->setParameter('country', $country)
+            ->orderBy('package.featured', 'DESC')
+            ->addOrderBy('package.priority', 'DESC')
+            ->addOrderBy('package.id', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 
     private function baseListBuilder(): QueryBuilder

@@ -2,6 +2,8 @@
 
 namespace App\Modules\Tour\Repository;
 
+use App\Modules\Destination\Entity\Airport;
+use App\Modules\Destination\Entity\Country;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\Tour\Entity\ExternalTourOffer;
 use App\Modules\Tour\Enum\TourAvailabilityStatus;
@@ -121,5 +123,48 @@ class ExternalTourOfferRepository extends ServiceEntityRepository
         }
 
         return $builder->getQuery()->getResult();
+    }
+
+    /**
+     * @param int[] $childrenAges
+     *
+     * @return ExternalTourOffer[]
+     */
+    public function findFreshResolvableCountryMatches(Country $country, ?Airport $origin, ?int $nights, int $adults, int $children, int $infants, array $childrenAges, \DateTimeImmutable $now): array
+    {
+        $builder = $this->createQueryBuilder('offer')
+            ->leftJoin('offer.originAirport', 'origin')
+            ->leftJoin('offer.destinationCity', 'destination')
+            ->leftJoin('destination.country', 'country')
+            ->leftJoin('offer.hotel', 'hotel')
+            ->leftJoin('offer.hotelRoomType', 'roomType')
+            ->addSelect('origin', 'destination', 'country', 'hotel', 'roomType')
+            ->andWhere('offer.expiresAt > :now')
+            ->andWhere('offer.availabilityStatus != :unavailable')
+            ->andWhere('destination.country = :country')
+            ->andWhere('offer.adults = :adults')
+            ->andWhere('offer.children = :children')
+            ->andWhere('offer.infants = :infants')
+            ->setParameter('now', $now)
+            ->setParameter('unavailable', TourAvailabilityStatus::UNAVAILABLE)
+            ->setParameter('country', $country)
+            ->setParameter('adults', $adults)
+            ->setParameter('children', $children)
+            ->setParameter('infants', $infants)
+            ->orderBy('offer.totalPrice', 'ASC')
+            ->addOrderBy('offer.id', 'DESC');
+
+        if ($origin !== null) {
+            $builder->andWhere('offer.originAirport = :origin')->setParameter('origin', $origin);
+        }
+
+        if ($nights !== null) {
+            $builder->andWhere('offer.nights = :nights')->setParameter('nights', $nights);
+        }
+
+        return array_values(array_filter(
+            $builder->getQuery()->getResult(),
+            static fn (ExternalTourOffer $offer): bool => $offer->getChildrenAges() === $childrenAges,
+        ));
     }
 }

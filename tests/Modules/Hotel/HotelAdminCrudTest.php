@@ -334,7 +334,7 @@ class HotelAdminCrudTest extends WebTestCase
         $client->disableReboot();
         $client->loginUser($this->createSuperAdminUser());
         [$city] = $this->persistGeography(self::uniqueSuffix());
-        $this->persistHotelSearchSource();
+        $this->persistHotelSearchSource($city->getCountry());
         self::getContainer()->set(FirecrawlClient::class, new FirecrawlClient(new MockHttpClient(new MockResponse(json_encode([
             'success' => true,
             'data' => [
@@ -553,14 +553,15 @@ class HotelAdminCrudTest extends WebTestCase
         return [$city, $district];
     }
 
-    private function persistHotelSearchSource(): SearchSource
+    private function persistHotelSearchSource(?Country $country = null): SearchSource
     {
         $source = (new SearchSource())
-            ->setName('Booking')
+            ->setName('Booking ' . self::uniqueSuffix())
             ->setDomain('booking.com')
             ->setProvider('firecrawl')
             ->setProviderType(SearchSourceProviderType::FIRECRAWL)
             ->setCapabilities([SearchSource::CAPABILITY_HOTEL])
+            ->setCountry($country)
             ->setPriority(0)
             ->setEnabled(true);
 

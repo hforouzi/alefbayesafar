@@ -36,12 +36,25 @@
                     <div>{{ 'trip_planner.counts.custom'|trans }}: {{ result.counts.customOptions|default(0) }}</div>
                     <div>{{ 'trip_planner.counts.complete'|trans }}: {{ result.counts.completeOptions|default(0) }}</div>
                     <div>{{ 'trip_planner.counts.partial'|trans }}: {{ result.counts.partialOptions|default(0) }}</div>
+                    <div>{{ 'trip_planner.counts.deduplicated'|trans }}: {{ result.counts.deduplicatedOptions|default(0) }}</div>
+                    <div>{{ 'trip_planner.counts.shortlisted'|trans }}: {{ result.counts.shortlistedRecommendations|default(0) }}</div>
                 </div>
                 <ul class="mt-3 list-disc ps-5 text-sm">
                     {% for message in result.messages %}
                         <li>{{ message }}</li>
                     {% endfor %}
                 </ul>
+                <div class="mt-4 rounded border border-info/20 bg-white/50 p-3 text-sm dark:bg-black/20">
+                    <div class="font-semibold">{{ 'trip_planner.test.intent'|trans }}</div>
+                    <div>{{ 'trip_planner.form.goal'|trans }}: {{ tripRequest ? ('trip_planner.goal.' ~ tripRequest.goal.value)|trans : '-' }}</div>
+                    <div>{{ 'trip_planner.form.destination_country'|trans }}: {{ tripRequest and tripRequest.destinationCountry ? tripRequest.destinationCountry : (tripRequest and tripRequest.destinationCity and tripRequest.destinationCity.country ? tripRequest.destinationCity.country : '-') }}</div>
+                    <div>{{ 'trip_planner.form.destination_city'|trans }}: {{ tripRequest and tripRequest.destinationCity ? tripRequest.destinationCity : '-' }}</div>
+                    <div>{{ 'trip_planner.form.date_mode'|trans }}: {{ tripRequest ? ('trip_planner.date_mode.' ~ tripRequest.dateMode.value)|trans : '-' }}</div>
+                    {% if tripRequest and tripRequest.flexible %}
+                        <div>{{ 'trip_planner.form.window_start'|trans }}: {{ tripRequest.windowStart ? tripRequest.windowStart|date('Y-m-d') : '-' }}</div>
+                        <div>{{ 'trip_planner.form.window_end'|trans }}: {{ tripRequest.windowEnd ? tripRequest.windowEnd|date('Y-m-d') : '-' }}</div>
+                    {% endif %}
+                </div>
             {% else %}
                 <div class="mt-1 text-sm">{{ 'trip_planner.test.invalid_request_help'|trans }}</div>
             {% endif %}
@@ -63,6 +76,9 @@
                                 <th>{{ 'trip_planner.option.rank'|trans }}</th>
                                 <th>{{ 'trip_planner.option.type'|trans }}</th>
                                 <th>{{ 'trip_planner.option.title'|trans }}</th>
+                                <th>{{ 'trip_planner.option.destination'|trans }}</th>
+                                <th>{{ 'trip_planner.option.dates'|trans }}</th>
+                                <th>{{ 'trip_planner.option.hotel'|trans }}</th>
                                 <th>{{ 'trip_planner.option.price'|trans }}</th>
                                 <th>{{ 'trip_planner.option.components'|trans }}</th>
                                 <th>{{ 'trip_planner.option.completeness'|trans }}</th>
@@ -83,6 +99,64 @@
                                         {{ option.title }}
                                         {% if option.bookingUrl %}
                                             <div><a href="{{ option.bookingUrl }}" target="_blank" rel="noopener">{{ 'trip_planner.option.booking_link'|trans }}</a></div>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {{ option.destinationCity ?: '-' }}
+                                        <div class="text-xs text-white-dark">{{ option.destinationCountry ?: '-' }}</div>
+                                    </td>
+                                    <td>
+                                        {{ option.departureDate|date('Y-m-d') }}
+                                        {% if option.returnDate %} -> {{ option.returnDate|date('Y-m-d') }}{% endif %}
+                                        <div class="text-xs text-white-dark">{{ option.nights }} {{ 'trip_planner.form.nights'|trans }}</div>
+                                    </td>
+                                    <td>
+                                        {{ option.hotelName ?: '-' }}
+                                        {% if option.hotelGrade %}
+                                            <div class="text-xs text-white-dark">{{ option.hotelGrade }} {{ 'trip_planner.option.stars'|trans }}</div>
+                                        {% endif %}
+                                        {% if option.board %}
+                                            <div class="text-xs text-white-dark">{{ option.board }}</div>
+                                        {% endif %}
+                                        {% if option.airline %}
+                                            <div class="text-xs text-white-dark">{{ option.airline }}</div>
+                                        {% endif %}
+                                        {% if option.agency %}
+                                            <div class="text-xs text-white-dark">{{ option.agency }}</div>
+                                        {% endif %}
+                                        {% if option.hotelRecommendationContext %}
+                                            <div class="mt-1 text-xs text-white-dark">
+                                                {{ 'trip_planner.hotel_context.canonical'|trans }}: {{ option.hotelRecommendationContext.canonicalMatchStatus|upper }}
+                                            </div>
+                                            <div class="mt-2 rounded border border-white-light bg-gray-50 p-2 text-xs dark:border-dark-light/20 dark:bg-black/20">
+                                                <div class="font-semibold">{{ 'trip_planner.hotel_context.title'|trans }}</div>
+                                                {% for source in option.hotelRecommendationContext.sources %}
+                                                    <div class="mt-1 border-t border-white-light pt-1 dark:border-dark-light/20">
+                                                        <div>{{ source.source }}: {{ source.status }}</div>
+                                                        <div>{{ 'trip_planner.hotel_context.freshness'|trans }}: {{ source.freshness }} / {{ source.liveRefreshAttempted ? 'live attempted' : 'cache/source data' }}{% if source.liveRefreshStatus %} / {{ source.liveRefreshStatus }}{% endif %}</div>
+                                                        {% if source.reviewScore %}
+                                                            <div>{{ 'trip_planner.hotel_context.score'|trans }}: {{ source.reviewScore }}{% if source.reviewScoreScale %} / {{ source.reviewScoreScale }}{% endif %}</div>
+                                                        {% endif %}
+                                                        {% if source.reviewCount is not null %}
+                                                            <div>{{ 'trip_planner.hotel_context.reviews'|trans }}: {{ source.reviewCount }}</div>
+                                                        {% endif %}
+                                                        {% if source.fetchedAt %}
+                                                            <div>{{ 'trip_planner.hotel_context.fetched_at'|trans }}: {{ source.fetchedAt|date('Y-m-d H:i') }}</div>
+                                                        {% endif %}
+                                                        {% if source.sourceUrl %}
+                                                            <div><a href="{{ source.sourceUrl }}" target="_blank" rel="noopener">{{ 'trip_planner.hotel_context.source_url'|trans }}</a></div>
+                                                        {% endif %}
+                                                        {% if source.warnings is not empty %}
+                                                            <div class="text-warning">{{ source.warnings|join(', ') }}</div>
+                                                        {% endif %}
+                                                    </div>
+                                                {% else %}
+                                                    <div class="text-warning">{{ 'trip_planner.hotel_context.no_sources'|trans }}</div>
+                                                {% endfor %}
+                                                {% if option.hotelRecommendationContext.warnings is not empty %}
+                                                    <div class="mt-1 text-warning">{{ option.hotelRecommendationContext.warnings|join(', ') }}</div>
+                                                {% endif %}
+                                            </div>
                                         {% endif %}
                                     </td>
                                     <td>{% if option.totalPrice %}{{ option.totalPrice }} {{ option.currency }}{% else %}{{ 'trip_planner.option.price_unavailable'|trans }}{% endif %}</td>
@@ -107,6 +181,57 @@
     {% endif %}
 
     {% if result and app.environment == 'dev' %}
+        <div class="mt-6 grid gap-4 lg:grid-cols-2">
+            <div class="rounded border border-white-light bg-white p-4 dark:border-dark-light/20 dark:bg-[#0e1726]">
+                <h2 class="text-lg font-semibold">{{ 'trip_planner.test.live_searches'|trans }}</h2>
+                {% for type, search in result.diagnostics.liveSearch|default({}) %}
+                    <div class="mt-3 rounded border border-white-light p-3 dark:border-dark-light/20">
+                        <div class="font-semibold">{{ type|capitalize }}</div>
+                        {% if search.sources is defined %}
+                            <div class="text-sm">{{ 'trip_planner.test.stored'|trans }}: {{ search.storedCount|default(0) }}</div>
+                            {% if search.countryDiscovery is defined %}
+                                <div class="text-sm">{{ 'trip_planner.test.cities_discovered'|trans }}: {{ search.countryDiscovery.cities|default([])|join(', ') ?: '-' }}</div>
+                            {% endif %}
+                            <div class="text-sm">{{ 'trip_planner.test.normalized'|trans }}: {{ search.acceptedCount|default(0) }}</div>
+                            {% for source in search.sources %}
+                                <div class="mt-2 text-sm">
+                                    {{ source.source }}:
+                                    {{ source.status }}
+                                    / raw {{ source.rawCount }}
+                                    / accepted {{ source.acceptedCount }}
+                                    / rejected {{ source.rejectedCount }}
+                                </div>
+                            {% endfor %}
+                        {% elseif search.searches is defined %}
+                            <div class="text-sm">{{ 'trip_planner.test.stored'|trans }}: {{ search.storedCount|default(0) }}</div>
+                            <div class="text-sm">{{ 'trip_planner.test.searches'|trans }}: {{ search.searches|length }}</div>
+                        {% else %}
+                            <div class="text-sm">{{ search.status|default('skipped') }}: {{ search.reason|default(search.error|default('-')) }}</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="mt-2 text-sm text-white-dark">{{ 'trip_planner.test.no_live_searches'|trans }}</div>
+                {% endfor %}
+            </div>
+            <div class="rounded border border-white-light bg-white p-4 dark:border-dark-light/20 dark:bg-[#0e1726]">
+                <h2 class="text-lg font-semibold">{{ 'trip_planner.test.journey_strategies'|trans }}</h2>
+                {% for journey in result.diagnostics.journeyStrategies|default([]) %}
+                    <div class="mt-3 rounded border border-white-light p-3 dark:border-dark-light/20">
+                        <div class="font-semibold">{{ journey.title }}</div>
+                        <ul class="mt-2 list-disc ps-5 text-sm">
+                            {% for leg in journey.legs %}
+                                <li>{{ leg.mode }}: {{ leg.origin }} -> {{ leg.destination }}{% if not leg.verifiedInventory %} ({{ 'trip_planner.test.unverified'|trans }}){% endif %}</li>
+                            {% endfor %}
+                        </ul>
+                        {% if journey.warnings is not empty %}
+                            <div class="mt-2 text-sm text-warning">{{ journey.warnings|join(', ') }}</div>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="mt-2 text-sm text-white-dark">{{ 'trip_planner.test.no_journey_strategies'|trans }}</div>
+                {% endfor %}
+            </div>
+        </div>
         <details class="mt-6 rounded border border-white-light bg-white p-4 dark:border-dark-light/20 dark:bg-[#0e1726]">
             <summary class="cursor-pointer font-semibold">{{ 'trip_planner.test.diagnostics'|trans }}</summary>
             <pre class="mt-2 overflow-auto rounded bg-gray-100 p-3 text-xs ltr text-left dark:bg-black">{{ result.diagnostics|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
@@ -131,15 +256,21 @@
 {% endblock %}
 
 {% block trip_planner_form %}
-    {{ form_start(form, { attr: { 'data-turbo': 'false' } }) }}
+    {{ form_start(form, { attr: { 'data-turbo': 'false', 'data-trip-planner-date-mode-form': 'true' } }) }}
         {{ form_errors(form) }}
         <div class="grid gap-4 md:grid-cols-2">
             {{ controls.lookup_field(form.originAirportId, 'trip_planner.form.origin_airport', path('destination_lookup_airports'), tripRequest and tripRequest.originAirport ? tripRequest.originAirport.id : '', tripRequest and tripRequest.originAirport ? tripRequest.originAirport : '', 'trip_planner.form.origin_airport_placeholder') }}
             {{ controls.lookup_field(form.originCityId, 'trip_planner.form.origin_city', path('destination_lookup_cities'), tripRequest and tripRequest.originCity ? tripRequest.originCity.id : '', tripRequest and tripRequest.originCity ? tripRequest.originCity : '', 'trip_planner.form.origin_city_placeholder') }}
-            {{ controls.lookup_field(form.destinationCityId, 'trip_planner.form.destination_city', path('destination_lookup_cities'), tripRequest ? tripRequest.destinationCity.id : '', tripRequest ? tripRequest.destinationCity : '', 'trip_planner.form.destination_city_placeholder') }}
-            {{ form_row(form.departureDate, { label: 'trip_planner.form.departure_date' }) }}
-            {{ form_row(form.returnDate, { label: 'trip_planner.form.return_date' }) }}
-            {{ form_row(form.nights, { label: 'trip_planner.form.nights' }) }}
+            {{ controls.lookup_field(form.destinationCountryId, 'trip_planner.form.destination_country', path('destination_lookup_countries'), tripRequest and tripRequest.destinationCountry ? tripRequest.destinationCountry.id : (tripRequest and tripRequest.destinationCity and tripRequest.destinationCity.country ? tripRequest.destinationCity.country.id : ''), tripRequest and tripRequest.destinationCountry ? tripRequest.destinationCountry : (tripRequest and tripRequest.destinationCity and tripRequest.destinationCity.country ? tripRequest.destinationCity.country : ''), 'trip_planner.form.destination_country_placeholder') }}
+            {{ controls.lookup_field(form.destinationCityId, 'trip_planner.form.destination_city', path('destination_lookup_cities'), tripRequest and tripRequest.destinationCity ? tripRequest.destinationCity.id : '', tripRequest and tripRequest.destinationCity ? tripRequest.destinationCity : '', 'trip_planner.form.destination_city_placeholder') }}
+            {{ form_row(form.goal, { label: 'trip_planner.form.goal' }) }}
+            {{ form_row(form.dateMode, { label: 'trip_planner.form.date_mode' }) }}
+            <div data-date-mode-panel="exact">{{ form_row(form.departureDate, { label: 'trip_planner.form.departure_date' }) }}</div>
+            <div data-date-mode-panel="exact">{{ form_row(form.returnDate, { label: 'trip_planner.form.return_date' }) }}</div>
+            <div data-date-mode-panel="flexible">{{ form_row(form.windowStart, { label: 'trip_planner.form.window_start' }) }}</div>
+            <div data-date-mode-panel="flexible">{{ form_row(form.windowEnd, { label: 'trip_planner.form.window_end' }) }}</div>
+            <div data-date-mode-panel="flexible">{{ form_row(form.nights, { label: 'trip_planner.form.nights' }) }}</div>
+            {{ form_row(form.rooms, { label: 'trip_planner.form.rooms' }) }}
             {{ form_row(form.adults, { label: 'trip_planner.form.adults' }) }}
             {{ form_row(form.children, { label: 'trip_planner.form.children' }) }}
             {{ form_row(form.childrenAgesText, { label: 'trip_planner.form.children_ages' }) }}
@@ -184,6 +315,19 @@
                     loading.classList.remove('hidden');
                 }
             });
+
+            var mode = form.querySelector('[name$="[dateMode]"]');
+            var panels = form.querySelectorAll('[data-date-mode-panel]');
+            var toggleDatePanels = function () {
+                var selected = mode ? mode.value : 'exact';
+                panels.forEach(function (panel) {
+                    panel.classList.toggle('hidden', panel.getAttribute('data-date-mode-panel') !== selected);
+                });
+            };
+            if (mode) {
+                mode.addEventListener('change', toggleDatePanels);
+                toggleDatePanels();
+            }
         })(document.currentScript);
     </script>
 {% endblock %}

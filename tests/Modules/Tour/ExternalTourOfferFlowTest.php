@@ -286,14 +286,17 @@ class ExternalTourOfferFlowTest extends KernelTestCase
         );
 
         $store = self::getContainer()->get(ExternalTourOfferStoreService::class);
-        self::assertSame(1, $store->storeResult($request, ExternalTourOfferSearchResult::success($source, [$candidate]), new \DateTimeImmutable('2026-09-03 10:00:00')));
+        $storeAt = new \DateTimeImmutable('now');
+        $updatedAt = $storeAt->modify('+5 minutes');
+        self::assertSame(1, $store->storeResult($request, ExternalTourOfferSearchResult::success($source, [$candidate]), $storeAt));
         self::assertSame(1, $this->em()->getRepository(ExternalTourOffer::class)->count(['searchSource' => $source]));
-        self::assertSame(1, $store->storeResult($request, ExternalTourOfferSearchResult::success($source, [$candidate]), new \DateTimeImmutable('2026-09-03 10:05:00')));
+        self::assertSame(1, $store->storeResult($request, ExternalTourOfferSearchResult::success($source, [$candidate]), $updatedAt));
         self::assertSame(1, $this->em()->getRepository(ExternalTourOffer::class)->count(['searchSource' => $source]));
 
         $offer = $this->em()->getRepository(ExternalTourOffer::class)->findOneBy(['externalOfferId' => $externalOfferId]);
         self::assertInstanceOf(ExternalTourOffer::class, $offer);
-        self::assertSame('2026-09-03 16:05:00', $offer->getExpiresAt()?->format('Y-m-d H:i:s'));
+        $ttlMinutes = (int) self::getContainer()->getParameter('tour.external_offer_ttl_minutes');
+        self::assertSame($updatedAt->modify('+' . $ttlMinutes . ' minutes')->format('Y-m-d H:i:s'), $offer->getExpiresAt()?->format('Y-m-d H:i:s'));
         self::assertSame($data['hotel']->getId(), $offer->getHotel()?->getId());
         self::assertSame($data['room']->getId(), $offer->getHotelRoomType()?->getId());
 
@@ -317,11 +320,12 @@ class ExternalTourOfferFlowTest extends KernelTestCase
         self::assertCount(1, $freshOnly);
         self::assertSame(TourOfferSourceType::OWN, $freshOnly[0]->sourceType);
 
-        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::noData($source), new \DateTimeImmutable('2026-09-03 11:00:00')));
+        $laterAt = $storeAt->modify('+1 hour');
+        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::noData($source), $laterAt));
         self::assertSame(1, $this->em()->getRepository(ExternalTourOffer::class)->count(['searchSource' => $source]));
-        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::failure($source, ['failed']), new \DateTimeImmutable('2026-09-03 11:00:00')));
+        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::failure($source, ['failed']), $laterAt));
         self::assertSame(1, $this->em()->getRepository(ExternalTourOffer::class)->count(['searchSource' => $source]));
-        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::noResults($source), new \DateTimeImmutable('2026-09-03 11:00:00')));
+        self::assertSame(0, $store->storeResult($request, ExternalTourOfferSearchResult::noResults($source), $laterAt));
         self::assertSame(0, $this->em()->getRepository(ExternalTourOffer::class)->count(['searchSource' => $source]));
     }
 
@@ -360,7 +364,7 @@ class ExternalTourOfferFlowTest extends KernelTestCase
         $country = (new Country())->setName('Tour External Country ' . $suffix);
         $istanbul = (new City())->setCountry($country)->setName('Istanbul')->setSlug('istanbul-' . strtolower($suffix));
         $cologne = (new City())->setCountry($country)->setName('Cologne ' . $suffix)->setSlug('cologne-' . strtolower($suffix));
-        $cgn = (new Airport())->setCity($cologne)->setName('Cologne Bonn ' . $suffix)->setIataCode(self::iata());
+        $cgn = (new Airport())->setCity($cologne)->setName('Cologne Bonn ' . $suffix)->setIataCode($this->uniqueIata());
         $hotel = (new Hotel())->setCity($istanbul)->setName('Arts Hotel Istanbul Harbiye')->setSlug('arts-hotel-tour-external-' . strtolower($suffix));
         $room = (new HotelRoomType())->setHotel($hotel)->setName('Double Room')->setCode('dbl-tour-' . strtolower($suffix));
 
@@ -421,5 +425,14 @@ class ExternalTourOfferFlowTest extends KernelTestCase
     private static function iata(): string
     {
         return chr(random_int(65, 90)) . chr(random_int(65, 90)) . chr(random_int(65, 90));
+    }
+
+    private function uniqueIata(): string
+    {
+        do {
+            $code = self::iata();
+        } while ($this->em()->getRepository(Airport::class)->findOneBy(['iataCode' => $code]) instanceof Airport);
+
+        return $code;
     }
 }
