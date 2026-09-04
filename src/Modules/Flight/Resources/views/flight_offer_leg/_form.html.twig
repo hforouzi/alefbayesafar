@@ -1,0 +1,41 @@
+{% macro relation_field(formField, label, url, value, selectedLabel, placeholder) %}
+    <div
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ url }}"
+        data-loading-text="{{ 'flight.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'flight.lookup.no_results'|trans }}"
+        data-error-text="{{ 'flight.lookup.error'|trans }}"
+        class="relative"
+    >
+        <label for="{{ formField.vars.id }}_search" class="form-label">{{ label|trans }}</label>
+        <div class="flex gap-2">
+            <input id="{{ formField.vars.id }}_search" type="search" value="{{ selectedLabel|default('') }}" placeholder="{{ placeholder|trans }}" autocomplete="off" class="form-input" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+            <button type="button" class="btn btn-outline-secondary px-3" data-action="geo-select#clear">{{ 'flight.lookup.clear'|trans }}</button>
+        </div>
+        {{ form_widget(formField, { value: value|default(''), attr: { 'data-geo-select-target': 'hidden' } }) }}
+        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        <div class="mt-1 min-h-4 text-xs text-danger">{{ form_errors(formField) }}</div>
+        <div class="mt-1 min-h-4 text-xs text-white-dark" data-geo-select-target="status"></div>
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{{ form_start(form) }}
+    <div class="grid gap-4 md:grid-cols-2">
+        {{ controls.relation_field(form.airlineId, 'flight.leg.airline', path('flight_lookup_airlines'), leg.airline ? leg.airline.id : '', leg.airline ? leg.airline : '', 'flight.leg.airline_placeholder') }}
+        {{ form_row(form.direction) }}
+        {{ controls.relation_field(form.originAirportId, 'flight.leg.origin_airport', path('destination_lookup_airports'), leg.originAirport ? leg.originAirport.id : '', leg.originAirport ? leg.originAirport : '', 'flight.leg.airport_placeholder') }}
+        {{ controls.relation_field(form.destinationAirportId, 'flight.leg.destination_airport', path('destination_lookup_airports'), leg.destinationAirport ? leg.destinationAirport.id : '', leg.destinationAirport ? leg.destinationAirport : '', 'flight.leg.airport_placeholder') }}
+        {{ form_row(form.segmentIndex) }}
+        {{ form_row(form.flightNumber) }}
+        {{ form_row(form.departureAt) }}
+        {{ form_row(form.arrivalAt) }}
+        {{ form_row(form.durationMinutes) }}
+        {{ form_row(form.aircraft) }}
+    </div>
+    <div class="mt-5 flex justify-end gap-2">
+        <a href="{{ path('flight_offer_leg_index', { offer: offer.id }) }}" class="btn btn-light">{{ 'flight.common.cancel'|trans }}</a>
+        <button type="submit" class="btn btn-primary">{{ 'flight.common.save'|trans }}</button>
+    </div>
+{{ form_end(form) }}

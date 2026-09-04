@@ -134,7 +134,7 @@ class HotelPricingResolverTest extends KernelTestCase
             ->setProvider('firecrawl')
             ->setProviderType(SearchSourceProviderType::FIRECRAWL)
             ->setCapabilities([SearchSource::CAPABILITY_HOTEL])
-            ->setEnabled(true);
+            ->setEnabled(false);
     }
 
     private function entityManager(): EntityManagerInterface

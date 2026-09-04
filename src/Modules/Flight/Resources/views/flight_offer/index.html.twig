@@ -1,0 +1,62 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'flight.offer.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'flight.offer.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <div class="flex flex-wrap gap-2">
+        <a href="{{ path('flight_airline_index') }}" class="btn btn-outline-secondary">{{ 'flight.airline.title'|trans }}</a>
+        <a href="{{ path('flight_offer_new') }}" class="btn btn-primary">{{ 'flight.offer.new'|trans }}</a>
+    </div>
+{% endblock %}
+
+{% block body %}
+    {% include '@Flight/admin/_table_filters.html.twig' with { table: 'own_flight_deals' } %}
+    <div class="table-responsive">
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    <th>{{ 'flight.offer.route'|trans }}</th>
+                    <th>{{ 'flight.offer.departure'|trans }}</th>
+                    <th>{{ 'flight.offer.airline'|trans }}</th>
+                    <th>{{ 'flight.offer.trip_type'|trans }}</th>
+                    <th>{{ 'flight.offer.cabin_class'|trans }}</th>
+                    <th>{{ 'flight.offer.passengers'|trans }}</th>
+                    <th>{{ 'flight.offer.price'|trans }}</th>
+                    <th>{{ 'flight.offer.priority'|trans }}</th>
+                    <th>{{ 'flight.common.active'|trans }}</th>
+                    <th>{{ 'flight.common.actions'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for offer in offers %}
+                    <tr>
+                        <td class="font-semibold">{{ offer.routeLabel }}</td>
+                        <td>{{ offer.departureLabel }}</td>
+                        <td>{{ offer.primaryAirlineLabel }}</td>
+                        <td>{{ ('flight.trip_type.' ~ offer.tripType.value)|trans }}</td>
+                        <td>{{ ('flight.cabin_class.' ~ offer.cabinClass.value)|trans }}</td>
+                        <td>{{ offer.adults }} / {{ offer.children }} / {{ offer.infants }}</td>
+                        <td>{{ offer.priceLabel }}</td>
+                        <td>{{ offer.priority }}</td>
+                        <td>
+                            <span class="badge {{ offer.active ? 'bg-success' : 'bg-danger' }} text-white">{{ offer.active ? 'flight.common.active'|trans : 'flight.common.inactive'|trans }}</span>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ path('flight_offer_edit', { id: offer.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'flight.common.edit'|trans }}</a>
+                                <a href="{{ path('flight_offer_leg_index', { offer: offer.id }) }}" class="btn btn-sm btn-outline-secondary">{{ 'flight.common.manage_legs'|trans }}</a>
+                                <form method="post" action="{{ path('flight_offer_toggle', { id: offer.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_flight_offer_' ~ offer.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ offer.active ? 'btn-outline-danger' : 'btn-outline-success' }}">{{ offer.active ? 'flight.common.inactive'|trans : 'flight.common.active'|trans }}</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="10" class="py-10 text-center text-white-dark">{{ 'flight.offer.empty'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include '@Flight/admin/_pagination.html.twig' %}
+{% endblock %}

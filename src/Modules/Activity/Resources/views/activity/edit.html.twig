@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'activity.activity.edit'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'activity.activity.subtitle'|trans }}{% endblock %}
+
+{% block body %}
+    {% include '@Activity/activity/_form.html.twig' %}
+{% endblock %}

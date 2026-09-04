@@ -1,0 +1,8 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'activity.offer.new'|trans }}{% endblock %}
+{% block page_subtitle %}{{ activity.name }}{% endblock %}
+
+{% block body %}
+    {% include '@Activity/offer/_form.html.twig' %}
+{% endblock %}

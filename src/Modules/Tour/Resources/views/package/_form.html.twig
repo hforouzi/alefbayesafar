@@ -1,0 +1,161 @@
+{% macro relation_field(field, label, value, url, placeholder, dependsCity) %}
+    <div
+        class="relative"
+        data-controller="geo-select"
+        data-geo-select-url-value="{{ url }}"
+        {% if dependsCity %}data-geo-select-depends-city-value="{{ dependsCity }}"{% endif %}
+        data-geo-select-min-length-value="2"
+        data-loading-text="{{ 'tour.lookup.loading'|trans }}"
+        data-no-results-text="{{ 'tour.lookup.no_results'|trans }}"
+        data-error-text="{{ 'tour.lookup.error'|trans }}"
+    >
+        <label class="mb-2 block text-sm font-medium text-black dark:text-white-light" for="{{ field.vars.id }}_search">{{ label|trans }}</label>
+        <div class="flex gap-2">
+            <input id="{{ field.vars.id }}_search" type="search" class="form-input" value="{{ value }}" placeholder="{{ placeholder|trans }}" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown" autocomplete="off">
+            <button type="button" class="btn btn-outline-danger shrink-0" data-action="geo-select#clear">{{ 'tour.lookup.clear'|trans }}</button>
+        </div>
+        {{ form_widget(field, { attr: { 'data-geo-select-target': 'hidden' } }) }}
+        <div class="mt-1 text-xs text-gray-500" data-geo-select-target="status"></div>
+        <div class="absolute z-20 mt-1 hidden max-h-60 w-full overflow-auto rounded-md border border-white-light bg-white shadow-lg dark:border-dark-light/20 dark:bg-[#0e1726]" data-geo-select-target="results"></div>
+        {{ form_errors(field) }}
+    </div>
+{% endmacro %}
+
+{% import _self as controls %}
+
+{{ form_start(form, { attr: { class: 'space-y-8' } }) }}
+    {{ form_errors(form) }}
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.basic'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.name, form.nameFa, form.slug] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.destination'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {{ controls.relation_field(form.originAirportId, 'tour.package.origin_airport', package.originAirport ? package.originAirport : '', path('destination_lookup_airports'), 'tour.lookup.airport_placeholder', null) }}
+            {{ controls.relation_field(form.destinationCityId, 'tour.package.destination', package.destinationCity ? package.destinationCity : '', path('destination_lookup_cities'), 'tour.lookup.city_placeholder', null) }}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.dates'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.departureDate, form.returnDate, form.validFrom, form.validTo, form.nights, form.days] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.passengers'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-4">
+            {% for field in [form.adults, form.children, form.infants, form.childrenAgesText] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.flight_hotel'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {{ controls.relation_field(form.flightOfferId, 'tour.package.flight_offer', package.flightOffer ? package.flightOffer.routeLabel ~ ' - ' ~ package.flightOffer.departureLabel : '', path('tour_lookup_own_flight_offers'), 'tour.lookup.flight_placeholder', null) }}
+            {{ controls.relation_field(form.hotelId, 'tour.package.hotel', package.hotel ? package.hotel : '', path('tour_lookup_hotels'), 'tour.lookup.hotel_placeholder', null) }}
+            {{ controls.relation_field(form.hotelRoomTypeId, 'tour.package.hotel_room_type', package.hotelRoomType ? package.hotelRoomType.name : '', path('tour_lookup_room_types'), 'tour.lookup.room_placeholder', '#' ~ form.hotelId.vars.id) }}
+            <div>
+                {{ form_label(form.boardType, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(form.boardType) }}
+                {{ form_errors(form.boardType) }}
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.pricing'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.pricingMode, form.currency, form.totalPrice, form.adultPrice, form.childPrice, form.infantPrice] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.inclusions'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for collection in [form.inclusions, form.exclusions] %}
+                <div>
+                    <h4 class="mb-3 text-sm font-semibold text-black dark:text-white-light">{{ collection.vars.label|trans }}</h4>
+                    <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {% for choice in collection %}
+                            <label class="inline-flex items-center gap-3 rounded border border-white-light/60 bg-white px-3 py-2 dark:border-dark-light/20 dark:bg-[#0e1726]">
+                                {{ form_widget(choice) }}
+                                <span>{{ choice.vars.label|trans }}</span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                    {{ form_errors(collection) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.descriptions'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            {% for field in [form.shortDescription, form.description] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'tour.sections.visibility'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-4">
+            <div>
+                {{ form_label(form.priority, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                {{ form_widget(form.priority) }}
+                {{ form_errors(form.priority) }}
+            </div>
+            {% for field in [form.active, form.featured, form.publicVisible] %}
+                <div class="flex items-end">
+                    <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                        {{ form_widget(field) }}
+                        <span>{{ field.vars.label|trans }}</span>
+                    </label>
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'tour.common.save'|trans }}</button>
+        <a href="{{ path('tour_package_index') }}" class="btn btn-light">{{ 'tour.common.cancel'|trans }}</a>
+    </div>
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}

@@ -1,0 +1,55 @@
+{{ form_start(form, { attr: { class: 'space-y-8' } }) }}
+    {{ form_errors(form) }}
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.dates'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.specificDate, form.validFrom, form.validTo] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.pricing'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-3">
+            {% for field in [form.pricingMode, form.currency, form.totalPrice, form.adultPrice, form.childPrice, form.infantPrice] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h3 class="mb-4 text-base font-semibold text-black dark:text-white-light">{{ 'activity.sections.availability'|trans }}</h3>
+        <div class="grid grid-cols-1 gap-5 lg:grid-cols-4">
+            {% for field in [form.minimumParticipants, form.maximumParticipants, form.availabilityStatus, form.priority] %}
+                <div>
+                    {{ form_label(field, null, { label_attr: { class: 'mb-2 block text-sm font-medium text-black dark:text-white-light' } }) }}
+                    {{ form_widget(field) }}
+                    {{ form_errors(field) }}
+                </div>
+            {% endfor %}
+            <div class="flex items-end">
+                <label class="inline-flex items-center gap-3 rounded-2xl border border-white-light/40 bg-white px-4 py-4 text-sm font-medium text-black dark:border-dark-light/20 dark:bg-[#0e1726] dark:text-white-light">
+                    {{ form_widget(form.active) }}
+                    <span>{{ form.active.vars.label|trans }}</span>
+                </label>
+                {{ form_errors(form.active) }}
+            </div>
+        </div>
+    </section>
+
+    <div class="mt-6 flex flex-wrap gap-3">
+        <button type="submit" class="btn btn-primary">{{ 'activity.common.save'|trans }}</button>
+        <a href="{{ path('activity_offer_index', { activity: activity.id }) }}" class="btn btn-light">{{ 'activity.common.cancel'|trans }}</a>
+    </div>
+    {{ form_rest(form) }}
+{{ form_end(form, { render_rest: false }) }}

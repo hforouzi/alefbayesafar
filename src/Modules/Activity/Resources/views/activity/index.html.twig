@@ -1,0 +1,55 @@
+{% extends 'layouts/admin.html.twig' %}
+
+{% block page_title %}{{ 'activity.activity.title'|trans }}{% endblock %}
+{% block page_subtitle %}{{ 'activity.activity.subtitle'|trans }}{% endblock %}
+{% block page_actions %}
+    <a href="{{ path('activity_new') }}" class="btn btn-primary">{{ 'activity.activity.new'|trans }}</a>
+{% endblock %}
+
+{% block body %}
+    {% include '@Activity/admin/_table_filters.html.twig' %}
+    <div class="table-responsive">
+        <table class="table-hover">
+            <thead>
+                <tr>
+                    <th>{{ 'activity.activity.name'|trans }}</th>
+                    <th>{{ 'activity.activity.city'|trans }}</th>
+                    <th>{{ 'activity.activity.category'|trans }}</th>
+                    <th>{{ 'activity.activity.duration_minutes'|trans }}</th>
+                    <th>{{ 'activity.activity.flags'|trans }}</th>
+                    <th>{{ 'activity.common.actions'|trans }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in activities %}
+                    <tr>
+                        <td class="font-semibold">{{ activity.name }}</td>
+                        <td>{{ activity.city ?: '-' }}</td>
+                        <td>{{ ('activity.category.' ~ activity.category.value)|trans }}</td>
+                        <td>{{ activity.durationMinutes ?: '-' }}</td>
+                        <td>
+                            <div class="flex flex-wrap gap-1">
+                                <span class="badge {{ activity.active ? 'bg-success' : 'bg-danger' }} text-white">{{ activity.active ? 'activity.activity.active'|trans : 'activity.activity.inactive'|trans }}</span>
+                                {% if activity.featured %}<span class="badge bg-primary text-white">{{ 'activity.activity.featured'|trans }}</span>{% endif %}
+                                {% if activity.publicVisible %}<span class="badge bg-info text-white">{{ 'activity.activity.public_visible'|trans }}</span>{% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="flex flex-wrap gap-2">
+                                <a href="{{ path('activity_edit', { id: activity.id }) }}" class="btn btn-sm btn-outline-primary">{{ 'activity.common.edit'|trans }}</a>
+                                <a href="{{ path('activity_offer_index', { activity: activity.id }) }}" class="btn btn-sm btn-outline-info">{{ 'activity.offer.title'|trans }}</a>
+                                <form method="post" action="{{ path('activity_toggle', { id: activity.id }) }}">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('toggle_activity_' ~ activity.id) }}">
+                                    <button type="submit" class="btn btn-sm {{ activity.active ? 'btn-outline-danger' : 'btn-outline-success' }}">{{ activity.active ? 'activity.activity.deactivate'|trans : 'activity.activity.activate'|trans }}</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td colspan="6" class="py-10 text-center text-white-dark">{{ 'activity.activity.empty'|trans }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include '@Activity/admin/_pagination.html.twig' %}
+{% endblock %}

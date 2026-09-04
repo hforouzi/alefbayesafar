@@ -1,0 +1,36 @@
+{{ form_start(form) }}
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {{ form_row(form.tripType) }}
+        {{ form_row(form.cabinClass) }}
+        {{ form_row(form.pricingMode) }}
+        {{ form_row(form.currency) }}
+        {{ form_row(form.adults) }}
+        {{ form_row(form.children) }}
+        {{ form_row(form.infants) }}
+        {{ form_row(form.priority) }}
+    </div>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {{ form_row(form.adultPrice) }}
+        {{ form_row(form.childPrice) }}
+        {{ form_row(form.infantPrice) }}
+        {{ form_row(form.totalPrice) }}
+    </div>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+        {{ form_row(form.validFrom) }}
+        {{ form_row(form.validTo) }}
+    </div>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+        {{ form_row(form.availabilityStatus) }}
+        {{ form_row(form.baggage) }}
+    </div>
+
+    <div class="mt-4">{{ form_row(form.active) }}</div>
+
+    <div class="mt-5 flex justify-end gap-2">
+        <a href="{{ path('flight_offer_index') }}" class="btn btn-light">{{ 'flight.common.cancel'|trans }}</a>
+        <button type="submit" class="btn btn-primary">{{ 'flight.common.save'|trans }}</button>
+    </div>
+{{ form_end(form) }}

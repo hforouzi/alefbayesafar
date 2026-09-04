@@ -27,11 +27,11 @@ enum HotelBoardType: string
         $normalized = trim(preg_replace('/\s+/', ' ', $normalized) ?? $normalized);
 
         return match (true) {
-            in_array($normalized, ['room only', 'no meal', 'no meals', 'without breakfast', 'without meal'], true) => self::ROOM_ONLY,
-            str_contains($normalized, 'breakfast') => self::BREAKFAST,
-            str_contains($normalized, 'half board') => self::HALF_BOARD,
-            str_contains($normalized, 'full board') => self::FULL_BOARD,
-            str_contains($normalized, 'all inclusive') || str_contains($normalized, 'allinclusive') => self::ALL_INCLUSIVE,
+            in_array($normalized, ['ro', 'room only', 'no meal', 'no meals', 'without breakfast', 'without meal'], true) => self::ROOM_ONLY,
+            in_array($normalized, ['bb', 'bed breakfast'], true) || str_contains($normalized, 'breakfast') => self::BREAKFAST,
+            in_array($normalized, ['hb'], true) || str_contains($normalized, 'half board') => self::HALF_BOARD,
+            in_array($normalized, ['fb'], true) || str_contains($normalized, 'full board') => self::FULL_BOARD,
+            in_array($normalized, ['ai', 'uai'], true) || str_contains($normalized, 'all inclusive') || str_contains($normalized, 'allinclusive') => self::ALL_INCLUSIVE,
             default => self::OTHER,
         };
     }
