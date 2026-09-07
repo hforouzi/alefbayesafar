@@ -2,6 +2,7 @@
 
 namespace App\Tests\Modules\TripPlanner;
 
+use App\Modules\Destination\ValueObject\DestinationInsight;
 use App\Modules\TripPlanner\Enum\TripOptionType;
 use App\Modules\TripPlanner\Service\TravelFollowUpAnswerService;
 use App\Modules\TripPlanner\ValueObject\ConversationState;
@@ -128,6 +129,44 @@ class TravelFollowUpAnswerServiceTest extends TestCase
 
         self::assertStringContainsString('Near Date Hotel', $answer);
         self::assertStringNotContainsString('Far Date Hotel', $answer);
+    }
+
+    public function testDestinationInsightQuestionIsAnsweredFromRealInsightsOnly(): void
+    {
+        $service = new TravelFollowUpAnswerService();
+        $state = new ConversationState();
+        $state->lastDestinationInsights = [
+            new DestinationInsight(title: 'Istinye Park', category: 'shopping', city: 'Istanbul', source: 'Tripadvisor', rating: '4.5', reviewCount: 1234, sourceUrl: 'https://tripadvisor.example/istinye'),
+            new DestinationInsight(title: 'Grand Bazaar', category: 'shopping', city: 'Istanbul', source: 'Tripadvisor'),
+        ];
+
+        $intent = $service->detectIntent('کجا برای خرید برم؟', true);
+        self::assertSame('destination_insight', $intent);
+
+        $answer = $service->answer($intent, [], $state);
+
+        self::assertStringContainsString('Istinye Park', $answer);
+        self::assertStringContainsString('4.5', $answer);
+        self::assertStringContainsString('Grand Bazaar', $answer);
+        self::assertStringContainsString('Tripadvisor', $answer);
+    }
+
+    public function testDestinationInsightQuestionWithNoDataIsHonestNotFabricated(): void
+    {
+        $service = new TravelFollowUpAnswerService();
+        $state = new ConversationState();
+        $state->lastDestinationInsights = [];
+
+        $answer = $service->answer('destination_insight', [], $state);
+
+        self::assertStringContainsString('در دسترس نیست', $answer);
+    }
+
+    public function testDestinationInsightIntentIsDetectedEvenWithoutTripOptions(): void
+    {
+        $service = new TravelFollowUpAnswerService();
+
+        self::assertSame('destination_insight', $service->detectIntent('بهترین مراکز خرید چی هستن؟', true));
     }
 
     private function option(

@@ -4,9 +4,9 @@
 
 {% block body %}
     <section class="w-full max-w-full overflow-x-hidden bg-[#fffaf4]">
-        <div class="mx-auto flex min-h-[calc(100vh-72px)] w-full max-w-6xl min-w-0 flex-col px-4 py-6 sm:px-6 lg:px-8" data-controller="travel-chat">
+        <div class="mx-auto w-full max-w-[1440px] min-w-0 px-4 py-6 sm:px-6 lg:px-8" data-controller="travel-chat">
             {% if state.transcript is empty %}
-                <div class="flex flex-1 flex-col items-center justify-center py-10 text-center">
+                <div class="flex min-h-[calc(100vh-140px)] flex-col items-center justify-center py-10 text-center">
                     <h1 class="break-words text-2xl font-black text-[#18312f] sm:text-3xl">برای سفرت چه چیزی تو ذهنت هست؟</h1>
                     <p class="mx-auto mt-3 max-w-md text-sm font-semibold text-[#65716e]">به فارسی معمولی بنویس؛ اگر چیزی کم بود، خودم می‌پرسم.</p>
 
@@ -15,16 +15,174 @@
                             <button type="button" class="rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-xs font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#fill" data-travel-chat-text-param="{{ example }}">{{ example }}</button>
                         {% endfor %}
                     </div>
+
+                    <form method="post" action="{{ path('public_build_message') }}" class="mx-auto mt-8 w-full max-w-lg" data-travel-chat-target="form" data-action="turbo:submit-start->travel-chat#start turbo:submit-end->travel-chat#stop">
+                        <div class="flex items-end gap-2">
+                            <textarea name="message" rows="1" required maxlength="500" class="form-input form-input-lg flex-1 resize-none" placeholder="مثلاً: ۵ روز استانبول تو مهر" data-travel-chat-target="input"></textarea>
+                            <button type="submit" class="shrink-0 rounded-md bg-[#0f766e] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#0b5f59]" data-travel-chat-target="submitButton">شروع برنامه‌ریزی</button>
+                        </div>
+                        <div class="mt-2 hidden rounded-md border border-[#e0f2ef] bg-[#e0f2ef] p-3 text-xs font-bold text-[#0f766e]" data-travel-chat-target="panel">
+                            <span data-travel-chat-target="caption">دارم گزینه‌های مناسب رو پیدا می‌کنم...</span>
+                        </div>
+                    </form>
+                    <a href="{{ path('public_build_advanced') }}" class="mt-4 text-xs font-extrabold text-[#0f766e]">جستجوی پیشرفته</a>
                 </div>
             {% else %}
                 {% set targetDate = state.departureDate ? date(state.departureDate) : (state.windowStart ? date(state.windowStart) : null) %}
                 {% set highlights = state.lastResultOptions is not empty ? trip_option_highlights(state.lastResultOptions, targetDate) : null %}
+                {% set sections = trip_option_sections(state.lastResultOptions|default([])) %}
+                {% set priceRange = state.lastResultOptions is not empty ? trip_option_price_range(state.lastResultOptions) : null %}
+                {% set purposeLabels = {'shopping': 'خرید', 'food': 'غذا و رستوران‌گردی', 'history': 'بازدید تاریخی', 'nightlife': 'تفریح شبانه', 'family': 'گردش خانوادگی'} %}
+                {% set insightHeadings = {'shopping': 'برای خرید', 'food': 'رستوران‌ها', 'history': 'جاهای دیدنی', 'nightlife': 'تفریحات'} %}
 
-                <div class="flex flex-1 flex-col gap-6 pb-4 lg:grid lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
-                    {# Chat column — right side in RTL #}
-                    <div class="flex min-w-0 flex-col gap-3 lg:sticky lg:top-20">
-                        <div class="max-h-[45vh] space-y-3 overflow-y-auto rounded-md border border-[#e7ddd0] bg-white p-3 lg:max-h-[calc(100vh-14rem)]" data-travel-chat-target="log">
-                            {% for entry in state.transcript %}
+                {# ===== TripSummary — full width, above the two-column workspace ===== #}
+                {% if state.destinationCityName or state.destinationCountryName %}
+                    <div class="mb-6 rounded-2xl border border-[#e9dcc8] bg-gradient-to-l from-[#fdf6ec] to-[#f7ecda] p-5 shadow-md shadow-[#b99b74]/10 sm:p-6">
+                        <div class="flex flex-wrap items-start justify-between gap-4">
+                            <div>
+                                <p class="text-xl font-black text-[#18312f] sm:text-2xl">
+                                    {{ state.originCityName ?? '—' }} <span class="mx-1 text-[#9aa39f]">→</span> {{ state.destinationCityName ?? state.destinationCountryName }}
+                                </p>
+                                <p class="mt-1.5 text-sm font-bold text-[#65716e]">
+                                    {% if state.nights %}{{ state.nights }} شب{% endif %}
+                                    {% if state.adults %}<span class="mx-1 text-[#d8cab9]">|</span>{{ state.adults }} بزرگسال{% endif %}
+                                    {% if state.children %} + {{ state.children }} کودک{% endif %}
+                                    <span class="mx-1 text-[#d8cab9]">|</span>{{ state.dateMode == 'exact' ? 'تاریخ دقیق' : 'تاریخ منعطف' }}
+                                    {% if state.travelPurpose %}<span class="mx-1 text-[#d8cab9]">|</span>هدف: {{ purposeLabels[state.travelPurpose] ?? state.travelPurpose }}{% endif %}
+                                </p>
+                            </div>
+
+                            <div class="flex shrink-0 flex-wrap items-center gap-2">
+                                {% if priceRange %}
+                                    <div class="rounded-xl border border-[#0f766e]/20 bg-white px-4 py-3 text-left shadow-sm">
+                                        <p class="text-xs font-extrabold text-[#9aa39f]">برآورد فعلی پکیج</p>
+                                        <p class="mt-0.5 text-2xl font-black leading-none text-[#0f766e] sm:text-3xl">
+                                            {{ priceRange.min == priceRange.max ? priceRange.min : priceRange.min ~ ' – ' ~ priceRange.max }}
+                                            <span class="text-xs font-extrabold text-[#65716e]">{{ priceRange.currency }}</span>
+                                        </p>
+                                    </div>
+                                {% endif %}
+                                <a href="{{ path('public_build_advanced') }}" class="rounded-md border border-[#d8cab9] bg-white px-3 py-2 text-xs font-extrabold text-[#44514f] transition hover:border-[#0f766e] hover:text-[#0f766e]">جستجوی پیشرفته</a>
+                                <form method="post" action="{{ path('public_build_reset') }}">
+                                    <button type="submit" class="rounded-md px-3 py-2 text-xs font-extrabold text-[#9aa39f] transition hover:text-[#9a3412]">شروع دوباره</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {# ===== MainGrid: ResultsWorkspace (col-start-1, left) + AdvisorPanel (col-start-2, right, sticky) ===== #}
+                <div class="flex flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)] lg:items-start" dir="ltr">
+                    {# ResultsWorkspace #}
+                    <div class="order-1 min-w-0 space-y-6 lg:col-start-1" dir="rtl">
+                        {% if state.lastResultOptions is not empty %}
+                            <section>
+                                {% if state.lastExplanationOverall %}
+                                    <div class="mb-4 rounded-xl border border-[#0f766e]/25 bg-[#e0f2ef] p-4 text-sm leading-7 text-[#0f4a45] sm:p-5">
+                                        {{ state.lastExplanationOverall }}
+                                    </div>
+                                {% endif %}
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">پیشنهادهای سفر / پکیج‌ها</h2>
+                                <div class="grid gap-4 md:grid-cols-2">
+                                    {% for option in state.lastResultOptions|slice(0, 3) %}
+                                        {% include '@PublicSite/_option_card.html.twig' with {
+                                            option: option,
+                                            explanationText: state.lastExplanationPerOption[option.rank] ?? null,
+                                            isCheapest: highlights and option.rank == highlights.cheapestRank,
+                                            isBestReviewed: highlights and option.rank == highlights.bestReviewedRank,
+                                            isFamily: highlights and option.rank == highlights.familyRank,
+                                            isClosestDate: highlights and option.rank == highlights.closestDateRank,
+                                        } %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% elseif state.lastNoResultMessages is not null %}
+                            <section class="rounded-xl border border-[#e7ddd0] bg-white p-5 shadow-md shadow-[#b99b74]/10">
+                                <h2 class="text-base font-black text-[#18312f]">گزینه‌ای پیدا نشد</h2>
+                                <p class="mt-2 text-sm leading-7 text-[#44514f]">در حال حاضر برای این بازه و مقصد گزینه مناسبی پیدا نشد. اگر بخواهید می‌توانید تاریخ را بازتر کنید یا شهرهای دیگر همان کشور را بررسی کنید.</p>
+                            </section>
+                        {% else %}
+                            <section class="flex min-h-[160px] flex-col items-center justify-center rounded-xl border border-dashed border-[#d8cab9] bg-white/60 p-8 text-center">
+                                <p class="text-sm font-bold text-[#65716e]">به محض این‌که اطلاعات سفرت کامل بشه، گزینه‌های پیشنهادی همین‌جا نمایش داده می‌شوند.</p>
+                            </section>
+                        {% endif %}
+
+                        {% if sections.flights is not empty %}
+                            <section>
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">پرواز</h2>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    {% for component in sections.flights %}
+                                        {% include '@PublicSite/_component_row.html.twig' with { component: component } %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+
+                        {% if sections.hotels is not empty %}
+                            <section>
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">هتل</h2>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    {% for component in sections.hotels %}
+                                        {% include '@PublicSite/_component_row.html.twig' with { component: component } %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+
+                        {% if state.lastDestinationInsights is not empty %}
+                            <section>
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">{{ insightHeadings[state.travelPurpose] ?? 'پیشنهادهای مقصد' }}</h2>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    {% for insight in state.lastDestinationInsights %}
+                                        <article class="rounded-lg border border-[#e7ddd0] bg-white p-3">
+                                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                                <p class="text-sm font-bold text-[#18312f]">{{ insight.title }}</p>
+                                                {% if insight.rating %}
+                                                    <p class="text-xs font-extrabold text-[#65716e]">امتیاز {{ insight.rating }}{% if insight.reviewCount %} از {{ insight.reviewCount }} نظر{% endif %}</p>
+                                                {% endif %}
+                                            </div>
+                                            <p class="mt-1 text-xs font-semibold text-[#9aa39f]">منبع: {{ insight.source }}</p>
+                                            {% if insight.sourceUrl %}
+                                                <a href="{{ insight.sourceUrl }}" target="_blank" rel="noopener noreferrer nofollow" class="mt-1 inline-block text-xs font-extrabold text-[#0f766e]">مشاهده جزئیات</a>
+                                            {% endif %}
+                                        </article>
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+
+                        {% if sections.activities is not empty %}
+                            <section>
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">تور و فعالیت</h2>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    {% for component in sections.activities %}
+                                        {% include '@PublicSite/_component_row.html.twig' with { component: component } %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+
+                        {% if sections.services is not empty %}
+                            <section>
+                                <h2 class="mb-3 text-sm font-black text-[#18312f]">خدمات جانبی</h2>
+                                <div class="grid gap-2 md:grid-cols-2">
+                                    {% for component in sections.services %}
+                                        {% include '@PublicSite/_component_row.html.twig' with { component: component } %}
+                                    {% endfor %}
+                                </div>
+                            </section>
+                        {% endif %}
+                    </div>
+
+                    {# AdvisorPanel #}
+                    <aside class="order-2 flex min-w-0 flex-col lg:col-start-2 lg:row-start-1 lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]" dir="rtl">
+                        <div class="mb-2 flex shrink-0 items-center gap-2 px-1">
+                            <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-xs font-black text-white">م</span>
+                            <span class="text-sm font-black text-[#18312f]">مشاور سفر</span>
+                        </div>
+
+                        <div class="max-h-[45vh] min-h-0 space-y-3 overflow-y-auto rounded-md border border-[#e7ddd0] bg-white p-3 lg:max-h-none lg:flex-1" data-travel-chat-target="log">
+                            {% for entry in state.transcript|slice(-8) %}
                                 <div class="flex {{ entry.role == 'user' ? 'justify-end' : 'justify-start' }}">
                                     <div class="max-w-[85%] whitespace-pre-line rounded-2xl px-4 py-3 text-sm leading-7 {{ entry.role == 'user' ? 'bg-[#0f766e] text-white' : 'border border-[#e7ddd0] bg-[#fffaf4] text-[#18312f]' }}">
                                         {{ entry.text }}
@@ -34,7 +192,7 @@
                         </div>
 
                         {% if state.suggestedReplies is not empty %}
-                            <div class="flex flex-wrap gap-2">
+                            <div class="mt-3 flex shrink-0 flex-wrap gap-2">
                                 {% for reply in state.suggestedReplies %}
                                     <button type="button" class="rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-xs font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="{{ reply }}">{{ reply }}</button>
                                 {% endfor %}
@@ -42,84 +200,37 @@
                         {% endif %}
 
                         {% if state.lastResultOptions is not empty %}
-                            <div>
+                            <div class="mt-3 shrink-0">
                                 <p class="mb-2 text-xs font-bold text-[#9aa39f]">می‌خواهید نتایج را تغییر دهید یا درباره‌شان بپرسید؟</p>
                                 <div class="flex flex-wrap gap-2">
-                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="کدوم بهتره؟">کدام گزینه بهتر است؟</button>
-                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="ارزون‌ترشو نشون بده">ارزان‌ترین را نشان بده</button>
-                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="برای خانواده مناسب‌تره؟">برای خانواده مناسب‌ترها</button>
-                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="هتل بهتر می‌خوام">هتل‌های بهتر را نشان بده</button>
-                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="کدوم به تاریخ من نزدیک‌تره؟">تاریخ نزدیک‌تر می‌خواهم</button>
-                                    {% if state.destinationCountryId %}
-                                        <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="یه شهر دیگه تو همین کشور">شهر دیگر</button>
-                                    {% endif %}
+                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="کدوم بهتره؟">کدام بهتر است؟</button>
+                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="هتل بهتر می‌خوام">هتل بهتر می‌خواهم</button>
+                                    <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="ارزون‌ترشو نشون بده">ارزان‌ترش کن</button>
                                 </div>
                             </div>
                         {% elseif state.lastNoResultMessages is not null %}
-                            <div class="flex flex-wrap gap-2">
+                            <div class="mt-3 shrink-0 flex flex-wrap gap-2">
                                 <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="تاریخ رو بازتر کن">بازه تاریخ را وسیع‌تر کن</button>
                                 {% if state.destinationCountryId %}
                                     <button type="button" class="rounded-full border border-[#e7ddd0] bg-white px-3 py-1.5 text-xs font-bold text-[#65716e] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="travel-chat#quickReply" data-travel-chat-message-param="یه شهر دیگه تو همین کشور">شهرهای دیگر را بررسی کن</button>
                                 {% endif %}
                             </div>
                         {% endif %}
-                    </div>
 
-                    {# Results column — left side in RTL, the recommendation workspace #}
-                    <div class="min-w-0">
-                        {% if state.lastResultOptions is not empty %}
-                            {% if state.lastExplanationOverall %}
-                                <div class="mb-4 rounded-xl border border-[#0f766e]/25 bg-[#e0f2ef] p-4 text-sm leading-7 text-[#0f4a45] sm:p-5">
-                                    {{ state.lastExplanationOverall }}
+                        <div class="sticky bottom-4 z-10 mt-3 shrink-0 rounded-md border border-[#e7ddd0] bg-[#fffaf4]/95 p-3 shadow-lg shadow-[#b99b74]/10 backdrop-blur lg:static lg:shadow-none">
+                            <form method="post" action="{{ path('public_build_message') }}" data-travel-chat-target="form" data-action="turbo:submit-start->travel-chat#start turbo:submit-end->travel-chat#stop">
+                                <div class="flex items-end gap-2">
+                                    <textarea name="message" rows="1" required maxlength="500" class="form-input form-input-lg flex-1 resize-none" placeholder="مثلاً: صبحانه داره؟" data-travel-chat-target="input"></textarea>
+                                    <button type="submit" class="shrink-0 rounded-md bg-[#0f766e] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#0b5f59]" data-travel-chat-target="submitButton">ارسال</button>
                                 </div>
-                            {% endif %}
-                            <div class="space-y-4">
-                                {% for option in state.lastResultOptions %}
-                                    {% include '@PublicSite/_option_card.html.twig' with {
-                                        option: option,
-                                        explanationText: state.lastExplanationPerOption[option.rank] ?? null,
-                                        isCheapest: highlights and option.rank == highlights.cheapestRank,
-                                        isBestReviewed: highlights and option.rank == highlights.bestReviewedRank,
-                                        isFamily: highlights and option.rank == highlights.familyRank,
-                                        isClosestDate: highlights and option.rank == highlights.closestDateRank,
-                                    } %}
-                                {% endfor %}
-                            </div>
-                        {% elseif state.lastNoResultMessages is not null %}
-                            <div class="rounded-xl border border-[#e7ddd0] bg-white p-5 shadow-md shadow-[#b99b74]/10">
-                                <h2 class="text-base font-black text-[#18312f]">گزینه‌ای پیدا نشد</h2>
-                                <p class="mt-2 text-sm leading-7 text-[#44514f]">در حال حاضر برای این بازه و مقصد گزینه مناسبی پیدا نشد. اگر بخواهید می‌توانید تاریخ را بازتر کنید یا شهرهای دیگر همان کشور را بررسی کنید.</p>
-                            </div>
-                        {% else %}
-                            <div class="flex min-h-[200px] flex-col items-center justify-center rounded-xl border border-dashed border-[#d8cab9] bg-white/60 p-8 text-center">
-                                <p class="text-sm font-bold text-[#65716e]">به محض این‌که اطلاعات سفرت کامل بشه، گزینه‌های پیشنهادی همین‌جا نمایش داده می‌شوند.</p>
-                            </div>
-                        {% endif %}
-                    </div>
+                                <div class="mt-2 hidden rounded-md border border-[#e0f2ef] bg-[#e0f2ef] p-3 text-xs font-bold text-[#0f766e]" data-travel-chat-target="panel">
+                                    <span data-travel-chat-target="caption">دارم گزینه‌های مناسب رو پیدا می‌کنم...</span>
+                                </div>
+                            </form>
+                        </div>
+                    </aside>
                 </div>
             {% endif %}
-
-            <div class="sticky bottom-4 mt-2 mb-20 rounded-md border border-[#e7ddd0] bg-[#fffaf4]/95 p-3 shadow-lg shadow-[#b99b74]/10 backdrop-blur md:mb-4">
-                <form method="post" action="{{ path('public_build_message') }}" data-travel-chat-target="form" data-action="turbo:submit-start->travel-chat#start turbo:submit-end->travel-chat#stop">
-                    <div class="flex items-end gap-2">
-                        <textarea name="message" rows="1" required maxlength="500" class="form-input form-input-lg flex-1 resize-none" placeholder="مثلاً: ۵ روز استانبول تو مهر" data-travel-chat-target="input"></textarea>
-                        <button type="submit" class="shrink-0 rounded-md bg-[#0f766e] px-5 py-3 text-sm font-extrabold text-white transition hover:bg-[#0b5f59]" data-travel-chat-target="submitButton">
-                            {{ state.transcript is empty ? 'شروع برنامه‌ریزی' : 'ارسال' }}
-                        </button>
-                    </div>
-                    <div class="mt-2 hidden rounded-md border border-[#e0f2ef] bg-[#e0f2ef] p-3 text-xs font-bold text-[#0f766e]" data-travel-chat-target="panel">
-                        <span data-travel-chat-target="caption">دارم گزینه‌های مناسب رو پیدا می‌کنم...</span>
-                    </div>
-                </form>
-                <div class="mt-2 flex items-center justify-between text-xs">
-                    <a href="{{ path('public_build_advanced') }}" class="font-extrabold text-[#0f766e]">جستجوی پیشرفته</a>
-                    {% if state.transcript is not empty %}
-                        <form method="post" action="{{ path('public_build_reset') }}">
-                            <button type="submit" class="font-extrabold text-[#9aa39f] transition hover:text-[#9a3412]">شروع دوباره</button>
-                        </form>
-                    {% endif %}
-                </div>
-            </div>
         </div>
     </section>
 {% endblock %}

@@ -5,6 +5,9 @@ namespace App\Tests\Modules\TripPlanner;
 use App\Modules\Destination\Entity\Airport;
 use App\Modules\Destination\Entity\City;
 use App\Modules\Destination\Entity\Country;
+use App\Modules\Destination\Provider\DestinationInsightProviderInterface;
+use App\Modules\Destination\ValueObject\DestinationInsight;
+use App\Modules\Destination\ValueObject\DestinationInsightResult;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\SearchSource\Enum\SearchSourceProviderType;
 use App\Modules\Tour\Entity\ExternalTourOffer;
@@ -501,6 +504,97 @@ class ConversationalTravelPlanningServiceTest extends KernelTestCase
         self::assertStringContainsString('ارزان‌ترین', $lastMessage);
         self::assertSame($optionsBeforeFollowUp, $state->lastResultOptions, 'a follow-up question must not trigger a new search');
         self::assertSame($searchAttemptedBefore, $state->searchAttempted);
+    }
+
+    public function testShoppingPurposeFetchesRealDestinationInsightsAndAdvisorMentionsThemHonestly(): void
+    {
+        self::bootKernel();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $this->offer($em, $catalog['istanbul'], 'Shopping Trip Offer ' . self::suffix(), '2026-10-01', '2026-10-06', 5, '690.00', 'Shopping Trip Hotel');
+        $em->flush();
+
+        self::getContainer()->set(DestinationInsightProviderInterface::class, $this->fakeInsightProvider([
+            new DestinationInsight(title: 'Istinye Park', category: 'shopping', city: $catalog['istanbulFa'], source: 'Tripadvisor', rating: '4.5', reviewCount: 1234, sourceUrl: 'https://tripadvisor.example/istinye-park'),
+            new DestinationInsight(title: 'Grand Bazaar', category: 'shopping', city: $catalog['istanbulFa'], source: 'Tripadvisor', rating: '4.6', reviewCount: 5000, sourceUrl: 'https://tripadvisor.example/grand-bazaar'),
+        ]));
+
+        $service = $this->service();
+        $state = new ConversationState();
+        $state = $service->handleMessage($state, '۵ روز ' . $catalog['istanbulFa'] . ' برای خرید');
+        self::assertSame('shopping', $state->travelPurpose);
+        $state = $service->handleMessage($state, $catalog['rashtFa']);
+        $state = $service->handleMessage($state, 'تو مهر هر وقت ارزون‌تره');
+
+        self::assertNotEmpty($state->lastResultOptions, 'the real tour offer must still be found alongside the purpose');
+        self::assertCount(2, $state->lastDestinationInsights);
+        self::assertSame('Istinye Park', $state->lastDestinationInsights[0]->title);
+
+        $lastAssistantMessage = null;
+        foreach (array_reverse($state->transcript) as $entry) {
+            if ($entry['role'] === 'assistant') {
+                $lastAssistantMessage = $entry['text'];
+                break;
+            }
+        }
+        self::assertNotNull($lastAssistantMessage);
+        self::assertStringContainsString('Istinye Park', $lastAssistantMessage, 'the advisor must mention real destination insights, not just the generic summary');
+
+        // Follow-up: "کجا برای خرید برم؟" must answer from the same real insights without repeating the generic summary.
+        $state = $service->handleMessage($state, 'کجا برای خرید برم؟');
+        $followUpAnswer = $state->transcript[array_key_last($state->transcript)]['text'];
+        self::assertStringContainsString('Istinye Park', $followUpAnswer);
+        self::assertStringContainsString('Grand Bazaar', $followUpAnswer);
+        self::assertStringNotContainsString('گزینه مناسب پیدا کردم', $followUpAnswer);
+    }
+
+    public function testNoExactTourResultStillShowsRealDestinationInsightsWhenPurposeIsKnown(): void
+    {
+        self::bootKernel();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $em->flush();
+
+        self::getContainer()->set(DestinationInsightProviderInterface::class, $this->fakeInsightProvider([
+            new DestinationInsight(title: 'Istinye Park', category: 'shopping', city: $catalog['istanbulFa'], source: 'Tripadvisor', rating: '4.5', reviewCount: 1234),
+        ]));
+
+        $service = $this->service();
+        $state = new ConversationState();
+        $state = $service->handleMessage($state, '۵ روز ' . $catalog['istanbulFa'] . ' برای خرید');
+        $state = $service->handleMessage($state, $catalog['rashtFa']);
+        $state = $service->handleMessage($state, 'تو مهر هر وقت ارزون‌تره');
+
+        self::assertSame([], $state->lastResultOptions, 'no commercial offer exists for this fixture, so the exact search must genuinely find nothing');
+        self::assertNotEmpty($state->lastDestinationInsights, 'the advisor must still surface real destination insights when no exact tour match exists');
+
+        $lastAssistantMessage = $state->transcript[array_key_last($state->transcript)]['text'];
+        self::assertStringNotContainsString('690.00', $lastAssistantMessage, 'no price may ever be fabricated when no real offer exists');
+    }
+
+    /**
+     * @param DestinationInsight[] $insights
+     */
+    private function fakeInsightProvider(array $insights): DestinationInsightProviderInterface
+    {
+        return new class($insights) implements DestinationInsightProviderInterface {
+            /** @param DestinationInsight[] $insights */
+            public function __construct(private readonly array $insights)
+            {
+            }
+
+            public function getCode(): string
+            {
+                return 'fake';
+            }
+
+            public function search(string $cityName, ?string $countryName, string $category, int $limit): DestinationInsightResult
+            {
+                return DestinationInsightResult::success($this->insights);
+            }
+        };
     }
 
     private function service(): ConversationalTravelPlanningService

@@ -1,0 +1,17 @@
+{# Expects: component (TripComponentSummary) #}
+<article class="flex items-center justify-between gap-3 rounded-lg border border-[#e7ddd0] bg-white p-3">
+    <div class="min-w-0">
+        <p class="truncate text-sm font-bold text-[#18312f]">{{ component.title }}</p>
+        {% if component.details %}
+            <p class="mt-0.5 truncate text-xs font-semibold text-[#65716e]">
+                {{ component.type == 'activity' ? ('activity.category.' ~ component.details)|trans : component.details }}
+            </p>
+        {% endif %}
+    </div>
+    {% if component.price %}
+        <div class="shrink-0 text-left">
+            <p class="font-black text-[#18312f]">{{ component.price }}</p>
+            <p class="text-xs font-extrabold text-[#65716e]">{{ component.currency }}</p>
+        </div>
+    {% endif %}
+</article>

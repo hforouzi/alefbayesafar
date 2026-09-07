@@ -4,6 +4,9 @@ namespace App\Tests\Modules\PublicSite;
 
 use App\Modules\Destination\Entity\City;
 use App\Modules\Destination\Entity\Country;
+use App\Modules\Destination\Provider\DestinationInsightProviderInterface;
+use App\Modules\Destination\ValueObject\DestinationInsight;
+use App\Modules\Destination\ValueObject\DestinationInsightResult;
 use App\Modules\SearchSource\Entity\SearchSource;
 use App\Modules\SearchSource\Enum\SearchSourceProviderType;
 use App\Modules\Tour\Entity\ExternalTourOffer;
@@ -111,16 +114,78 @@ class PublicBuildChatControllerTest extends WebTestCase
             self::assertStringNotContainsString($forbidden, $html);
         }
 
-        $logPosition = strpos($html, 'data-travel-chat-target="log"');
+        // ResultsWorkspace is emitted first in the DOM (per the required page structure) but
+        // carries lg:order-2 so it renders visually on the LEFT under RTL; AdvisorPanel is
+        // emitted second but carries lg:order-1 so it renders visually on the RIGHT.
+        $resultsWorkspacePosition = strpos($html, 'order-1 min-w-0 space-y-6 lg:order-2');
+        $advisorPanelPosition = strpos($html, 'order-2 flex min-w-0 flex-col lg:order-1');
+        self::assertIsInt($resultsWorkspacePosition, 'the results workspace (lg:order-2, visually left) must be present');
+        self::assertIsInt($advisorPanelPosition, 'the advisor panel (lg:order-1, visually right) must be present');
+        self::assertLessThan($advisorPanelPosition, $resultsWorkspacePosition, 'ResultsWorkspace must be emitted before AdvisorPanel in the DOM');
+
         $resultsPosition = strpos($html, 'Chat HTTP Offer');
-        self::assertIsInt($logPosition);
         self::assertIsInt($resultsPosition);
-        self::assertLessThan($resultsPosition, $logPosition, 'the chat panel must be emitted before the results panel so it renders on the right in RTL');
+        self::assertGreaterThan($resultsWorkspacePosition, $resultsPosition, 'result cards must render inside the results workspace');
+        self::assertLessThan($advisorPanelPosition, $resultsPosition, 'result cards must not render inside the advisor panel');
 
         $client->request('POST', '/build/reset');
         self::assertResponseRedirects('/build');
         $client->followRedirect();
         self::assertSelectorTextContains('body', 'برای سفرت چه چیزی تو ذهنت هست؟');
+    }
+
+    public function testShoppingPurposeRendersLovableStyleSectionsWithRealDestinationInsights(): void
+    {
+        $client = self::createClient();
+        // The client reboots the kernel (and its container) before every request()
+        // call by default, which would silently discard the service override below.
+        $client->disableReboot();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $this->offer($em, $catalog['istanbul'], 'Shopping Trip Offer ' . self::suffix(), '690.00', 'Shopping Trip Hotel');
+        $em->flush();
+
+        self::getContainer()->set(DestinationInsightProviderInterface::class, new class implements DestinationInsightProviderInterface {
+            public function getCode(): string
+            {
+                return 'fake';
+            }
+
+            public function search(string $cityName, ?string $countryName, string $category, int $limit): DestinationInsightResult
+            {
+                return DestinationInsightResult::success([
+                    new DestinationInsight(title: 'Istinye Park', category: 'shopping', city: $cityName, source: 'Tripadvisor', rating: '4.5', reviewCount: 1234, sourceUrl: 'https://tripadvisor.example/istinye-park'),
+                ]);
+            }
+        });
+
+        $client->request('POST', '/build/message', ['message' => '۵ روز ' . $catalog['istanbulFa'] . ' برای خرید']);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => $catalog['rashtFa']]);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => 'تو مهر هر وقت ارزون‌تره']);
+        $crawler = $client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        $html = (string) $client->getResponse()->getContent();
+
+        self::assertStringContainsString($catalog['rashtFa'], $html);
+        self::assertStringContainsString($catalog['istanbulFa'], $html);
+        self::assertStringContainsString('پیشنهادهای سفر / پکیج‌ها', $html);
+        self::assertStringContainsString('برای خرید', $html, 'the destination insight section heading must reflect the shopping purpose');
+        self::assertStringContainsString('برآورد فعلی پکیج', $html);
+        self::assertStringContainsString('Istinye Park', $html);
+        self::assertStringContainsString('4.5', $html);
+        self::assertStringContainsString('Tripadvisor', $html);
+        self::assertStringContainsString('مشاهده جزئیات', $html);
+
+        // Ask the shopping follow-up question and confirm it answers from the same real insights.
+        $client->request('POST', '/build/message', ['message' => 'کجا برای خرید برم؟']);
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+        $followUpHtml = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('Istinye Park', $followUpHtml);
     }
 
     public function testFollowUpQuestionAfterResultsGetsContextualAnswerNotGenericSummary(): void

@@ -2,6 +2,8 @@
 
 namespace App\Modules\TripPlanner\ValueObject;
 
+use App\Modules\Destination\ValueObject\DestinationInsight;
+
 /**
  * Session-stored conversation state for the public chat-first trip planner.
  *
@@ -69,6 +71,12 @@ final class ConversationState
     public ?array $lastNoResultMessages = null;
 
     public bool $searchAttempted = false;
+
+    /** User-stated travel purpose/interest (e.g. 'shopping'), used to fetch real destination insights. */
+    public ?string $travelPurpose = null;
+
+    /** @var DestinationInsight[] Real, provider-sourced destination-advice items for the current purpose/destination. */
+    public array $lastDestinationInsights = [];
 
     public function addMessage(string $role, string $text): void
     {

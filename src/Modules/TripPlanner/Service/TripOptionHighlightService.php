@@ -33,6 +33,39 @@ final class TripOptionHighlightService
     }
 
     /**
+     * A "برآورد فعلی پکیج" range: min/max total price across the currently
+     * shown options, only when they share one currency (never fake-converts
+     * mixed currencies, matching the rest of the planner).
+     *
+     * @param TripOption[] $options
+     *
+     * @return array{currency: string, min: string, max: string, count: int}|null
+     */
+    public function packagePriceRange(array $options): ?array
+    {
+        $byCurrency = [];
+        foreach ($options as $option) {
+            if ($option->totalPrice !== null && $option->currency !== null) {
+                $byCurrency[$option->currency][] = (float) $option->totalPrice;
+            }
+        }
+
+        if (\count($byCurrency) !== 1) {
+            return null;
+        }
+
+        $currency = array_key_first($byCurrency);
+        $prices = $byCurrency[$currency];
+
+        return [
+            'currency' => $currency,
+            'min' => number_format(min($prices), 2, '.', ''),
+            'max' => number_format(max($prices), 2, '.', ''),
+            'count' => \count($prices),
+        ];
+    }
+
+    /**
      * @param TripOption[] $options
      */
     private function cheapestRank(array $options): ?int

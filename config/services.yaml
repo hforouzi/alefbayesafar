@@ -99,3 +99,9 @@ services:
   # whenever OPENAI_API_KEY is missing or the call fails.
   App\Modules\TripPlanner\Service\TravelIntentInterpreterInterface: '@App\Modules\TripPlanner\Service\OpenAiTravelIntentInterpreter'
   App\Modules\TripPlanner\Service\TravelRecommendationExplanationServiceInterface: '@App\Modules\TripPlanner\Service\OpenAiTravelRecommendationExplanationService'
+
+  # Real destination-advice data (shopping malls, markets, attractions, ...),
+  # sourced via Firecrawl web search scoped to Tripadvisor. Swappable behind
+  # DestinationInsightProviderInterface, same boundary pattern as the other
+  # Firecrawl-backed providers in this project.
+  App\Modules\Destination\Provider\DestinationInsightProviderInterface: '@App\Modules\Destination\Provider\FirecrawlDestinationInsightProvider'

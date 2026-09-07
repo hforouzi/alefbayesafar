@@ -47,6 +47,14 @@ final readonly class ConversationalTravelPlanningService
     /** Repeats of the same clarification field before switching to an alternate question with quick-reply chips. */
     private const MAX_SAME_QUESTION_REPEATS = 0;
 
+    private const PURPOSE_LABELS = [
+        'shopping' => 'خرید',
+        'food' => 'غذا و رستوران‌گردی',
+        'history' => 'بازدید تاریخی',
+        'nightlife' => 'تفریح شبانه',
+        'family' => 'گردش خانوادگی',
+    ];
+
     public function __construct(
         private TravelIntentInterpreterInterface $interpreter,
         private CityRepository $cityRepository,
@@ -55,6 +63,7 @@ final readonly class ConversationalTravelPlanningService
         private TravelPlanningService $planningService,
         private TravelRecommendationExplanationServiceInterface $explanationService,
         private TravelFollowUpAnswerService $followUpAnswerService,
+        private DestinationInsightService $destinationInsightService,
     ) {
     }
 
@@ -67,7 +76,7 @@ final readonly class ConversationalTravelPlanningService
 
         $state->addMessage('user', $message);
 
-        $hasResults = !empty($state->lastResultOptions);
+        $hasResults = !empty($state->lastResultOptions) || $state->lastDestinationInsights !== [];
         $followUpIntent = $this->followUpAnswerService->detectIntent($message, $hasResults);
         if ($followUpIntent !== null) {
             $state->addMessage('assistant', $this->followUpAnswerService->answer($followUpIntent, $state->lastResultOptions ?? [], $state));
@@ -199,6 +208,10 @@ final readonly class ConversationalTravelPlanningService
         if ($update->anotherCityRequested && $state->destinationCountryId !== null) {
             $state->destinationCityId = null;
             $state->destinationCityName = null;
+        }
+
+        if ($update->purpose !== null) {
+            $state->travelPurpose = $update->purpose;
         }
     }
 
@@ -418,6 +431,7 @@ final readonly class ConversationalTravelPlanningService
                     $place,
                 ),
             );
+            $this->applyDestinationInsights($state);
 
             return;
         }
@@ -434,6 +448,40 @@ final readonly class ConversationalTravelPlanningService
         $state->addMessage('assistant', $summary);
         if ($explanation->overallText !== '') {
             $state->addMessage('assistant', $explanation->overallText);
+        }
+
+        $this->applyDestinationInsights($state);
+    }
+
+    /**
+     * Fetches real destination-advice items (shopping malls, markets, ...)
+     * once a purpose and destination are both known, and appends one honest
+     * Persian summary message. Stays silent on failure/no-data rather than
+     * leaking a technical provider error into the public chat.
+     */
+    private function applyDestinationInsights(ConversationState $state): void
+    {
+        if ($state->travelPurpose === null) {
+            return;
+        }
+
+        $city = $state->destinationCityName ?? $state->destinationCountryName;
+        if ($city === null) {
+            return;
+        }
+
+        $result = $this->destinationInsightService->forPurpose($city, $state->destinationCountryName, $state->travelPurpose);
+        $state->lastDestinationInsights = $result->insights;
+        $purposeLabel = self::PURPOSE_LABELS[$state->travelPurpose] ?? $state->travelPurpose;
+
+        if ($result->insights !== []) {
+            $names = implode('، ', array_map(
+                static fn ($insight): string => $insight->title,
+                \array_slice($result->insights, 0, 3),
+            ));
+            $state->addMessage('assistant', \sprintf('برای %s در %s، بر اساس منابع معتبر می‌تونی این‌ها رو در نظر بگیری: %s.', $purposeLabel, $city, $names));
+        } elseif ($result->success) {
+            $state->addMessage('assistant', \sprintf('در حال حاضر پیشنهاد مشخصی برای %s در %s از منابع معتبر پیدا نشد.', $purposeLabel, $city));
         }
     }
 }

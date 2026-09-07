@@ -19,6 +19,7 @@ use App\Modules\TripPlanner\ValueObject\TripOption;
 final class TravelFollowUpAnswerService
 {
     private const INTENT_PATTERNS = [
+        'destination_insight' => '/خرید|مرکز\s*خرید|مراکز\s*خرید/u',
         'breakfast' => '/صبحانه/u',
         'cheapest' => '/(کدوم|کدام)[^.\n]{0,15}(ارزون|ارزان)|(ارزون|ارزان)[^.\n]{0,15}(کدوم|کدام)/u',
         'family' => '/خانواده/u',
@@ -67,6 +68,10 @@ final class TravelFollowUpAnswerService
      */
     public function answer(string $intent, array $options, ConversationState $state): string
     {
+        if ($intent === 'destination_insight') {
+            return $this->destinationInsightAnswer($state);
+        }
+
         if ($options === []) {
             return 'در حال حاضر گزینه‌ای برای مقایسه در دسترس نیست.';
         }
@@ -81,6 +86,34 @@ final class TravelFollowUpAnswerService
             'which_better' => $this->whichBetterAnswer($options),
             default => 'می‌تونی دقیق‌تر بپرسی تا بهتر راهنمایی کنم؟',
         };
+    }
+
+    /**
+     * Answers a destination-advice follow-up (e.g. "کجا برای خرید برم؟")
+     * strictly from the real, provider-sourced insights already fetched for
+     * this conversation. Never claims a hotel is better located for the
+     * purpose unless that is actually derivable from the data on hand — it
+     * currently is not, so this deliberately does not compare hotels here.
+     */
+    private function destinationInsightAnswer(ConversationState $state): string
+    {
+        $insights = $state->lastDestinationInsights;
+        if ($insights === []) {
+            return 'در حال حاضر پیشنهاد مشخصی از منابع معتبر برای این مورد در دسترس نیست.';
+        }
+
+        $lines = [];
+        foreach (\array_slice($insights, 0, 4) as $insight) {
+            $line = $insight->title;
+            if ($insight->rating !== null) {
+                $line .= $insight->reviewCount !== null
+                    ? \sprintf(' (امتیاز %s از %d نظر)', $insight->rating, $insight->reviewCount)
+                    : \sprintf(' (امتیاز %s)', $insight->rating);
+            }
+            $lines[] = $line;
+        }
+
+        return \sprintf('بر اساس اطلاعات %s: %s.', $insights[0]->source, implode('، ', $lines));
     }
 
     /**
@@ -294,7 +327,7 @@ final class TravelFollowUpAnswerService
             return null;
         }
 
-        $group = array_values(reset($byCurrency));
+        $group = reset($byCurrency);
         usort($group, static fn (TripOption $a, TripOption $b): int => (float) $a->totalPrice <=> (float) $b->totalPrice);
 
         return $group;

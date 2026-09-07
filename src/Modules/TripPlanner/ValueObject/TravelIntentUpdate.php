@@ -39,6 +39,7 @@ final readonly class TravelIntentUpdate
         public bool $betterHotelRequested = false,
         public bool $widenWindowRequested = false,
         public bool $anotherCityRequested = false,
+        public ?string $purpose = null,
         public bool $recognized = false,
     ) {
     }

@@ -119,6 +119,13 @@ final class DeterministicTravelIntentInterpreter implements TravelIntentInterpre
             $recognized = true;
         }
 
+        $purpose = null;
+        if (preg_match('/خرید|شاپینگ/u', $working, $m) === 1) {
+            $purpose = 'shopping';
+            $working = $this->strip($working, $m[0]);
+            $recognized = true;
+        }
+
         $cheaperRequested = false;
         if (preg_match('/ارزون‌?تر|ارزان‌?تر/u', $working, $m) === 1) {
             $cheaperRequested = true;
@@ -216,6 +223,7 @@ final class DeterministicTravelIntentInterpreter implements TravelIntentInterpre
             betterHotelRequested: $betterHotelRequested,
             widenWindowRequested: $widenWindowRequested,
             anotherCityRequested: $anotherCityRequested,
+            purpose: $purpose,
             recognized: $recognized,
         );
     }

@@ -65,6 +65,7 @@ cheaperRequested (bool) - true only if this message asks to see a cheaper option
 betterHotelRequested (bool) - true only if this message asks for a better/nicer hotel than what was already shown,
 widenWindowRequested (bool) - true only if this message asks to widen/loosen the date window,
 anotherCityRequested (bool) - true only if this message asks for a different city within the same country,
+purpose (string|null) - the trip's stated purpose/interest if the user mentioned one, using only one of: "shopping", "food", "history", "nightlife", "family". Leave null if no purpose was stated.
 recognized (bool) - true if you extracted anything at all from the message.
 
 The user's current known context (already-known fields) is given to you only
@@ -117,6 +118,7 @@ PROMPT;
             betterHotelRequested: (bool) ($payload['betterHotelRequested'] ?? false),
             widenWindowRequested: (bool) ($payload['widenWindowRequested'] ?? false),
             anotherCityRequested: (bool) ($payload['anotherCityRequested'] ?? false),
+            purpose: $this->string($payload['purpose'] ?? null),
             recognized: (bool) ($payload['recognized'] ?? false),
         );
     }

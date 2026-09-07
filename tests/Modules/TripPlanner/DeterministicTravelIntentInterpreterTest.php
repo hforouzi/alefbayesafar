@@ -66,6 +66,22 @@ class DeterministicTravelIntentInterpreterTest extends TestCase
         self::assertTrue($update->breakfastPreferred);
     }
 
+    public function testShoppingPurposeIsExtractedAndDoesNotLeakIntoDestinationGuess(): void
+    {
+        $update = (new DeterministicTravelIntentInterpreter())->interpret('۵ روز استانبول برای خرید', new ConversationState());
+
+        self::assertSame('shopping', $update->purpose);
+        self::assertSame('استانبول', $update->destinationCityName);
+        self::assertSame(5, $update->nights);
+    }
+
+    public function testMessageWithoutPurposeLeavesPurposeNull(): void
+    {
+        $update = (new DeterministicTravelIntentInterpreter())->interpret('۵ روز استانبول می‌خوام', new ConversationState());
+
+        self::assertNull($update->purpose);
+    }
+
     public function testOpenDestinationIsExtracted(): void
     {
         $update = (new DeterministicTravelIntentInterpreter())->interpret('هر جا ارزون‌تره برای ۵ شب', new ConversationState());
