@@ -118,6 +118,31 @@ class CityRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /**
+     * Active cities in a country that have at least one active airport —
+     * the last-resort candidate pool for country-only destination discovery
+     * when no configured tour source already names supported cities.
+     *
+     * @return City[]
+     */
+    public function findActiveWithAirportForCountry(Country $country, int $limit = 25): array
+    {
+        return $this->createQueryBuilder('city')
+            ->addSelect('country')
+            ->innerJoin('city.country', 'country')
+            ->innerJoin('city.airports', 'airport')
+            ->andWhere('city.country = :country')
+            ->andWhere('city.active = :active')
+            ->andWhere('airport.active = :active')
+            ->setParameter('country', $country)
+            ->setParameter('active', true)
+            ->groupBy('city.id')
+            ->orderBy('city.name', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findOneByCountryStateAndName(Country $country, ?State $state, string $name): ?City
     {
         $builder = $this->createQueryBuilder('city')

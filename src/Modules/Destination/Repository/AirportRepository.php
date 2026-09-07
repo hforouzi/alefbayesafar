@@ -4,6 +4,7 @@ namespace App\Modules\Destination\Repository;
 
 use App\Modules\Destination\Entity\Airport;
 use App\Modules\Destination\Entity\City;
+use App\Modules\Destination\Entity\Country;
 use App\Modules\Destination\ValueObject\PaginatedResult;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\ORM\QueryBuilder;
@@ -104,6 +105,33 @@ class AirportRepository extends ServiceEntityRepository
         }
 
         return $builder->getQuery()->getResult();
+    }
+
+    /**
+     * Real, active airports in the same country as a given city, excluding
+     * that city's own airports. Used by CommercialDepartureResolver as the
+     * raw candidate pool for alternative departure discovery — geographic
+     * and inventory ranking happen on top of this in the caller.
+     *
+     * @return Airport[]
+     */
+    public function findActiveByCountryExcludingCity(Country $country, City $excludeCity, int $limit = 30): array
+    {
+        return $this->createQueryBuilder('airport')
+            ->addSelect('city')
+            ->innerJoin('airport.city', 'city')
+            ->andWhere('city.country = :country')
+            ->andWhere('city.id != :excludeCityId')
+            ->andWhere('airport.active = :active')
+            ->andWhere('city.active = :active')
+            ->setParameter('country', $country)
+            ->setParameter('excludeCityId', $excludeCity->getId())
+            ->setParameter('active', true)
+            ->orderBy('city.name', 'ASC')
+            ->addOrderBy('airport.iataCode', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
     }
 
     private function applyActiveFilter(QueryBuilder $builder, string $active, string $alias): void

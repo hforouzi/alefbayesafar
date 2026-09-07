@@ -105,7 +105,7 @@ class PublicBuildChatControllerTest extends WebTestCase
         self::assertStringContainsString('Chat HTTP Hotel', $html);
         self::assertStringContainsString('690.00', $html);
         self::assertStringContainsString('صبحانه: دارد', $html, 'known breakfast board must render as a clear Persian fact line');
-        self::assertStringContainsString('کدام گزینه بهتر است؟', $html, 'follow-up suggestion chips must be offered once results are shown');
+        self::assertStringContainsString('کدام بهتر است؟', $html, 'follow-up suggestion chips must be offered once results are shown');
         foreach ([
             'cached_external', 'provider_error', 'no_configured_sources', 'liveRefreshStatus', 'canonicalMatchStatus',
             'live_external', 'budget fit', 'lower-priced matching departure', 'matched option within requested date window',
@@ -115,12 +115,13 @@ class PublicBuildChatControllerTest extends WebTestCase
         }
 
         // ResultsWorkspace is emitted first in the DOM (per the required page structure) but
-        // carries lg:order-2 so it renders visually on the LEFT under RTL; AdvisorPanel is
-        // emitted second but carries lg:order-1 so it renders visually on the RIGHT.
-        $resultsWorkspacePosition = strpos($html, 'order-1 min-w-0 space-y-6 lg:order-2');
-        $advisorPanelPosition = strpos($html, 'order-2 flex min-w-0 flex-col lg:order-1');
-        self::assertIsInt($resultsWorkspacePosition, 'the results workspace (lg:order-2, visually left) must be present');
-        self::assertIsInt($advisorPanelPosition, 'the advisor panel (lg:order-1, visually right) must be present');
+        // carries lg:col-start-1 so it renders visually on the LEFT under the grid's
+        // dir="ltr" wrapper; AdvisorPanel is emitted second but carries lg:col-start-2
+        // so it renders visually on the RIGHT.
+        $resultsWorkspacePosition = strpos($html, 'order-1 min-w-0 space-y-6 lg:col-start-1');
+        $advisorPanelPosition = strpos($html, 'order-2 flex min-w-0 flex-col lg:col-start-2');
+        self::assertIsInt($resultsWorkspacePosition, 'the results workspace (lg:col-start-1, visually left) must be present');
+        self::assertIsInt($advisorPanelPosition, 'the advisor panel (lg:col-start-2, visually right) must be present');
         self::assertLessThan($advisorPanelPosition, $resultsWorkspacePosition, 'ResultsWorkspace must be emitted before AdvisorPanel in the DOM');
 
         $resultsPosition = strpos($html, 'Chat HTTP Offer');

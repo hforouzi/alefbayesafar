@@ -276,6 +276,29 @@ final readonly class TripPlanner
                 }
             }
 
+            // Direct origin produced nothing priced yet — only now consider the
+            // validated alternative departure airport TravelPlanningService found.
+            if ($candidates === [] && $request->commercialDepartureAirport instanceof \App\Modules\Destination\Entity\Airport) {
+                foreach ($dateWindows as $window) {
+                    foreach ($this->flightPricingResolver->resolve(
+                        $request->commercialDepartureAirport,
+                        $this->destinationAirport($request),
+                        $window['departureDate'],
+                        $window['returnDate'],
+                        $request->adults,
+                        $request->children,
+                        $request->infants,
+                        $request->flightCabin ?? FlightCabinClass::ECONOMY,
+                        $request->directFlightPreferred ? true : null,
+                    ) as $candidate) {
+                        $candidates[] = $candidate;
+                        if (\count($candidates) >= self::MAX_FLIGHT_CANDIDATES) {
+                            return $candidates;
+                        }
+                    }
+                }
+            }
+
             return $candidates;
         } catch (\Throwable $exception) {
             $messages[] = 'No suitable flight was available for the requested dates.';
@@ -416,6 +439,13 @@ final readonly class TripPlanner
                     new TripComponentSummary('flight', $flight->routeSummary, $flight->sourceType->value, null, $flight->currency, $flight->totalPrice, $flight->airlineSummary . ' / ' . $flight->departureSummary),
                     new TripComponentSummary('hotel', $hotel->getName(), $hotelCandidate->sourceType->value, null, $hotelCandidate->currency, $hotelCandidate->totalPrice, $hotelCandidate->roomName),
                 ];
+
+                $flightOriginAirport = $this->flightOriginAirport($flight);
+                if ($flightOriginAirport !== null && $request->originAirport !== null && $flightOriginAirport->getId() !== $request->originAirport->getId()) {
+                    $commercialDepartureCity = $flightOriginAirport->getCity()?->getName() ?? $flightOriginAirport->getName();
+                    $userOriginCity = $request->originCity?->getName() ?? $request->originAirport->getName();
+                    $optionWarnings[] = sprintf('This option departs from %s, not your own origin (%s). You would need to reach %s first.', $commercialDepartureCity, $userOriginCity, $commercialDepartureCity);
+                }
 
                 if ($request->transferRequired && !$transfer instanceof TransferPricingCandidate) {
                     $optionWarnings[] = 'Requested transfer is not currently available.';
@@ -643,6 +673,14 @@ final readonly class TripPlanner
         $first = $outbound[0] ?? null;
 
         return $first?->getDepartureAt();
+    }
+
+    private function flightOriginAirport(FlightPricingCandidate $candidate): ?\App\Modules\Destination\Entity\Airport
+    {
+        $outbound = $candidate->flightOffer?->getOrderedLegs(\App\Modules\Flight\Enum\FlightDirection::OUTBOUND);
+        $first = $outbound[0] ?? null;
+
+        return $first?->getOriginAirport();
     }
 
     private function flightReturnDate(FlightPricingCandidate $candidate): ?\DateTimeImmutable

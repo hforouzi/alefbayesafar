@@ -42,6 +42,15 @@ final readonly class TripSearchRequest
         public array $candidateDateWindows = [],
         public int $rooms = 1,
         public ?Country $destinationCountry = null,
+        /**
+         * Set only when a direct search from the user's own origin produced
+         * no usable commercial result and CommercialDepartureResolver found a
+         * validated alternative departure airport. userOriginCity/originCity
+         * above always stays the user's real origin — this is never used to
+         * silently replace it, only to let TripPlanner also price flights
+         * from a nearby commercial gateway.
+         */
+        public ?Airport $commercialDepartureAirport = null,
     ) {
         if ($this->destinationCity instanceof City && $this->destinationCountry instanceof Country) {
             $cityCountry = $this->destinationCity->getCountry();
@@ -203,6 +212,84 @@ final readonly class TripSearchRequest
             candidateDateWindows: $candidateDateWindows,
             rooms: $this->rooms,
             destinationCountry: $this->destinationCountry,
+            commercialDepartureAirport: $this->commercialDepartureAirport,
+        );
+    }
+
+    /**
+     * Resolves a country-only request onto one concrete destination city once
+     * live search has established that city actually has usable inventory,
+     * so downstream Flight/Hotel candidate building (which needs a concrete
+     * destination airport/hotel set) can run. destinationCountry is kept so
+     * the request never stops being recognized as belonging to that country.
+     */
+    public function withDestinationCity(City $city): self
+    {
+        return new self(
+            originAirport: $this->originAirport,
+            originCity: $this->originCity,
+            destinationCity: $city,
+            departureDate: $this->departureDate,
+            returnDate: $this->returnDate,
+            nights: $this->nights,
+            adults: $this->adults,
+            children: $this->children,
+            infants: $this->infants,
+            childAges: $this->childAges,
+            budget: $this->budget,
+            preferredCurrency: $this->preferredCurrency,
+            hotelStarPreference: $this->hotelStarPreference,
+            breakfastPreferred: $this->breakfastPreferred,
+            flightCabin: $this->flightCabin,
+            directFlightPreferred: $this->directFlightPreferred,
+            activityCategories: $this->activityCategories,
+            transferRequired: $this->transferRequired,
+            dateMode: $this->dateMode,
+            windowStart: $this->windowStart,
+            windowEnd: $this->windowEnd,
+            goal: $this->goal,
+            candidateDateWindows: $this->candidateDateWindows,
+            rooms: $this->rooms,
+            destinationCountry: $this->destinationCountry ?? $city->getCountry(),
+            commercialDepartureAirport: $this->commercialDepartureAirport,
+        );
+    }
+
+    /**
+     * Attaches a validated alternative commercial departure airport found by
+     * CommercialDepartureResolver after a direct-origin search produced no
+     * usable result. originAirport/originCity are left untouched — the
+     * user's real origin is never overwritten.
+     */
+    public function withCommercialDepartureAirport(Airport $airport): self
+    {
+        return new self(
+            originAirport: $this->originAirport,
+            originCity: $this->originCity,
+            destinationCity: $this->destinationCity,
+            departureDate: $this->departureDate,
+            returnDate: $this->returnDate,
+            nights: $this->nights,
+            adults: $this->adults,
+            children: $this->children,
+            infants: $this->infants,
+            childAges: $this->childAges,
+            budget: $this->budget,
+            preferredCurrency: $this->preferredCurrency,
+            hotelStarPreference: $this->hotelStarPreference,
+            breakfastPreferred: $this->breakfastPreferred,
+            flightCabin: $this->flightCabin,
+            directFlightPreferred: $this->directFlightPreferred,
+            activityCategories: $this->activityCategories,
+            transferRequired: $this->transferRequired,
+            dateMode: $this->dateMode,
+            windowStart: $this->windowStart,
+            windowEnd: $this->windowEnd,
+            goal: $this->goal,
+            candidateDateWindows: $this->candidateDateWindows,
+            rooms: $this->rooms,
+            destinationCountry: $this->destinationCountry,
+            commercialDepartureAirport: $airport,
         );
     }
 

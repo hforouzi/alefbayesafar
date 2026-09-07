@@ -584,6 +584,7 @@ class TripPlannerTest extends KernelTestCase
             $container->get(\App\Modules\Hotel\Repository\HotelRepository::class),
             $container->get(\App\Modules\Hotel\Service\HotelOfferSearchService::class),
             $container->get(\App\Modules\Hotel\Service\HotelOfferStoreService::class),
+            $container->get(\App\Modules\TripPlanner\Service\CommercialDepartureResolver::class),
             $container->get(TripPlanner::class),
         );
 
@@ -727,6 +728,7 @@ class TripPlannerTest extends KernelTestCase
             $container->get(\App\Modules\Hotel\Repository\HotelRepository::class),
             $container->get(\App\Modules\Hotel\Service\HotelOfferSearchService::class),
             $container->get(\App\Modules\Hotel\Service\HotelOfferStoreService::class),
+            $container->get(\App\Modules\TripPlanner\Service\CommercialDepartureResolver::class),
             $container->get(TripPlanner::class),
         );
 
