@@ -40,6 +40,13 @@ class DestinationPersianEnrichCommand extends Command
             [[$summary['countries'], $summary['states'], $summary['cities'], $summary['airports'], $summary['skippedCurated'], $summary['skippedMissingSource']]]
         );
 
+        $cityReport = $summary['cityReport'];
+        $io->section('City Persian names');
+        $io->writeln(sprintf('Cities checked: %d', $cityReport['checked']));
+        $io->writeln(sprintf('Persian names already present: %d', $cityReport['alreadyPresent']));
+        $io->writeln(sprintf('Persian names added: %d', $cityReport['added']));
+        $io->writeln(sprintf('Still missing: %d', $cityReport['stillMissing']));
+
         if ($summary['files'] !== []) {
             $io->section('GeoNames alternate-name sources');
             foreach (array_unique($summary['files']) as $file) {

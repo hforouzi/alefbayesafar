@@ -1,0 +1,222 @@
+{% extends 'layouts/public.html.twig' %}
+
+{% block title %}جستجوی پیشرفته | الفبای سفر{% endblock %}
+
+{% block body %}
+    <section class="w-full max-w-full overflow-x-hidden bg-[#fffaf4]">
+        <div class="mx-auto w-full max-w-3xl min-w-0 px-4 py-8 sm:px-6 lg:px-8" data-controller="trip-refine search-status">
+            <div class="mb-6 min-w-0">
+                <a href="{{ path('public_build') }}" class="mb-3 inline-flex items-center gap-1 text-sm font-extrabold text-[#0f766e]">&rarr; بازگشت به گفتگوی سفر</a>
+                <h1 class="break-words text-2xl font-black text-[#18312f] sm:text-3xl">جستجوی پیشرفته</h1>
+                <p class="mt-2 text-sm font-semibold text-[#65716e]">این فرم برای کاربران حرفه‌ای است. مبدأ و مقصد را بگویید؛ بقیه جزئیات اختیاری است.</p>
+            </div>
+
+            {{ form_start(form, { attr: { class: 'w-full max-w-full overflow-hidden rounded-md border border-[#e7ddd0] bg-white p-4 shadow-xl shadow-[#b99b74]/10 sm:p-6', novalidate: 'novalidate', 'data-trip-refine-target': 'form', 'data-action': 'turbo:submit-start->search-status#start turbo:submit-end->search-status#stop' } }) }}
+                {{ form_errors(form) }}
+
+                <div class="grid min-w-0 gap-4 md:grid-cols-2">
+                    <div data-controller="geo-select" data-geo-select-url-value="{{ path('public_build_lookup_cities') }}" data-loading-text="در حال جست‌وجو..." data-no-results-text="نتیجه‌ای پیدا نشد" data-error-text="جست‌وجو با خطا مواجه شد" class="relative">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">از کجا سفر می‌کنید؟</span>
+                        <div class="flex gap-2">
+                            <input type="search" value="{{ tripRequest and tripRequest.originCity ? tripRequest.originCity.name : '' }}" placeholder="مثلاً رشت، تهران" autocomplete="off" class="form-input form-input-lg" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+                            <button type="button" class="rounded-md border border-[#d8cab9] px-3 text-sm font-extrabold text-[#596461]" data-action="geo-select#clear">پاک کردن</button>
+                        </div>
+                        {{ form_widget(form.originCityId, { attr: { 'data-geo-select-target': 'hidden' } }) }}
+                        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-[#e7ddd0] bg-white shadow-lg" data-geo-select-target="results"></div>
+                        <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-geo-select-target="status"></div>
+                        {{ form_errors(form.originCityId) }}
+                        <p class="mt-1 text-xs text-[#9aa39f]">فقط نام شهر کافی است؛ نیازی به کد فرودگاه نیست.</p>
+                    </div>
+
+                    <div data-controller="geo-select" data-geo-select-url-value="{{ path('public_build_lookup_cities') }}" data-loading-text="در حال جست‌وجو..." data-no-results-text="نتیجه‌ای پیدا نشد" data-error-text="جست‌وجو با خطا مواجه شد" class="relative">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">مقصد (شهر، اختیاری)</span>
+                        <div class="flex gap-2">
+                            <input type="search" value="{{ tripRequest and tripRequest.destinationCity ? tripRequest.destinationCity.name : '' }}" placeholder="مثلاً استانبول" autocomplete="off" class="form-input form-input-lg" data-geo-select-target="input" data-trip-refine-target="destinationCityDisplay" data-action="input->geo-select#search keydown->geo-select#keydown">
+                            <button type="button" class="rounded-md border border-[#d8cab9] px-3 text-sm font-extrabold text-[#596461]" data-action="geo-select#clear">پاک کردن</button>
+                        </div>
+                        {{ form_widget(form.destinationCityId, { attr: { 'data-geo-select-target': 'hidden', 'data-trip-refine-target': 'destinationCityId' } }) }}
+                        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-[#e7ddd0] bg-white shadow-lg" data-geo-select-target="results"></div>
+                        <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-geo-select-target="status"></div>
+                        {{ form_errors(form.destinationCityId) }}
+                    </div>
+                </div>
+
+                <div class="mt-4" data-controller="geo-select" data-geo-select-url-value="{{ path('public_build_lookup_countries') }}" data-loading-text="در حال جست‌وجو..." data-no-results-text="نتیجه‌ای پیدا نشد" data-error-text="جست‌وجو با خطا مواجه شد">
+                    <span class="mb-2 block text-sm font-extrabold text-[#18312f]">یا فقط کشور مقصد</span>
+                    <div class="relative flex gap-2">
+                        <input type="search" value="{{ tripRequest and tripRequest.destinationCountry ? tripRequest.destinationCountry.name : '' }}" placeholder="مثلاً ترکیه" autocomplete="off" class="form-input form-input-lg" data-geo-select-target="input" data-action="input->geo-select#search keydown->geo-select#keydown">
+                        <button type="button" class="rounded-md border border-[#d8cab9] px-3 text-sm font-extrabold text-[#596461]" data-action="geo-select#clear">پاک کردن</button>
+                        <div class="absolute z-20 mt-1 hidden max-h-64 w-full overflow-auto rounded border border-[#e7ddd0] bg-white shadow-lg top-full" data-geo-select-target="results"></div>
+                    </div>
+                    {{ form_widget(form.destinationCountryId, { attr: { 'data-geo-select-target': 'hidden' } }) }}
+                    <div class="mt-1 min-h-4 text-xs text-[#9a3412]" data-geo-select-target="status"></div>
+                    {{ form_errors(form.destinationCountryId) }}
+                    <p class="mt-1 text-xs text-[#9aa39f]">اگر شهر دقیق را نمی‌دانید، فقط کشور را انتخاب کنید؛ ما بهترین شهرهای موجود را پیدا می‌کنیم.</p>
+                </div>
+
+                <div class="mt-6" data-controller="date-mode">
+                    <span class="mb-3 block text-sm font-extrabold text-[#18312f]">تاریخ سفر</span>
+                    <div class="grid min-w-0 gap-2 sm:grid-cols-2">
+                        {% for choice in form.dateMode %}
+                            <label class="cursor-pointer rounded-md border p-3 text-center text-sm font-extrabold transition {{ choice.vars.checked ? 'border-[#0f766e] bg-[#e0f2ef] text-[#0f766e]' : 'border-[#d8cab9] bg-white text-[#596461]' }}">
+                                {{ form_widget(choice, { attr: { class: 'sr-only', 'data-date-mode-target': 'mode', 'data-action': 'date-mode#change' } }) }}
+                                {{ choice.vars.value == 'flexible' ? 'بازه زمانی منعطف' : 'تاریخ دقیق' }}
+                            </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="mt-6 grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="flexibleFields">
+                    <div>
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">شروع بازه</span>
+                        {{ form_widget(form.windowStart, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.windowStart) }}
+                    </div>
+                    <div>
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">پایان بازه</span>
+                        {{ form_widget(form.windowEnd, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.windowEnd) }}
+                    </div>
+                </div>
+
+                <div class="mt-6 hidden grid min-w-0 gap-4 md:grid-cols-2" data-date-mode-target="exactFields">
+                    <div>
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">تاریخ رفت</span>
+                        {{ form_widget(form.departureDate, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.departureDate) }}
+                    </div>
+                    <div>
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">تاریخ برگشت</span>
+                        {{ form_widget(form.returnDate, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.returnDate) }}
+                    </div>
+                </div>
+
+                <div class="mt-6 grid min-w-0 gap-4 md:grid-cols-3">
+                    <label class="block">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">مدت سفر (شب)</span>
+                        {{ form_widget(form.nights, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.nights) }}
+                    </label>
+                    <label class="block">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">بزرگسال</span>
+                        {{ form_widget(form.adults, { attr: { class: 'form-input form-input-lg' } }) }}
+                    </label>
+                    <label class="block">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">کودک</span>
+                        {{ form_widget(form.children, { attr: { class: 'form-input form-input-lg' } }) }}
+                        {{ form_errors(form.childrenAgesText) }}
+                    </label>
+                </div>
+                <label class="mt-4 block max-w-xs">
+                    <span class="mb-2 block text-sm font-extrabold text-[#18312f]">سن کودکان (با ویرگول جدا کنید)</span>
+                    {{ form_widget(form.childrenAgesText, { attr: { class: 'form-input form-input-lg', placeholder: '7, 11' } }) }}
+                </label>
+
+                <details class="mt-6 rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-4">
+                    <summary class="cursor-pointer text-sm font-extrabold text-[#18312f]">ترجیحات پیشرفته (اختیاری)</summary>
+                    <div class="mt-4 grid min-w-0 gap-4 md:grid-cols-2">
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">بودجه تقریبی (اختیاری)</span>
+                            {{ form_widget(form.budget, { attr: { class: 'form-input form-input-lg', placeholder: 'مثلاً 1500' } }) }}
+                            {{ form_errors(form.budget) }}
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">ستاره هتل موردنظر</span>
+                            {{ form_widget(form.hotelStarPreference, { attr: { class: 'form-input form-input-lg', 'data-trip-refine-target': 'hotelStars' } }) }}
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">کلاس پرواز</span>
+                            {{ form_widget(form.flightCabin, { attr: { class: 'form-input form-input-lg' } }) }}
+                        </label>
+                        <label class="block">
+                            <span class="mb-2 block text-sm font-extrabold text-[#18312f]">تعداد اتاق</span>
+                            {{ form_widget(form.rooms, { attr: { class: 'form-input form-input-lg' } }) }}
+                        </label>
+                    </div>
+                    <div class="mt-4 flex flex-wrap gap-4">
+                        <label class="inline-flex items-center gap-2 text-sm font-bold text-[#18312f]">{{ form_widget(form.breakfastPreferred) }} صبحانه برایم مهم است</label>
+                        <label class="inline-flex items-center gap-2 text-sm font-bold text-[#18312f]">{{ form_widget(form.directFlightPreferred, { attr: { 'data-trip-refine-target': 'directFlight' } }) }} ترجیح پرواز مستقیم</label>
+                        <label class="inline-flex items-center gap-2 text-sm font-bold text-[#18312f]">{{ form_widget(form.transferRequired) }} نیاز به ترانسفر فرودگاهی دارم</label>
+                    </div>
+                    <div class="mt-4">
+                        <span class="mb-2 block text-sm font-extrabold text-[#18312f]">علایق سفر</span>
+                        <div class="flex flex-wrap gap-2">
+                            {% for child in form.activityCategories %}
+                                <label class="cursor-pointer rounded-full border border-[#d8cab9] bg-white px-3 py-1 text-xs font-extrabold text-[#596461] has-[:checked]:border-[#0f766e] has-[:checked]:bg-[#0f766e] has-[:checked]:text-white">
+                                    {{ form_widget(child, { attr: { class: 'sr-only' } }) }}
+                                    {{ (child.vars.label)|trans }}
+                                </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </details>
+
+                <div class="mt-8 flex flex-col gap-3 border-t border-[#e7ddd0] pt-5">
+                    <button type="submit" class="rounded-md bg-[#0f766e] px-6 py-3 text-sm font-extrabold text-white transition hover:bg-[#0b5f59]" data-search-status-target="submitButton">جست‌وجوی سفر</button>
+                    <div class="hidden rounded-md border border-[#e0f2ef] bg-[#e0f2ef] p-4 text-sm font-bold text-[#0f766e]" data-search-status-target="panel">
+                        <span data-search-status-target="caption">در حال جست‌وجوی تورهای موجود...</span>
+                    </div>
+                </div>
+            {{ form_end(form) }}
+
+            {% if submitted %}
+                <div class="mt-8" id="trip-results" tabindex="-1">
+                    {% if searchFailed %}
+                        <div class="rounded-md border border-[#f0b5a2] bg-[#fff4ef] p-5 text-sm font-extrabold text-[#9a3412]">
+                            متأسفانه پردازش این جست‌وجو ممکن نشد. لطفاً تاریخ‌ها و تعداد مسافران را بررسی کنید و دوباره تلاش کنید.
+                        </div>
+                    {% elseif result %}
+                        {% if result.options is not empty %}
+                            {% if explanation %}
+                                <div class="mb-5 rounded-md border border-[#0f766e]/30 bg-[#e0f2ef] p-5 text-sm leading-7 text-[#0f4a45]">
+                                    {{ explanation.overallText }}
+                                </div>
+                            {% endif %}
+
+                            {% set highlights = trip_option_highlights(result.options, tripRequest ? tripRequest.travelStartDate() : null) %}
+                            <div class="space-y-4">
+                                {% for option in result.options %}
+                                    {% include '@PublicSite/_option_card.html.twig' with {
+                                        option: option,
+                                        explanationText: explanation ? explanation.forOption(option.rank) : null,
+                                        isCheapest: option.rank == highlights.cheapestRank,
+                                        isBestReviewed: option.rank == highlights.bestReviewedRank,
+                                        isFamily: option.rank == highlights.familyRank,
+                                        isClosestDate: option.rank == highlights.closestDateRank,
+                                    } %}
+                                {% endfor %}
+                            </div>
+
+                            <div class="mt-6 flex flex-wrap gap-2">
+                                <button type="button" class="rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-xs font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="trip-refine#directFlightOnly">فقط پرواز مستقیم</button>
+                                <button type="button" class="rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-xs font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="trip-refine#betterHotel">هتل ۴ ستاره به بالا</button>
+                                {% if tripRequest and tripRequest.destinationCountry and tripRequest.destinationCity %}
+                                    <button type="button" class="rounded-full border border-[#d8cab9] bg-white px-4 py-2 text-xs font-extrabold text-[#18312f] transition hover:border-[#0f766e] hover:text-[#0f766e]" data-action="trip-refine#anotherCity">شهر دیگری در همین کشور</button>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <div class="rounded-md border border-[#e7ddd0] bg-[#fffaf4] p-5">
+                                <h2 class="text-lg font-black text-[#18312f]">هنوز پیشنهادی پیدا نشد</h2>
+                                <p class="mt-3 text-sm leading-7 text-[#44514f]">{{ explanation ? explanation.overallText : 'در حال حاضر برای این بازه و مقصد گزینه مناسبی پیدا نشد.' }}</p>
+                                <p class="mt-3 text-sm text-[#65716e]">می‌توانید بازه تاریخ را بازتر کنید یا شهر دیگری در همان کشور را امتحان کنید.</p>
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </section>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        document.addEventListener('turbo:load', function () {
+            var results = document.getElementById('trip-results');
+            if (results) {
+                results.focus();
+            }
+        });
+    </script>
+{% endblock %}

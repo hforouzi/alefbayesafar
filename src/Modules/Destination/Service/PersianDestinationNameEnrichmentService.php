@@ -26,7 +26,7 @@ final class PersianDestinationNameEnrichmentService
     }
 
     /**
-     * @return array{countries: int, states: int, cities: int, airports: int, skippedCurated: int, skippedMissingSource: int, files: string[]}
+     * @return array{countries: int, states: int, cities: int, airports: int, skippedCurated: int, skippedMissingSource: int, files: string[], cityReport: array{checked: int, alreadyPresent: int, added: int, stillMissing: int}}
      */
     public function enrich(?string $countryIso2 = null, bool $refresh = false): array
     {
@@ -45,6 +45,10 @@ final class PersianDestinationNameEnrichmentService
             'files' => [],
         ];
 
+        $cityRepository = $this->entityManager->getRepository(City::class);
+        $citiesChecked = $cityRepository->count([]);
+        $citiesMissingBefore = $cityRepository->count(['nameFa' => null]);
+
         foreach ($iso2Values as $iso2) {
             $alternateNames = $this->alternateNamesForCountry($iso2, $refresh, $isTargeted || $refresh);
             if ($alternateNames === []) {
@@ -57,10 +61,42 @@ final class PersianDestinationNameEnrichmentService
             $this->enrichType(DestinationEntityType::CITY, $alternateNames, $result);
         }
 
+        $curatedAdded = $this->enrichCitiesFromCuratedFallback();
+
         $result['skippedMissingSource'] += $this->entityManager->getRepository(Airport::class)->count(['nameFa' => null]);
         $this->entityManager->flush();
 
+        $citiesMissingAfter = $cityRepository->count(['nameFa' => null]);
+        $result['cityReport'] = [
+            'checked' => $citiesChecked,
+            'alreadyPresent' => $citiesChecked - $citiesMissingBefore,
+            'added' => $citiesMissingBefore - $citiesMissingAfter,
+            'stillMissing' => $citiesMissingAfter,
+        ];
+        $result['cities'] += $curatedAdded;
+
         return $result;
+    }
+
+    /**
+     * Deterministic, network-free fallback for well-known cities that the
+     * GeoNames alternate-names pass did not already cover. Never overwrites
+     * an existing Persian name.
+     */
+    private function enrichCitiesFromCuratedFallback(): int
+    {
+        $added = 0;
+        foreach ($this->entityManager->getRepository(City::class)->findBy(['nameFa' => null]) as $city) {
+            $persianName = CuratedPersianCityNames::find($city->getCountry()?->getIso2(), $city->getName());
+            if ($persianName === null) {
+                continue;
+            }
+
+            $city->setNameFa($persianName);
+            ++$added;
+        }
+
+        return $added;
     }
 
     /**

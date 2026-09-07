@@ -7,6 +7,7 @@ use App\Modules\Destination\Entity\City;
 use App\Modules\Destination\Entity\Country;
 use App\Modules\Destination\Entity\DestinationSourceReference;
 use App\Modules\Destination\Entity\State;
+use App\Modules\Destination\Service\CuratedPersianCityNames;
 use App\Modules\Destination\Service\PersianDestinationNameEnrichmentService;
 use App\Modules\Destination\ValueObject\DestinationEntityType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -81,6 +82,106 @@ class PersianDestinationNameEnrichmentServiceTest extends KernelTestCase
         self::assertNull($airport->getNameFa());
 
         $filesystem->remove($cacheDirectory);
+    }
+
+    public function testCuratedFallbackFillsWellKnownCityWithoutOverwritingExistingValue(): void
+    {
+        self::bootKernel();
+        $em = $this->entityManager();
+
+        [$country, ] = $this->findOrCreateCountry('AL', 'Albania');
+        $suffix = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+
+        // A city named exactly like a curated entry, with no state, is
+        // reused across runs of this test to avoid the (country, state,
+        // name) uniqueness constraint colliding with a previous run.
+        $curatedCity = $em->getRepository(City::class)->findOneBy(['country' => $country, 'state' => null, 'name' => 'Tirana']);
+        if (!$curatedCity instanceof City) {
+            $curatedCity = (new City())->setCountry($country)->setName('Tirana')->setSlug('tirana-curated-test');
+            $em->persist($curatedCity);
+        }
+
+        // A distinct state scopes this second "Tirana" so it does not
+        // collide with the row above under the same unique constraint.
+        $state = (new State())->setCountry($country)->setName('Curated Test State ' . $suffix)->setCode($suffix)->setSlug('curated-test-state-' . strtolower($suffix));
+        $alreadySetCity = (new City())
+            ->setCountry($country)
+            ->setState($state)
+            ->setName('Tirana')
+            ->setNameFa('نام دستی ' . $suffix)
+            ->setSlug('tirana-manual-test-' . strtolower($suffix));
+        $unknownCity = (new City())
+            ->setCountry($country)
+            ->setName('Unmapped Town ' . $suffix)
+            ->setSlug('unmapped-town-test-' . strtolower($suffix));
+        foreach ([$state, $alreadySetCity, $unknownCity] as $entity) {
+            $em->persist($entity);
+        }
+        $em->flush();
+
+        $cacheDirectory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'alefbayesafar-persian-curated-' . strtolower($suffix);
+        $filesystem = new Filesystem();
+        $filesystem->mkdir($cacheDirectory . DIRECTORY_SEPARATOR . 'alternatenames');
+        // No GeoNames alt-name data at all for this run — isolates the curated fallback.
+        $this->writeAlternateNamesZip($cacheDirectory, 'AL', []);
+
+        $service = new PersianDestinationNameEnrichmentService(new MockHttpClient(), $em, $cacheDirectory, $filesystem);
+        $service->enrich('AL');
+
+        $em->refresh($curatedCity);
+        $em->refresh($alreadySetCity);
+        $em->refresh($unknownCity);
+
+        self::assertSame(CuratedPersianCityNames::NAMES['AL']['Tirana'], $curatedCity->getNameFa());
+        self::assertSame('نام دستی ' . $suffix, $alreadySetCity->getNameFa(), 'a manually-set Persian name must never be overwritten');
+        self::assertNull($unknownCity->getNameFa(), 'a city with no known mapping must stay null, never fabricated from the English name');
+
+        $filesystem->remove($cacheDirectory);
+    }
+
+    public function testCityReportCountsAreInternallyConsistent(): void
+    {
+        self::bootKernel();
+        $em = $this->entityManager();
+        $suffix = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6));
+        $iso2 = $this->unusedIso2();
+
+        $cacheDirectory = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'alefbayesafar-persian-report-' . strtolower($suffix);
+        $filesystem = new Filesystem();
+        $filesystem->mkdir($cacheDirectory . DIRECTORY_SEPARATOR . 'alternatenames');
+        $this->writeAlternateNamesZip($cacheDirectory, $iso2, []);
+
+        $country = (new Country())->setName('Report Country ' . $suffix)->setIso2($iso2);
+        $city = (new City())->setCountry($country)->setName('Report City ' . $suffix)->setSlug('report-city-' . strtolower($suffix));
+        $em->persist($country);
+        $em->persist($city);
+        $em->flush();
+
+        $service = new PersianDestinationNameEnrichmentService(new MockHttpClient(), $em, $cacheDirectory, $filesystem);
+        $result = $service->enrich($iso2);
+        $report = $result['cityReport'];
+
+        self::assertSame($report['checked'], $report['alreadyPresent'] + $report['added'] + $report['stillMissing']);
+        self::assertGreaterThanOrEqual(1, $report['stillMissing'], 'the unmapped fixture city must be counted as still missing, not silently dropped');
+
+        $filesystem->remove($cacheDirectory);
+    }
+
+    /**
+     * @return array{0: Country, 1: bool} the country and whether it was found (true) or newly created (false)
+     */
+    private function findOrCreateCountry(string $iso2, string $fallbackName): array
+    {
+        $existing = $this->entityManager()->getRepository(Country::class)->findOneBy(['iso2' => $iso2]);
+        if ($existing instanceof Country) {
+            return [$existing, true];
+        }
+
+        $country = (new Country())->setName($fallbackName)->setIso2($iso2);
+        $this->entityManager()->persist($country);
+        $this->entityManager()->flush();
+
+        return [$country, false];
     }
 
     /**

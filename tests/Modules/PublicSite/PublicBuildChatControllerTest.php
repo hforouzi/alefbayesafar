@@ -1,0 +1,227 @@
+<?php
+
+namespace App\Tests\Modules\PublicSite;
+
+use App\Modules\Destination\Entity\City;
+use App\Modules\Destination\Entity\Country;
+use App\Modules\SearchSource\Entity\SearchSource;
+use App\Modules\SearchSource\Enum\SearchSourceProviderType;
+use App\Modules\Tour\Entity\ExternalTourOffer;
+use App\Modules\Tour\Enum\TourAvailabilityStatus;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+
+/**
+ * HTTP-level coverage for the chat-first /build experience. The interpreter
+ * logic itself is covered by ConversationalTravelPlanningServiceTest; these
+ * tests only confirm the controller/session/redirect wiring and that the
+ * public page never shows a structured multi-field form or an airport
+ * field as the primary interaction.
+ */
+class PublicBuildChatControllerTest extends WebTestCase
+{
+    public function testInitialBuildPageIsChatFirstNotFormFirst(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/build');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('body', 'برای سفرت چه چیزی تو ذهنت هست؟');
+        self::assertSelectorExists('textarea[name="message"]');
+        self::assertSelectorNotExists('input[name*="originCityId"]');
+        self::assertSelectorNotExists('input[name*="originAirportId"]');
+        self::assertSelectorNotExists('select[name*="hotelStarPreference"]');
+    }
+
+    public function testFirstMessageAsksForOriginAndNeverAsksForAirport(): void
+    {
+        $client = self::createClient();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $em->flush();
+
+        $client->request('POST', '/build/message', ['message' => '۵ روز ' . $catalog['istanbulFa'] . ' می‌خوام']);
+        self::assertResponseRedirects('/build');
+        $client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        $html = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('کدام شهر', $html);
+        self::assertStringNotContainsString('airport', strtolower($html));
+        self::assertStringNotContainsString('IATA', $html);
+    }
+
+    public function testConversationCompletesAndRendersCardsThenResetClearsIt(): void
+    {
+        $client = self::createClient();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $source = (new SearchSource())
+            ->setName('Chat HTTP Source ' . self::suffix())
+            ->setDomain('example.test')
+            ->setProvider('test')
+            ->setProviderType(SearchSourceProviderType::MANUAL)
+            ->setCapabilities([SearchSource::CAPABILITY_TOUR])
+            ->setEnabled(true);
+        $offer = (new ExternalTourOffer())
+            ->setSearchSource($source)
+            ->setProviderCode('test')
+            ->setTitle('Chat HTTP Offer ' . self::suffix())
+            ->setDestinationCity($catalog['istanbul'])
+            ->setDestinationText($catalog['istanbul']->getName())
+            ->setDepartureDate(new \DateTimeImmutable('2026-10-01'))
+            ->setReturnDate(new \DateTimeImmutable('2026-10-06'))
+            ->setNights(5)
+            ->setHotelName('Chat HTTP Hotel')
+            ->setBoardType('breakfast')
+            ->setAdults(2)
+            ->setChildren(0)
+            ->setInfants(0)
+            ->setCurrency('EUR')
+            ->setTotalPrice('690.00')
+            ->setAvailabilityStatus(TourAvailabilityStatus::AVAILABLE)
+            ->setFetchedAt(new \DateTimeImmutable('-1 hour'))
+            ->setExpiresAt(new \DateTimeImmutable('+5 hours'))
+            ->setMetadata([]);
+        $em->persist($source);
+        $em->persist($offer);
+        $em->flush();
+
+        $client->request('POST', '/build/message', ['message' => '۵ روز ' . $catalog['istanbulFa'] . ' می‌خوام']);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => $catalog['rashtFa']]);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => 'تو مهر هر وقت ارزون‌تره']);
+        $client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        $html = (string) $client->getResponse()->getContent();
+        self::assertStringContainsString('Chat HTTP Offer', $html);
+        self::assertStringContainsString('Chat HTTP Hotel', $html);
+        self::assertStringContainsString('690.00', $html);
+        self::assertStringContainsString('صبحانه: دارد', $html, 'known breakfast board must render as a clear Persian fact line');
+        self::assertStringContainsString('کدام گزینه بهتر است؟', $html, 'follow-up suggestion chips must be offered once results are shown');
+        foreach ([
+            'cached_external', 'provider_error', 'no_configured_sources', 'liveRefreshStatus', 'canonicalMatchStatus',
+            'live_external', 'budget fit', 'lower-priced matching departure', 'matched option within requested date window',
+            'external offer', 'no_options',
+        ] as $forbidden) {
+            self::assertStringNotContainsString($forbidden, $html);
+        }
+
+        $logPosition = strpos($html, 'data-travel-chat-target="log"');
+        $resultsPosition = strpos($html, 'Chat HTTP Offer');
+        self::assertIsInt($logPosition);
+        self::assertIsInt($resultsPosition);
+        self::assertLessThan($resultsPosition, $logPosition, 'the chat panel must be emitted before the results panel so it renders on the right in RTL');
+
+        $client->request('POST', '/build/reset');
+        self::assertResponseRedirects('/build');
+        $client->followRedirect();
+        self::assertSelectorTextContains('body', 'برای سفرت چه چیزی تو ذهنت هست؟');
+    }
+
+    public function testFollowUpQuestionAfterResultsGetsContextualAnswerNotGenericSummary(): void
+    {
+        $client = self::createClient();
+        $em = self::getContainer()->get(EntityManagerInterface::class);
+        self::assertInstanceOf(EntityManagerInterface::class, $em);
+        $catalog = $this->catalog($em);
+        $this->offer($em, $catalog['istanbul'], 'Follow-up Cheap Offer ' . self::suffix(), '600.00', 'Follow-up Cheap Hotel');
+        $this->offer($em, $catalog['istanbul'], 'Follow-up Pricey Offer ' . self::suffix(), '750.00', 'Follow-up Pricey Hotel');
+        $em->flush();
+
+        $client->request('POST', '/build/message', ['message' => '۵ روز ' . $catalog['istanbulFa'] . ' می‌خوام']);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => $catalog['rashtFa']]);
+        $client->followRedirect();
+        $client->request('POST', '/build/message', ['message' => 'تو مهر هر وقت ارزون‌تره']);
+        $client->followRedirect();
+        self::assertResponseIsSuccessful();
+
+        $client->request('POST', '/build/message', ['message' => 'کدوم ارزون‌تره؟']);
+        $crawler = $client->followRedirect();
+
+        self::assertResponseIsSuccessful();
+        $bubbles = $crawler->filter('.rounded-2xl');
+        self::assertGreaterThan(0, $bubbles->count());
+        $lastMessage = trim($bubbles->last()->text());
+
+        self::assertStringContainsString('ارزان‌ترین گزینه', $lastMessage);
+        self::assertStringNotContainsString('گزینه مناسب پیدا کردم', $lastMessage, 'a follow-up answer must not repeat the original generic result summary');
+    }
+
+    public function testAdvancedSearchLinkIsAvailableAsSecondaryOption(): void
+    {
+        $client = self::createClient();
+        $client->request('GET', '/build');
+
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('a[href="/build/advanced"]');
+    }
+
+    /**
+     * @return array{rasht: City, istanbul: City, rashtFa: string, istanbulFa: string}
+     */
+    private function catalog(EntityManagerInterface $em): array
+    {
+        $suffix = self::suffix();
+        $iranCountry = (new Country())->setName('Chat HTTP Iran ' . $suffix);
+        $turkeyCountry = (new Country())->setName('Chat HTTP Turkey ' . $suffix)->setNameFa('ترکیه' . $suffix);
+        $rashtFa = 'رشت' . $suffix;
+        $rasht = (new City())->setCountry($iranCountry)->setName('Chat HTTP Rasht ' . $suffix)->setNameFa($rashtFa)->setSlug('chat-http-rasht-' . strtolower($suffix));
+        $istanbulFa = 'استانبول' . $suffix;
+        $istanbul = (new City())->setCountry($turkeyCountry)->setName('Chat HTTP Istanbul ' . $suffix)->setNameFa($istanbulFa)->setSlug('chat-http-istanbul-' . strtolower($suffix));
+
+        foreach ([$iranCountry, $turkeyCountry, $rasht, $istanbul] as $entity) {
+            $em->persist($entity);
+        }
+
+        return ['rasht' => $rasht, 'istanbul' => $istanbul, 'rashtFa' => $rashtFa, 'istanbulFa' => $istanbulFa];
+    }
+
+    private function offer(EntityManagerInterface $em, City $destination, string $title, string $price, string $hotelName): void
+    {
+        $source = (new SearchSource())
+            ->setName('Chat HTTP Source ' . self::suffix())
+            ->setDomain('example.test')
+            ->setProvider('test')
+            ->setProviderType(SearchSourceProviderType::MANUAL)
+            ->setCapabilities([SearchSource::CAPABILITY_TOUR])
+            ->setEnabled(true);
+        $offer = (new ExternalTourOffer())
+            ->setSearchSource($source)
+            ->setProviderCode('test')
+            ->setTitle($title)
+            ->setDestinationCity($destination)
+            ->setDestinationText($destination->getName())
+            ->setDepartureDate(new \DateTimeImmutable('2026-10-01'))
+            ->setReturnDate(new \DateTimeImmutable('2026-10-06'))
+            ->setNights(5)
+            ->setHotelName($hotelName)
+            ->setBoardType('breakfast')
+            ->setAdults(2)
+            ->setChildren(0)
+            ->setInfants(0)
+            ->setCurrency('EUR')
+            ->setTotalPrice($price)
+            ->setAvailabilityStatus(TourAvailabilityStatus::AVAILABLE)
+            ->setFetchedAt(new \DateTimeImmutable('-1 hour'))
+            ->setExpiresAt(new \DateTimeImmutable('+5 hours'))
+            ->setMetadata([]);
+        $em->persist($source);
+        $em->persist($offer);
+    }
+
+    private static function suffix(): string
+    {
+        $letters = '';
+        for ($index = 0; $index < 8; ++$index) {
+            $letters .= chr(random_int(65, 90));
+        }
+
+        return $letters;
+    }
+}

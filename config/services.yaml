@@ -10,6 +10,8 @@ parameters:
   firecrawl.base_url: 'https://api.firecrawl.dev'
   flight.external_offer_ttl_minutes: '20'
   tour.external_offer_ttl_minutes: '360'
+  openai.base_url: 'https://api.openai.com'
+  openai.default_model: 'gpt-4o-mini'
 
 
 services:
@@ -85,3 +87,15 @@ services:
   App\Modules\Hotel\Service\HotelCandidatePayloadSigner:
     arguments:
       $secret: '%kernel.secret%'
+
+  App\Modules\TripPlanner\Service\OpenAiClient:
+    arguments:
+      $apiKey: '%env(default::OPENAI_API_KEY)%'
+      $model: '%env(default:openai.default_model:OPENAI_MODEL)%'
+      $baseUrl: '%env(default:openai.base_url:OPENAI_BASE_URL)%'
+
+  # Both interfaces are bound to their OpenAI-backed implementation, which
+  # itself falls back to the deterministic implementation automatically
+  # whenever OPENAI_API_KEY is missing or the call fails.
+  App\Modules\TripPlanner\Service\TravelIntentInterpreterInterface: '@App\Modules\TripPlanner\Service\OpenAiTravelIntentInterpreter'
+  App\Modules\TripPlanner\Service\TravelRecommendationExplanationServiceInterface: '@App\Modules\TripPlanner\Service\OpenAiTravelRecommendationExplanationService'
